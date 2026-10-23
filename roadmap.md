@@ -1,5 +1,7 @@
 # Autenticação segura — ITV FINANCEIRO HML
 
+- [x] Solicitação 18:20 UTC: viabilidade verificada por SELECT; destino confirmado, template1 listado mas conexão B não comprovada; executor somente leitura, PIDs distintos, sem controle de conexões fixas/serviços/workers ou escolha de sessão no mecanismo de migração. Nenhuma ativação/migração; alternativa é janela operacional coordenada no HML, com risco residual explicitado e nova decisão antes de executar.
+
 - [x] Solicitação 18:15 UTC: proposta de barreira PostgreSQL entregue, SQL adicional separado/SQL M3.2 intacto e 13/13 testes locais de admissão/drenagem/retomada/recuperação; nenhuma alteração HML.
 - [ ] Manutenção proposta: aguarda aprovação e comprovação de conexões fixas em dois bancos do mesmo cluster, autoridade de admissão, drenagem graciosa dos pools/workers e executor oficial compatível; não fechar HML nem aplicar M3.2 sem esses controles.
 
