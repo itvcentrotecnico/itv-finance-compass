@@ -5,9 +5,14 @@
 - [x] Migração M1: permissões e regras de acesso por perfil.
 - [x] Login, convite/senha inicial, recuperação, saída segura e proteção das páginas.
 - [ ] Painel Supabase (usuário): desligar cadastro público, expor `financeiro_hml`, cadastrar URLs de redirecionamento.
-- [ ] Criar o primeiro Administrador Geral (usuário, via SQL Editor).
+- [x] Primeiro Administrador Geral criado e acesso confirmado pelo usuário.
 - [ ] Testes de acesso por perfil ponta a ponta em HML (aguarda usuários de teste para cada perfil).
 
 Não conectar o GESTÃO ITV, não publicar em produção e não adicionar dados financeiros reais.
 - [x] M2 e telas de Plano de Contas e Centros de Custo (auditoria, validações, testes de banco por perfil).
 - [ ] Teste ponta a ponta das telas com login real em HML (aguarda usuários de teste por perfil).
+- [x] Plano de Contas e Centros de Custo: testes funcionais com Administrador Geral confirmados pelo usuário.
+- [x] M3: inspecionar banco/aplicação e apresentar plano de Tesouraria para aprovação, sem alterar o banco.
+- [ ] M3: migração, Tesouraria operacional e testes automatizados (aguarda aprovação do plano).
+
+Testes de convites e demais perfis ficam para homologação final; não bloqueiam o planejamento e desenvolvimento autorizados da M3.
