@@ -1,14 +1,20 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useRouteContext, useRouterState } from "@tanstack/react-router";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
   SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar,
 } from "@/components/ui/sidebar";
 import { MODULE_GROUPS } from "@/lib/modules";
+import { can } from "@/lib/auth/permissions";
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const path = useRouterState({ select: (s) => s.location.pathname });
+  const { role } = useRouteContext({ from: "/_authenticated" });
+  const groups = MODULE_GROUPS.map((g) => ({
+    ...g,
+    modules: g.modules.filter((m) => role && can(role, m.key, "view")),
+  })).filter((g) => g.modules.length > 0);
 
   return (
     <Sidebar collapsible="icon">
@@ -26,7 +32,7 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
       <SidebarContent>
-        {MODULE_GROUPS.map((group) => (
+        {groups.map((group) => (
           <SidebarGroup key={group.label}>
             <SidebarGroupLabel className="text-[10px] uppercase tracking-[0.14em] text-sidebar-foreground/45">
               {group.label}
