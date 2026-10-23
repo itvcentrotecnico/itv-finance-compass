@@ -11,7 +11,7 @@ Somente inspeção realizada: **nenhuma alteração no banco**. Aprovação auto
 - Contas: perfil ativo lê; Administrador Geral/Financeiro cria e altera. authenticated tem SELECT/INSERT/UPDATE, não DELETE; anon sem acesso. Auditoria é lida só pelos administradores, sem escrita pelo usuário.
 - Plano de Contas tem natureza, pai, situação e aceite de lançamentos; Centros de Custo tem responsável/situação. M2 oferece autoria, validações e auditoria por triggers.
 - Contagens: 0 contas financeiras, 1 conta contábil, 1 centro e 1 Administrador Geral ativo. Não há ledger, transferência, idempotência ou cálculo de saldo.
-- Reutilizar login, sessão, proteção financeira, papel_atual/tem_papel, cadastros, controles, erros e identidade ITV com logo oficial/fundo claro. A Tesouraria já existe no registro de módulos: substituir seu estado “Em estruturação”, sem rota paralela.
+- Reutilizar login, sessão, proteção financeira, papel_atual/tem_papel, cadastros, controles, erros e identidade ITV com logo oficial/fundo claro. Tesouraria substitui o estado “Em estruturação” no módulo existente.
 
 ## 2. Matriz proposta
 Sessão válida e perfil ativo obrigatórios. Nenhum perfil exclui fisicamente registros.
