@@ -1,24 +1,82 @@
 import { createFileRoute } from "@tanstack/react-router";
+import {
+  Wallet, TrendingUp, TrendingDown, Scale, CalendarClock, CalendarCheck, AlertOctagon, LineChart,
+  BellRing, Clock, PiggyBank, Layers, Target, GitCompareArrows,
+} from "lucide-react";
+import { AppShell } from "@/components/layout/AppShell";
+import { ChartPlaceholder, EmptyState, KpiCard, PageHeader, Panel } from "@/components/shared/finance";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
-  component: Index,
+  head: () => ({
+    meta: [
+      { title: "Dashboard executivo · ITV Financeiro" },
+      { name: "description", content: "Visão executiva da administração financeira da ITV Centro Técnico." },
+      { property: "og:title", content: "Dashboard executivo · ITV Financeiro" },
+      { property: "og:description", content: "Visão executiva da administração financeira da ITV Centro Técnico." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
+  component: Dashboard,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
-function Index() {
+const KPIS = [
+  { label: "Saldo consolidado", icon: Wallet, hint: "Todas as contas e caixas" },
+  { label: "Entradas no mês", icon: TrendingUp, hint: "Realizadas", tone: "positive" as const },
+  { label: "Saídas no mês", icon: TrendingDown, hint: "Realizadas", tone: "negative" as const },
+  { label: "Resultado do período", icon: Scale, hint: "Entradas − saídas" },
+  { label: "A pagar · 30 dias", icon: CalendarClock, hint: "Vencimentos previstos", tone: "warning" as const },
+  { label: "A receber · 30 dias", icon: CalendarCheck, hint: "Recebimentos previstos", tone: "positive" as const },
+  { label: "Obrigações vencidas", icon: AlertOctagon, hint: "Em atraso", tone: "negative" as const },
+  { label: "Projeção de saldo · 30 dias", icon: LineChart, hint: "Saldo atual + previstos" },
+];
+
+const CHARTS = [
+  { title: "Evolução de entradas e saídas", subtitle: "Últimos 12 meses", variant: "bars" as const, span: "lg:col-span-2" },
+  { title: "Distribuição de despesas", subtitle: "Por categoria", variant: "donut" as const },
+  { title: "Fluxo de caixa", subtitle: "Realizado e projetado", variant: "line" as const, span: "lg:col-span-2" },
+  { title: "Resultado mensal", subtitle: "Exercício corrente", variant: "bars" as const },
+  { title: "Contas a pagar por vencimento", subtitle: "Faixas de prazo", variant: "bars" as const },
+  { title: "Contas a receber por vencimento", subtitle: "Faixas de prazo", variant: "bars" as const },
+];
+
+const ALERTS = [
+  { icon: Clock, title: "Contas vencidas" },
+  { icon: PiggyBank, title: "Insuficiência de caixa" },
+  { icon: Layers, title: "Concentração de vencimentos" },
+  { icon: Target, title: "Despesas acima do orçamento" },
+  { icon: GitCompareArrows, title: "Divergências de conciliação" },
+];
+
+function Dashboard() {
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
+    <AppShell>
+      <PageHeader
+        eyebrow="Visão executiva"
+        title="Dashboard"
+        description="Os indicadores serão preenchidos assim que os módulos financeiros e a integração com o GESTÃO ITV forem autorizados."
       />
-    </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {KPIS.map((k) => <KpiCard key={k.label} {...k} />)}
+      </div>
+
+      <div className="mt-6 grid gap-4 lg:grid-cols-3">
+        {CHARTS.map((c) => (
+          <Panel key={c.title} title={c.title} subtitle={c.subtitle} className={c.span}>
+            <ChartPlaceholder variant={c.variant} />
+          </Panel>
+        ))}
+      </div>
+
+      <Panel title="Central de alertas" subtitle="Monitoramento automático — disponível nas próximas etapas" className="mt-6"
+        action={<BellRing className="size-4 text-muted-foreground" />}>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          {ALERTS.map((a) => (
+            <EmptyState key={a.title} compact icon={a.icon} title={a.title} description="Nenhum alerta" />
+          ))}
+        </div>
+      </Panel>
+    </AppShell>
   );
 }
