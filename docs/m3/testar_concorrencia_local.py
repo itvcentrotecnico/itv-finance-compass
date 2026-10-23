@@ -30,7 +30,7 @@ POOL = ThreadPoolExecutor(max_workers=4)
 def connect(db='postgres', auth=False):
     c = psycopg.connect(host=SOCKET, port=PORT, user='postgres', dbname=db,
                          autocommit=True, row_factory=dict_row)
-    c.execute("SET statement_timeout='15s'; SET deadlock_timeout='100ms'")
+    c.execute("SET client_encoding='UTF8'; SET statement_timeout='15s'; SET deadlock_timeout='100ms'")
     if auth:
         c.execute("SELECT set_config('request.jwt.claim.sub', %s, false)", (USER,))
         c.execute('SET ROLE authenticated')
