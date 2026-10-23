@@ -1,5 +1,7 @@
 # Autenticação segura — ITV FINANCEIRO HML
 
+- [x] Solicitação 21:03 UTC: comandos finais entregues para registro/validação de ACL de UPDATE, barreira temporária por REVOKE, eficácia persistente, drenagem após COMMIT, submissão oficial do SQL byte-idêntico e restauração exata de nove grants; nenhuma alteração executada no HML. Evidências hospedadas/backup informadas pelo usuário. Execução aguarda autorização expressa e controle administrativo dos escritores privilegiados.
+
 - [x] Solicitação 18:20 UTC: viabilidade verificada por SELECT; destino confirmado, template1 listado mas conexão B não comprovada; executor somente leitura, PIDs distintos, sem controle de conexões fixas/serviços/workers ou escolha de sessão no mecanismo de migração. Nenhuma ativação/migração; alternativa é janela operacional coordenada no HML, com risco residual explicitado e nova decisão antes de executar.
 
 - [x] Solicitação 18:15 UTC: proposta de barreira PostgreSQL entregue, SQL adicional separado/SQL M3.2 intacto e 13/13 testes locais de admissão/drenagem/retomada/recuperação; nenhuma alteração HML.
