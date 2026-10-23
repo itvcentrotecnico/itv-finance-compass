@@ -1,7 +1,9 @@
 # Autenticação segura — ITV FINANCEIRO HML
 
 - [x] Solicitação 21:19 UTC: M3.2 aplicada em 21:26 UTC pelo mecanismo oficial, SQL integral e SHA-256 idêntico ao aprovado; integridade M1/M2, dados, RLS, ACLs, funções/triggers/índice e barreira verificadas por leitura. Nove grants temporários não restaurados; nenhuma operação financeira executada.
-- [ ] Restaurar nove grants temporários e homologar operações financeiras: aguarda autorização separada; escritas permanecem bloqueadas.
+- [x] Nove grants temporários restaurados pelo usuário; RPCs de Tesouraria para authenticated reconfirmadas por leitura em 21:30 UTC.
+- [x] Solicitação 21:30 UTC: prontidão analisada por leitura, nove permissões restauradas verificadas, HML exclusivo confirmado, 26 testes locais aprovados e acesso sem sessão redirecionado. Relatório docs/m3/PRONTIDAO_HOMOLOGACAO_M3_2.md; pendências: histórico de operações não integrado, recuperação de envios incertos/erros, zero classificações aptas e validação autenticada não disponível nesta sessão externa.
+- [ ] Homologar operações financeiras: aguarda autorização separada; nenhuma escrita de teste permitida na análise de prontidão.
 
 - [x] Solicitação 21:03 UTC: comandos finais entregues para registro/validação de ACL de UPDATE, barreira temporária por REVOKE, eficácia persistente, drenagem após COMMIT, submissão oficial do SQL byte-idêntico e restauração exata de nove grants; nenhuma alteração executada no HML. Evidências hospedadas/backup informadas pelo usuário. Execução aguarda autorização expressa e controle administrativo dos escritores privilegiados.
 
