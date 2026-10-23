@@ -20,5 +20,6 @@ Não conectar o GESTÃO ITV, não publicar em produção e não adicionar dados 
 - [x] Backup assistido parcial: exportação real de financeiro_hml (7 tabelas, 18 funções, dados/controles), recuperação em PostgreSQL 17.9 vazio e 102 verificações aprovadas; pacote/relatório disponíveis em Files. Não é backup completo Supabase; auth real e configurações hospedadas não recuperadas.
 - [x] Aceitação expressa da recuperação parcial em 23/10/2026 às 18:04 UTC, limitada ao HML; Auth/configurações hospedadas fora da cobertura.
 - [x] Autorização condicionada: destino, pacote CRC/SHA-256, identidade do SQL e tabelas vazias conferidos; 29 testes de regressão aprovados; relatório de interrupção e roteiro de homologação preparados, sem migração nem novos dados.
+- [x] Solicitação 18:11 UTC: RPCs, triggers, privilégios de tabela/coluna e acessos diretos mapeados; destino/recuperação/SQL/tabelas vazias reconfirmados; roteiro de manutenção entregue. M3.2 não aplicada: bloqueio de admissão e drenagem de chamadas antigas não comprováveis apenas com NOWAIT; aguarda controle operacional verificado, sem migrações adicionais.
 
 Testes de convites e demais perfis ficam para homologação final; não bloqueiam o planejamento e desenvolvimento autorizados da M3.
