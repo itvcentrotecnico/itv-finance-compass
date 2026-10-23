@@ -13,6 +13,7 @@ Não conectar o GESTÃO ITV, não publicar em produção e não adicionar dados 
 - [ ] Teste ponta a ponta das telas com login real em HML (aguarda usuários de teste por perfil).
 - [x] Plano de Contas e Centros de Custo: testes funcionais com Administrador Geral confirmados pelo usuário.
 - [x] M3: inspecionar banco/aplicação e apresentar plano de Tesouraria para aprovação, sem alterar o banco.
-- [ ] M3: migração, Tesouraria operacional e testes automatizados (aguarda aprovação do plano).
+- [x] M3 suspensa: revisão integral do SQL, causa raiz 42601 reproduzida localmente, inspeção de objetos e integridade M1/M2, SQL corrigido e relatório (somente leitura no HML).
+- [ ] M3: aplicar correções e realizar testes financeiros no banco (aguarda nova autorização após apresentação do SQL e relatório).
 
 Testes de convites e demais perfis ficam para homologação final; não bloqueiam o planejamento e desenvolvimento autorizados da M3.
