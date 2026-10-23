@@ -1,11 +1,9 @@
 # M3 — Tesouraria ITV FINANCEIRO HML
 
 ## Escopo e autorização
-Implementar contas bancárias e caixa físico, entradas, saídas, transferências, saldo inicial, saldo disponível, extrato e estornos rastreáveis, integrados aos cadastros existentes. Exclusivamente Supabase **ayjppexbzpgdkzbehvzw**, esquema **financeiro_hml**. Sem GESTÃO ITV, publicação em produção ou movimentações fictícias.
+Contas bancárias/caixa, entradas, saídas, transferências, abertura, saldos, extrato e estornos integrados aos cadastros. Exclusivamente Supabase **ayjppexbzpgdkzbehvzw**, **financeiro_hml**; sem GESTÃO ITV, produção ou movimentos fictícios.
 
-Esta etapa realizou apenas consultas no banco e revisão da aplicação. **Nenhuma migração ou configuração foi executada.** A aprovação deste plano autoriza a implementação M3 e a submissão da migração pelo mecanismo de aprovação; alterações fora do escopo exigem nova autorização.
-
-Os testes funcionais de Plano de Contas e Centros de Custo com Administrador Geral foram confirmados pelo usuário. Convites e demais perfis continuam na homologação final, sem interromper a M3 autorizada.
+Somente inspeção realizada: **nenhuma alteração no banco**. Aprovação autoriza implementar M3 e submeter a migração à aprovação própria; fora do escopo exige nova autorização. M2 foi validada pelo usuário com Administrador Geral; convites e outros perfis ficam para homologação final sem interromper M3.
 
 ## 1. Inspeção e reutilização
 - Cinco tabelas: perfis, plano_contas, centros_custo, contas_financeiras e auditoria. Todas com RLS habilitado e obrigatório.
@@ -75,6 +73,6 @@ Transferência parcial: transação e verificação dos efeitos. Duplicação/es
 - Ponta a ponta com Administrador Geral e dados explicitamente autorizados: conta → lançamento → transferência → extrato → estorno → recarregar e confirmar saldo/histórico; telas largas/estreitas e erros. Não gravar operações de teste permanentes sem autorização. Convites e demais perfis permanecem na homologação final, sem bloquear a implementação.
 
 ## 9. Reversão e entrega
-Falha durante a migração reverte sua transação. Antes de movimentações, reversão aprovada pode remover apenas objetos M3 e restaurar grants/triggers anteriores. **Após uso financeiro, não apagar ledger nem voltar a saldo manual:** desativar a interface M3, preservar registros e corrigir por migração posterior; não fazer DROP CASCADE ou apagar cadastros M1/M2.
+Falha na migração reverte sua transação. Antes de uso, reversão aprovada remove somente M3 e restaura grants/triggers anteriores. Depois de uso financeiro: desativar tela, preservar ledger e corrigir por nova migração; nunca apagar histórico, usar DROP CASCADE ou voltar a saldo manual.
 
-Entrega após aprovação: Tesouraria operacional no HML, migração e decisões documentadas, testes executados com evidências e pendências de homologação explícitas. Nenhuma publicação em produção.
+Entregar Tesouraria HML, migração/documentação, testes e evidências com pendências explícitas; sem publicação em produção.
