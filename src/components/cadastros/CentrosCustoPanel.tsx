@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Panel, EmptyState } from "@/components/shared/finance";
 import { canTable } from "@/lib/auth/permissions";
-import { listarCentros, podeVerAuditoria, salvar, validarCadastro, type Centro } from "@/lib/cadastros";
+import { listarCentros, podeVerAuditoria, salvar, validarCadastro, type Centro, type Erros } from "@/lib/cadastros";
 import { Historico } from "./Historico";
 import { ConfirmarStatus, StatusBadge, Carregando, ErroCarga } from "./comum";
 import { Campo } from "./PlanoContasPanel";
@@ -99,7 +99,7 @@ function FormCentro({ centro, onDone }: { centro: Centro | null; onDone: () => v
   const [codigo, setCodigo] = useState(centro?.codigo ?? "");
   const [descricao, setDescricao] = useState(centro?.descricao ?? "");
   const [responsavel, setResponsavel] = useState(centro?.responsavel ?? "");
-  const [erros, setErros] = useState<Record<string, string>>({});
+  const [erros, setErros] = useState<Erros>({});
   const m = useMutation({
     mutationFn: () => salvar("centros_custo", centro?.id ?? null, { codigo: codigo.trim(), descricao: descricao.trim(), responsavel: responsavel.trim() || null }),
     onSuccess: () => { toast.success(centro ? "Centro atualizado." : "Centro cadastrado."); qc.invalidateQueries({ queryKey: ["centros_custo"] }); onDone(); },

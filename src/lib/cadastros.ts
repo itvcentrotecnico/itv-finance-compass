@@ -20,11 +20,12 @@ export interface Evento {
   antes: Record<string, unknown> | null; depois: Record<string, unknown> | null;
 }
 
+export type Erros = Partial<Record<"codigo" | "descricao" | "responsavel", string>>;
 const CODIGO_RE = /^[A-Za-z0-9._-]{1,32}$/;
 
 /** Mesmas regras das restrições do banco (financeiro_hml). */
-export function validarCadastro(v: { codigo: string; descricao: string; responsavel?: string }): Record<string, string> {
-  const e: Record<string, string> = {};
+export function validarCadastro(v: { codigo: string; descricao: string; responsavel?: string }): Erros {
+  const e: Erros = {};
   const codigo = v.codigo.trim();
   const desc = v.descricao.trim();
   if (!codigo) e.codigo = "Informe o código.";

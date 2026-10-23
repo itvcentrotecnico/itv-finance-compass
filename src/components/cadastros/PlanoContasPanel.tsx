@@ -12,7 +12,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Panel, EmptyState } from "@/components/shared/finance";
 import { canTable } from "@/lib/auth/permissions";
 import {
-  NATUREZAS, NATUREZA_LABELS, descendentes, listarContas, montarArvore, podeVerAuditoria, salvar, validarCadastro,
+  NATUREZAS, NATUREZA_LABELS, descendentes, listarContas, type Erros, montarArvore, podeVerAuditoria, salvar, validarCadastro,
   type Conta, type Natureza,
 } from "@/lib/cadastros";
 import { Historico } from "./Historico";
@@ -117,7 +117,7 @@ function FormConta({ conta, contas, onDone }: { conta: Conta | null; contas: Con
   const [natureza, setNatureza] = useState<Natureza>(conta?.natureza ?? "despesa");
   const [pai, setPai] = useState<string>(conta?.conta_pai_id ?? "nenhuma");
   const [aceita, setAceita] = useState(conta?.aceita_lancamentos ?? true);
-  const [erros, setErros] = useState<Record<string, string>>({});
+  const [erros, setErros] = useState<Erros>({});
 
   const bloqueados = conta ? descendentes(contas, conta.id) : new Set<string>();
   const pais = contas.filter((c) => c.ativo && c.natureza === natureza && !bloqueados.has(c.id));
