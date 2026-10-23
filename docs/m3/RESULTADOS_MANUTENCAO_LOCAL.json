@@ -7,7 +7,120 @@
     }
   },
   {
-    "resultado": "FAIL",
-    "erro": "InvalidParameterValue('cannot disallow connections for current database')"
+    "teste": "RPC_antiga_antes_de_lock_tesouraria_criar_conta",
+    "resultado": "PASS",
+    "evidencia": {
+      "pid": 36462,
+      "fim": "ROLLBACK",
+      "resultado": {
+        "id": "8384b5e8-5584-4905-a54d-7d13e57cb2ba",
+        "conta_id": "8fd3b61c-7d0c-48fc-96fa-13b6b90290a5",
+        "repetida": false
+      }
+    }
+  },
+  {
+    "teste": "RPC_antiga_antes_de_lock_tesouraria_lancar",
+    "resultado": "PASS",
+    "evidencia": {
+      "pid": 36464,
+      "fim": "ROLLBACK",
+      "sqlstate": "42702"
+    }
+  },
+  {
+    "teste": "RPC_antiga_antes_de_lock_tesouraria_transferir",
+    "resultado": "PASS",
+    "evidencia": {
+      "pid": 36465,
+      "fim": "ROLLBACK",
+      "sqlstate": "P0001"
+    }
+  },
+  {
+    "teste": "RPC_antiga_antes_de_lock_tesouraria_estornar",
+    "resultado": "PASS",
+    "evidencia": {
+      "pid": 36466,
+      "fim": "ROLLBACK",
+      "sqlstate": "P0001"
+    }
+  },
+  {
+    "teste": "novas_conexoes_administrativas_recusadas",
+    "resultado": "PASS",
+    "evidencia": [
+      "owner/superuser refused",
+      "owner/superuser refused"
+    ]
+  },
+  {
+    "teste": "sessao_idle_admin_sobrevive_bloqueia_drenagem",
+    "resultado": "PASS",
+    "evidencia": [
+      {
+        "pid": 36460,
+        "state": "idle",
+        "wait_event_type": "Client",
+        "wait_event": "ClientRead"
+      },
+      {
+        "pid": 36461,
+        "state": "idle",
+        "wait_event_type": "Client",
+        "wait_event": "ClientRead"
+      }
+    ]
+  },
+  {
+    "teste": "drenagem_total_sem_cancelar_sessoes",
+    "resultado": "PASS",
+    "evidencia": {
+      "outros_clients": []
+    }
+  },
+  {
+    "teste": "M3_2_apos_drenagem_M1_M2_RLS_preservadas",
+    "resultado": "PASS",
+    "evidencia": {
+      "vazias": [
+        0,
+        0,
+        0
+      ]
+    }
+  },
+  {
+    "teste": "retomada_RPC_idempotente_apos_commit",
+    "resultado": "PASS",
+    "evidencia": {
+      "contas_operacoes_movimentos": [
+        1,
+        1,
+        0
+      ]
+    }
+  },
+  {
+    "teste": "escrita_financeira_anterior_commit_aborta_sem_perda",
+    "resultado": "PASS",
+    "evidencia": {
+      "vazias": false,
+      "dados_preservados": true
+    }
+  },
+  {
+    "teste": "erro_DDL_rollback_recuperacao_outro_banco_mesmo_cluster",
+    "resultado": "PASS",
+    "evidencia": {
+      "parcial": false
+    }
+  },
+  {
+    "teste": "perda_conexao_rollback_recuperacao_outro_banco_mesmo_cluster",
+    "resultado": "PASS",
+    "evidencia": {
+      "parcial": false
+    }
   }
 ]
