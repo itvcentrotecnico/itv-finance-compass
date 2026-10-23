@@ -1,5 +1,7 @@
 # Autenticação segura — ITV FINANCEIRO HML
 
+- [ ] Solicitação 18:15 UTC: preparar proposta de barreira PostgreSQL, SQL adicional separado da M3.2 e testes locais de admissão/drenagem/retomada, sem alterações HML; aguardar aprovação antes de aplicar.
+
 - [x] Conectar o projeto Supabase HML (ayjppexbzpgdkzbehvzw).
 - [x] Inspecionar `financeiro_hml` e apresentar proposta técnica (aprovada).
 - [x] Migração M1: permissões e regras de acesso por perfil.
