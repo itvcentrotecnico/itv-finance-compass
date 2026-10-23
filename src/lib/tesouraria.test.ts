@@ -1,0 +1,20 @@
+import { describe, it, expect } from "vitest";
+import { decimal, centavos, dinheiro, validarPedido, podeOperar, podeEstornar, type Pedido, type ContaFinanceira } from "./tesouraria";
+import { can } from "./auth/permissions";
+const p: Pedido = { tipo: "transferencia", chave: "id", data: "2026-10-23", descricao: "Transferência teste isolado", valor: "0.30", origem: "a", destino: "b" };
+describe("integridade da Tesouraria", () => {
+  it("rejeita transferência entre a mesma conta", () => expect(validarPedido({ ...p, destino: "a" })).not.toBeNull());
+  it("preserva centavos sem ponto flutuante", () => expect(centavos("0.10") + centavos("0.20")).toBe(30n));
+  it("preserva valores grandes sem perda de precisão", () => expect(dinheiro("9999999999999999.99")).toBe("R$ 9.999.999.999.999.999,99"));
+  it("rejeita mais de duas casas", () => expect(() => decimal("1.001")).toThrow());
+  it("aceita abertura negativa exata", () => expect(decimal("-10,01", true)).toBe("-10.01"));
+  it("rejeita lançamento zero", () => expect(validarPedido({ ...p, valor: "0" })).not.toBeNull());
+  it("rejeita conta inativa", () => expect(validarPedido(p, [{ id: "a", ativo: false, data_saldo_inicial: "2026-10-01" } as ContaFinanceira])).not.toBeNull());
+  it("rejeita data anterior à abertura", () => expect(validarPedido(p, [{ id: "a", ativo: true, data_saldo_inicial: "2026-10-24" } as ContaFinanceira])).not.toBeNull());
+  it("exige classificação em entrada", () => expect(validarPedido({ tipo: "entrada", chave: "id", data: "2026-10-23", descricao: "Teste isolado", valor: "1.00", destino: "b" })).not.toBeNull());
+  it("exige justificativa de estorno", () => expect(validarPedido({ ...p, tipo: "estorno", justificativa: "" })).not.toBeNull());
+  it("Consulta Gerencial lê Tesouraria sem escrever", () => { expect(can("consulta_gerencial", "tesouraria", "view")).toBe(true); expect(podeOperar("consulta_gerencial")).toBe(false); });
+  it("Analista registra mas não estorna", () => { expect(podeOperar("analista_financeiro")).toBe(true); expect(podeEstornar("analista_financeiro")).toBe(false); });
+  it("administradores estornam", () => { expect(podeEstornar("admin_geral")).toBe(true); expect(podeEstornar("admin_financeiro")).toBe(true); });
+  it("ninguém exclui ou edita movimentação", () => { expect(can("admin_geral", "tesouraria", "delete")).toBe(false); expect(can("admin_financeiro", "tesouraria", "update")).toBe(false); });
+});
