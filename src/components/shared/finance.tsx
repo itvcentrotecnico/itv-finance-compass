@@ -2,7 +2,7 @@ import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-export function PageHeader({ eyebrow, title, description, actions }: { eyebrow?: string; title: string; description?: string; actions?: ReactNode }) {
+export function PageHeader({ eyebrow, title, description, actions }: { eyebrow?: string | undefined; title: string; description?: string | undefined; actions?: ReactNode | undefined }) {
   return (
     <div className="mb-8 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
       <div>
@@ -15,7 +15,7 @@ export function PageHeader({ eyebrow, title, description, actions }: { eyebrow?:
   );
 }
 
-export function Panel({ title, subtitle, children, className, action }: { title: string; subtitle?: string; children: ReactNode; className?: string; action?: ReactNode }) {
+export function Panel({ title, subtitle, children, className, action }: { title: string; subtitle?: string | undefined; children: ReactNode; className?: string | undefined; action?: ReactNode | undefined }) {
   return (
     <section className={cn("rounded-xl border bg-card shadow-card", className)}>
       <header className="flex items-start justify-between gap-3 border-b px-5 py-4">
@@ -51,7 +51,7 @@ export function KpiCard({ label, icon: Icon, hint, tone = "default" }: { label: 
   );
 }
 
-export function EmptyState({ icon: Icon, title, description, compact }: { icon: LucideIcon; title: string; description: string; compact?: boolean }) {
+export function EmptyState({ icon: Icon, title, description, compact }: { icon: LucideIcon; title: string; description: string; compact?: boolean | undefined }) {
   return (
     <div className={cn("relative flex flex-col items-center justify-center overflow-hidden rounded-lg border border-dashed text-center", compact ? "px-4 py-8" : "px-6 py-14")}>
       <div className="pattern-grid absolute inset-0 opacity-40 [mask-image:radial-gradient(circle,black,transparent_70%)]" />
