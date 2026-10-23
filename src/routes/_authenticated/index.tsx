@@ -6,7 +6,7 @@ import {
 import { AppShell } from "@/components/layout/AppShell";
 import { ChartPlaceholder, EmptyState, KpiCard, PageHeader, Panel } from "@/components/shared/finance";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
     meta: [
       { title: "Dashboard executivo · ITV Financeiro" },

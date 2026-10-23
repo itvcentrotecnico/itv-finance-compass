@@ -11,3 +11,5 @@
 
 - Finance modules are declared in `src/lib/modules.ts` and rendered by the `/$modulo` route; add new modules to the registry, not new ad-hoc routes. Why: navigation and pages stay in sync as the platform grows.
 - Role/permission matrix lives in `src/lib/auth/permissions.ts`; it must be mirrored in backend RLS once auth is enabled — UI checks alone are never authoritative.
+- Financial pages live under `src/routes/_authenticated/` (client-only gate that loads the user's active role from `financeiro_hml.perfis`); auth pages stay public. Why: no financial UI renders without a verified session and active profile.
+- App data lives in the `financeiro_hml` schema, accessed via `.schema('financeiro_hml')` (not in generated types); privileged auth admin calls (invites) run only in `src/lib/usuarios.functions.ts` after verifying `tem_papel` as the caller. Why: RLS stays the authority and service_role never reaches the browser.

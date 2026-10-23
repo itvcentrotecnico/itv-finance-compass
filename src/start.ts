@@ -24,6 +24,15 @@ const csrfMiddleware = createCsrfMiddleware({
   filter: (ctx) => ctx.handlerType === "serverFn",
 });
 
+// Envia o token da sessão às funções do servidor; o servidor revalida (requireSupabaseAuth).
+const attachBearer = createMiddleware({ type: "function" }).client(async ({ next }) => {
+  const { supabase } = await import("./integrations/supabase/client");
+  const { data } = await supabase.auth.getSession();
+  const token = data.session?.access_token;
+  return next({ headers: token ? { Authorization: `Bearer ${token}` } : {} });
+});
+
 export const startInstance = createStart(() => ({
   requestMiddleware: [errorMiddleware, csrfMiddleware],
+  functionMiddleware: [attachBearer],
 }));
