@@ -46,6 +46,7 @@ export function traduzirErro(err: unknown): string {
   if (msg.includes("PC_PAI_INATIVO")) return "A conta-pai está inativa.";
   if (msg.includes("PC_PAI_INEXISTENTE")) return "A conta-pai não foi encontrada.";
   if (msg.includes("PC_FILHAS_ATIVAS")) return "Inative primeiro as contas-filhas ativas.";
+  if (msg.includes("TES_NATUREZA")) return "Uma classificação já utilizada na Tesouraria não pode mudar de natureza.";
   if (e?.code === "23514") return "Os dados não atendem às regras de cadastro.";
   if (/fetch|network/i.test(msg)) return "Falha de conexão. Verifique a internet e tente novamente.";
   return "Não foi possível concluir a operação.";

@@ -50,6 +50,11 @@ const ADMIN_ONLY: ModuleKey[] = ["usuarios", "integracoes", "configuracoes"];
 const STRUCTURE: ModuleKey[] = ["plano_contas"];
 
 export function can(role: Role, module: ModuleKey, action: Action): boolean {
+  if (module === "tesouraria") {
+    if (action === "view") return true;
+    if (action === "delete" || action === "update" || action === "approve") return false;
+    return role !== "consulta_gerencial";
+  }
   switch (role) {
     case "admin_geral":
       return true;
