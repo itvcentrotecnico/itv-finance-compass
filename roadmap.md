@@ -5,7 +5,7 @@
 - [x] Migração M1: permissões e regras de acesso por perfil.
 - [x] Login, convite/senha inicial, recuperação, saída segura e proteção das páginas.
 - [ ] Painel Supabase (usuário): desligar cadastro público, expor `financeiro_hml`, cadastrar URLs de redirecionamento.
-- [ ] Criar o primeiro Administrador Geral (usuário, via SQL Editor).
+- [x] Primeiro Administrador Geral criado e acesso confirmado pelo usuário.
 - [ ] Testes de acesso por perfil ponta a ponta em HML (aguarda usuários de teste para cada perfil).
 
 Não conectar o GESTÃO ITV, não publicar em produção e não adicionar dados financeiros reais.
