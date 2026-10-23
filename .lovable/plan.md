@@ -64,48 +64,35 @@ Saldo = soma de créditos − soma de débitos, incluindo abertura e estornos. *
 Saldo de abertura do período inclui efeitos anteriores ao filtro; saldo final inclui efeitos até a data final. Filtros de tipo/categoria selecionam linhas, mas não podem adulterar o saldo real da conta: resultados filtrados têm subtotal separado. Transferências mostram os dois lados no extrato consolidado e apenas o lado correspondente no extrato de uma conta. Ordenação estável por data, criação e ID; paginação e totais no banco, sem depender do limite de 1.000 linhas.
 
 ## 5. Migração M3 e segurança — detalhes técnicos
-Uma migração versionada, submetida pela ferramenta de migração somente após aprovação:
+Uma migração versionada, submetida pela ferramenta própria somente após aprovação:
+1. Revalidar estrutura, políticas e ausência de contas. Se surgirem contas antes da aplicação, abortar e apresentar conversão de abertura para revisão, sem inventar movimentos.
+2. Acrescentar os campos cadastrais/autoria e criar tabelas, vínculos, índices e unicidades. Grants explícitos, RLS habilitado e obrigatório, leitura por perfil ativo; nenhum acesso a anon.
+3. Preservar políticas M1/M2. Nas contas, restringir grants diretos à leitura/atualização de campos cadastrais; criação e abertura exclusivamente transacionais. Triggers bloqueiam alteração de saldo/data de abertura, identidade e autoria.
+4. Novas tabelas: SELECT para authenticated, nenhum INSERT/UPDATE/DELETE direto. Funções de escrita controladas; revogar EXECUTE padrão de PUBLIC/anon e liberar somente entradas a authenticated.
+5. RPCs propostas: `tesouraria_criar_conta`, `tesouraria_lancar`, `tesouraria_transferir`, `tesouraria_estornar`, `tesouraria_extrato`, `tesouraria_saldos`. Escritas SECURITY DEFINER de escopo mínimo, objetos qualificados, search_path seguro e sem SQL dinâmico. Toda chamada verifica auth.uid() e tem_papel antes da escrita, porque o privilégio elevado não pode depender apenas de RLS. Não aceitar papel/usuário/autoria do cliente; auxiliares não públicas. Leituras sob RLS.
+6. Triggers de validação, imutabilidade e auditoria de contas; preservar acesso restrito à auditoria técnica. Validações temporais em triggers, não CHECK com now(). Índices em conta/data/classificação, chave idempotente única por usuário e unicidade de estorno por original.
 
-1. Revalidar estrutura, políticas e existência de contas; abortar em divergência não prevista. Como hoje não há contas, não será necessário converter saldos existentes. Se surgirem contas antes da aplicação, apresentar tratamento de abertura para nova revisão, sem inventar movimentos.
-2. Acrescentar dados cadastrais/autoria às contas e criar as duas tabelas, índices, vínculos e unicidades. Grants explícitos seguidos de RLS habilitado e obrigatório e políticas de leitura por perfil ativo. Nenhum grant a `anon`.
-3. Preservar as políticas M1/M2. Nas contas, restringir os grants diretos: leitura e atualização apenas dos campos cadastrais permitidos; criação/abertura exclusivamente por função transacional. Trigger bloqueia alterações de saldo/data de abertura, identidade e autoria, mesmo por caminhos alternativos.
-4. Nas novas tabelas, conceder SELECT a `authenticated`, **sem INSERT/UPDATE/DELETE diretos**. Escrita exclusivamente por funções SQL controladas; revogar EXECUTE padrão de PUBLIC/anon e liberar somente as funções de entrada a authenticated.
-5. Funções propostas: `tesouraria_criar_conta`, `tesouraria_lancar`, `tesouraria_transferir`, `tesouraria_estornar`, `tesouraria_extrato` e `tesouraria_saldos`. As funções de escrita são `SECURITY DEFINER` de escopo mínimo, sem SQL dinâmico, com objetos qualificados e `search_path` seguro. Como executam com privilégio elevado, **validam `auth.uid()` e `tem_papel` no banco em toda chamada** antes da escrita; não confiar apenas em RLS ou na tela. Nunca aceitar usuário/papel/autoria enviados pelo cliente. Leitura permanece sob RLS; funções auxiliares não ficam abertas ao público.
-6. Triggers de validação e imutabilidade, auditoria de contas com os mecanismos existentes e rastreabilidade dos cabeçalhos/estornos. Não alterar o acesso à auditoria técnica. Validações temporais usam triggers, não CHECK dependente de `now()`.
-7. Índices em data/conta/classificação/operação; unicidade para idempotência por usuário e chave, e para estorno por original.
+Validar contas ativas, classificação ativa com aceite, centro ativo quando informado, valor e relações por tipo e data não anterior à abertura. Abertura/transferência não levam classificação de receita/despesa. Não presumir que entrada é sempre receita: preservar natureza para futura DRE.
 
-As funções verificam contas ativas, conta contábil ativa e que aceita lançamentos, centro ativo quando informado, relações obrigatórias por tipo, valor válido e data não anterior à abertura. Transferência/abertura não levam classificação de receita/despesa. Não presumir que toda entrada é receita: a natureza contábil será preservada para a futura DRE.
+Idempotência: mesma chave e conteúdo normalizado retorna original; conteúdo diferente falha. Reserva e escrita atômicas. Bloqueios determinísticos de contas/classificações impedem corrida com inativação; falha em qualquer lado reverte a transferência inteira.
 
-Idempotência compara o conteúdo normalizado: repetição com a mesma chave e dados retorna a operação original; mesma chave com conteúdo diferente gera erro. Reserva da chave e gravação financeira são atômicas. Bloqueios em ordem determinística nas contas e classificações evitam corrida com inativação; falha em qualquer lado da transferência reverte toda a operação.
+Precisão: strings decimais na API e numeric no banco; conversão exata dos centavos legados. Nunca Number/parseFloat/soma financeira JS. Rejeitar mais de duas casas, sem arredondar silenciosamente.
 
-**Precisão:** valores recebidos/retornados como strings decimais; PostgreSQL calcula com `numeric`, abertura legado converte centavos exatamente. Não usar `Number`, `parseFloat` ou soma financeira em JavaScript. Rejeitar mais de duas casas em vez de arredondar silenciosamente.
-
-**Premissas propostas:** somente BRL; não impor proibição de saldo negativo sem regra autorizada; estorno exige contas ativas (reativação administrativa prévia se necessário), preservando a proibição de movimentos em contas inativas. Não permitir mudar natureza de classificação já utilizada, para não reescrever a leitura histórica; registrar também a classificação vigente no momento da operação.
+Premissas propostas: BRL; não proibir saldo negativo sem regra autorizada; estorno exige conta ativa, com reativação administrativa prévia se necessário. Snapshot da classificação vigente e bloqueio de mudança de natureza já utilizada preservam histórico.
 
 ## 6. Telas e aplicação
-Abas **Contas**, **Movimentações** e **Extrato**, saldos e estados vazios reais. Formulários de conta/abertura, entrada/saída e transferência; confirmação de estorno com justificativa; detalhes com vínculo da transferência, original/estorno e autoria. Pesquisa, filtros e paginação; carregamento, erros de validação e permissão, prevenção de duplo envio e confirmação de resultado após falha de conexão.
+Abas Contas, Movimentações e Extrato; saldos e estados vazios reais. Formulários de abertura, entrada/saída e transferência; estorno com justificativa; detalhes com original/estorno, lados da transferência e autoria. Filtros, paginação, carregamento, erros de permissão/validação, bloqueio de duplo envio e recuperação de resultado após falha de conexão.
 
-Arquivos previstos: `src/components/tesouraria/*`, contratos/validações em `src/lib/tesouraria.ts`, funções autenticadas em `src/lib/tesouraria.functions.ts`, matriz e testes em `src/lib/auth/permissions*`, integração em `src/routes/_authenticated/$modulo.tsx`, documentação em `AGENTS.md`/`roadmap.md`. Migração gerada somente pela ferramenta própria.
+Arquivos previstos: `src/components/tesouraria/*`, contratos/validações em `src/lib/tesouraria.ts`, chamadas autenticadas em `src/lib/tesouraria.functions.ts`, matriz/testes `src/lib/auth/permissions*`, integração no `src/routes/_authenticated/$modulo.tsx` e documentação AGENTS/roadmap. Migração gerada pela ferramenta própria. Middleware existente e funções TanStack autenticadas chamam RPC como usuário, sem service_role. Leituras iniciais na página protegida com cache de consultas; não alterar tipos gerados.
 
-Reutilizar middleware e bearer existentes; funções TanStack autenticadas chamam SQL RPC no contexto do usuário, sem cliente administrativo. Leituras iniciais sob a página protegida com cache de consultas; não buscar dados privados na página de login. Não modificar tipos Supabase gerados manualmente.
+## 7. Riscos e medidas
+Transferência parcial: transação e verificação dos efeitos. Duplicação/estorno simultâneo: unicidade e bloqueios. Saldo divergente: ledger imutável, abertura única e agregação no banco. Inativação concorrente: validação com bloqueios. API direta: grants mínimos, RLS, papel verificado nas funções e triggers. Histórico reclassificado: snapshot e proteção de natureza. Precisão: numeric/strings. Extrato incompleto: paginação e totais sem limite implícito.
 
-## 7. Riscos e prevenção
-| Risco | Medida |
-|---|---|
-| Transferência parcial | Transação única e validação dos dois efeitos |
-| Requisição repetida / estorno simultâneo | Unicidade, comparação de conteúdo e bloqueio |
-| Saldo divergente | Livro imutável, abertura única e agregação no banco |
-| Inativação/classificação concorrente | Bloqueios e validação transacional |
-| Bypass por API direta | Grants mínimos, RLS, funções com verificação de papel e triggers |
-| Reclassificação histórica | Snapshot e proteção da natureza utilizada |
-| Perda de precisão | Strings decimais e numeric; zero cálculo float |
-| Extrato incompleto | Paginação e totais calculados sem limite implícito |
-
-## 8. Testes e critérios de aceite
-- Vitest: cada regra financeira, parsing decimal exato e limites; matriz concreta dos quatro perfis; envio repetido mantém chave; tratamento de erros.
-- Banco automatizado: mesma conta negada; transferência completa ou nenhuma; transferência não aumenta receita/despesa; saldo inicial contado uma vez; conta/categoria inativa ou sem aceite negada; centro inativo negado; UPDATE/DELETE direto negados; estorno inverso e único; justificativa obrigatória; repetição idêntica retorna mesmo ID e conteúdo diferente falha; concorrência; totais acima de 1.000 linhas e saldo anterior ao período.
-- Permissões: chamadas diretas com identidade de cada perfil, anônimo e perfil inativo; confirmar leitura/escrita/estorno/auditoria permitidos e negados. Testes isolados com rollback, sem registros fictícios persistidos no HML. Resultados simulados não serão apresentados como homologação real.
-- Ponta a ponta com Administrador Geral e dados de teste explicitamente autorizados: criar conta, lançar, transferir, filtrar, estornar, recarregar e confirmar saldo/histórico; verificar telas largas/estreitas e ausência de erros. Não gravar operações de teste permanentes sem autorização específica. Demais perfis/convites ficam identificados como pendentes da homologação final, sem bloquear a implementação.
+## 8. Testes e aceite
+- Vitest: cada regra financeira, decimal exato/limites, matriz dos quatro perfis, chave estável em reenvio e erros.
+- Banco automatizado: mesma conta negada; transferência completa ou nenhuma e fora de receita/despesa; abertura contada uma vez; conta/categoria inativa ou sem aceite negada; centro inativo negado; UPDATE/DELETE direto negado; estorno inverso, único e justificado; idempotência e conflito de conteúdo; concorrência; totais acima de 1.000 linhas e saldo anterior ao filtro.
+- Permissões: chamadas diretas como quatro perfis, anônimo e perfil inativo; conferir leitura/escrita/estorno/auditoria. Testes isolados com rollback, sem dados fictícios persistidos. Simulação não será apresentada como homologação real.
+- Ponta a ponta com Administrador Geral e dados explicitamente autorizados: conta → lançamento → transferência → extrato → estorno → recarregar e confirmar saldo/histórico; telas largas/estreitas e erros. Não gravar operações de teste permanentes sem autorização. Convites e demais perfis permanecem na homologação final, sem bloquear a implementação.
 
 ## 9. Reversão e entrega
 Falha durante a migração reverte sua transação. Antes de movimentações, reversão aprovada pode remover apenas objetos M3 e restaurar grants/triggers anteriores. **Após uso financeiro, não apagar ledger nem voltar a saldo manual:** desativar a interface M3, preservar registros e corrigir por migração posterior; não fazer DROP CASCADE ou apagar cadastros M1/M2.
