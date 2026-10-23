@@ -1,0 +1,13 @@
+[
+  {
+    "teste": "SQL_M3_2_byte_identico",
+    "resultado": "PASS",
+    "evidencia": {
+      "sha256": "66c47b7d9292c45f1580f32f1b59937047ba36b294f0eac9d914f188a1817401"
+    }
+  },
+  {
+    "resultado": "FAIL",
+    "erro": "InvalidParameterValue('cannot disallow connections for current database')"
+  }
+]
