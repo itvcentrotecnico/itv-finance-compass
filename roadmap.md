@@ -17,5 +17,6 @@ Não conectar o GESTÃO ITV, não publicar em produção e não adicionar dados 
 - [ ] M3: aplicar correções e realizar testes financeiros no banco (aguarda nova autorização após apresentação do SQL e relatório).
 - [x] M3.2: bloqueio NOWAIT antes da pre-verificacao, 15 testes locais concorrentes e 29 de regressao aprovados; SQL final/relatorio entregues.
 - [ ] M3.2: aplicação controlada autorizada em 23/10/2026, interrompida antes da execução: backup/ponto de recuperação restaurável não verificável com os acessos disponíveis. Destino ayjppexbzpgdkzbehvzw confirmado, três tabelas financeiras vazias, SQL final idêntico ao entregue. Aguardar comprovação de recuperação e manutenção/drenagem antes de aplicar e validar M1/M2/RLS/dados.
+- [ ] Backup assistido: exportar por leitura o esquema financeiro_hml e registros solicitados, preparar recuperação parcial e validar em PostgreSQL isolado; documentar autenticação não recuperável, evidências e limites. Não aplicar M3.2 nesta etapa.
 
 Testes de convites e demais perfis ficam para homologação final; não bloqueiam o planejamento e desenvolvimento autorizados da M3.
