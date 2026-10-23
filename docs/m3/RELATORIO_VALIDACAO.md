@@ -1,5 +1,7 @@
 # M3 — suspensão, causa raiz e revisão
 
+> Relatório histórico da primeira revisão. A validação concorrente e o SQL final atual estão em `RELATORIO_FINAL_M3_2.md`; as limitações de concorrência abaixo descrevem aquela rodada anterior.
+
 Data da inspeção: 23/10/2026, 17:28–17:32 UTC. Destino inspecionado: Supabase HML `ayjppexbzpgdkzbehvzw`, esquema `financeiro_hml`. Nenhuma migração foi executada no HML após a solicitação de suspensão. Nenhuma conexão com GESTÃO ITV ou produção foi realizada.
 
 ## 1. Situação real e cronologia
