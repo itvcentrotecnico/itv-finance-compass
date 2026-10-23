@@ -4,7 +4,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { EmptyState, PageHeader, Panel } from "@/components/shared/finance";
 import { findGroupOf, findModuleBySlug } from "@/lib/modules";
 
-export const Route = createFileRoute("/$modulo")({
+export const Route = createFileRoute("/_authenticated/$modulo")({
   loader: ({ params }) => {
     const mod = findModuleBySlug(params.modulo);
     if (!mod || !mod.slug) throw notFound();
