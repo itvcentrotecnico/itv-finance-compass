@@ -11,3 +11,8 @@
 Não conectar o GESTÃO ITV, não publicar em produção e não adicionar dados financeiros reais.
 - [x] M2 e telas de Plano de Contas e Centros de Custo (auditoria, validações, testes de banco por perfil).
 - [ ] Teste ponta a ponta das telas com login real em HML (aguarda usuários de teste por perfil).
+- [x] Plano de Contas e Centros de Custo: testes funcionais com Administrador Geral confirmados pelo usuário.
+- [ ] M3: inspecionar banco/aplicação e apresentar plano de Tesouraria para aprovação, sem alterar o banco.
+- [ ] M3: migração, Tesouraria operacional e testes automatizados (aguarda aprovação do plano).
+
+Testes de convites e demais perfis ficam para homologação final; não bloqueiam o planejamento e desenvolvimento autorizados da M3.
