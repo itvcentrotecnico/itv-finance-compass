@@ -16,6 +16,6 @@ Não conectar o GESTÃO ITV, não publicar em produção e não adicionar dados 
 - [x] M3 suspensa: revisão integral do SQL, causa raiz 42601 reproduzida localmente, inspeção de objetos e integridade M1/M2, SQL corrigido e relatório (somente leitura no HML).
 - [ ] M3: aplicar correções e realizar testes financeiros no banco (aguarda nova autorização após apresentação do SQL e relatório).
 - [x] M3.2: bloqueio NOWAIT antes da pre-verificacao, 15 testes locais concorrentes e 29 de regressao aprovados; SQL final/relatorio entregues.
-- [ ] M3.2: aplicar no HML em manutencao e validar pos-migracao (aguarda autorizacao expressa; nenhuma migracao HML autorizada).
+- [ ] M3.2: aplicação controlada autorizada em 23/10/2026; confirmar destino, backup recuperável, manutenção/drenagem e tabelas vazias antes do SQL final; interromper se qualquer pré-condição falhar e validar M1/M2/RLS/dados após aplicação.
 
 Testes de convites e demais perfis ficam para homologação final; não bloqueiam o planejamento e desenvolvimento autorizados da M3.
