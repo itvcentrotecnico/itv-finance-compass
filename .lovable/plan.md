@@ -61,7 +61,7 @@ Premissas propostas: BRL; não proibir saldo negativo sem regra autorizada; esto
 ## 6. Telas e aplicação
 Abas Contas, Movimentações e Extrato; saldos e estados vazios reais. Formulários de abertura, entrada/saída e transferência; estorno com justificativa; detalhes com original/estorno, lados da transferência e autoria. Filtros, paginação, carregamento, erros de permissão/validação, bloqueio de duplo envio e recuperação de resultado após falha de conexão.
 
-Arquivos previstos: `src/components/tesouraria/*`, contratos/validações em `src/lib/tesouraria.ts`, chamadas autenticadas em `src/lib/tesouraria.functions.ts`, matriz/testes `src/lib/auth/permissions*`, integração no `src/routes/_authenticated/$modulo.tsx` e documentação AGENTS/roadmap. Migração gerada pela ferramenta própria. Middleware existente e funções TanStack autenticadas chamam RPC como usuário, sem service_role. Leituras iniciais na página protegida com cache de consultas; não alterar tipos gerados.
+Implementação: painel Tesouraria na página existente, contratos decimais/validações, matriz e testes, documentação. Funções TanStack autenticadas usam middleware existente e RPC como usuário, sem service_role. Leituras na página protegida; migração pela ferramenta própria, sem editar tipos gerados.
 
 ## 7. Riscos e medidas
 Transferência parcial: transação e verificação dos efeitos. Duplicação/estorno simultâneo: unicidade e bloqueios. Saldo divergente: ledger imutável, abertura única e agregação no banco. Inativação concorrente: validação com bloqueios. API direta: grants mínimos, RLS, papel verificado nas funções e triggers. Histórico reclassificado: snapshot e proteção de natureza. Precisão: numeric/strings. Extrato incompleto: paginação e totais sem limite implícito.
