@@ -9,7 +9,7 @@ DO $$ BEGIN
  IF to_regclass('financeiro_hml.tesouraria_operacoes') IS NULL OR to_regclass('financeiro_hml.tesouraria_movimentos') IS NULL THEN RAISE EXCEPTION 'M3.2: base ausente; nao reaplicar M3 automaticamente'; END IF;
  IF EXISTS(SELECT 1 FROM financeiro_hml.tesouraria_operacoes) OR EXISTS(SELECT 1 FROM financeiro_hml.tesouraria_movimentos) OR EXISTS(SELECT 1 FROM financeiro_hml.contas_financeiras) THEN RAISE EXCEPTION 'M3.2: existem dados; suspender para reconciliacao'; END IF;
 END $$;
-CREATE OR REPLACE FUNCTION financeiro_hml.tes_validar_efeitos() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,financeiro_hml AS $$
+CREATE OR REPLACE FUNCTION financeiro_hml.tes_validar_efeitos() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,financeiro_hml,pg_temp AS $$
 DECLARE o financeiro_hml.tesouraria_operacoes; original financeiro_hml.tesouraria_operacoes; n int; creditos numeric; debitos numeric; abertura bigint; oid uuid;
 BEGIN
  IF TG_TABLE_NAME='tesouraria_operacoes' THEN oid:=NEW.id; ELSE oid:=NEW.operacao_id; END IF;
@@ -22,6 +22,8 @@ BEGIN
  ELSIF o.tipo IN ('entrada','saida') THEN
   IF o.valor<=0 OR n<>1 OR o.plano_conta_id IS NULL OR (o.tipo='entrada' AND (creditos<>o.valor OR debitos<>0 OR o.conta_origem_id IS NOT NULL OR o.conta_destino_id IS NULL)) OR (o.tipo='saida' AND (debitos<>o.valor OR creditos<>0 OR o.conta_destino_id IS NOT NULL OR o.conta_origem_id IS NULL)) THEN RAISE EXCEPTION 'TES_INTEGRIDADE'; END IF;
  ELSIF o.tipo='abertura' THEN
+  IF (o.conta_origem_id IS NULL)=(o.conta_destino_id IS NULL) THEN RAISE EXCEPTION 'TES_INTEGRIDADE'; END IF;
+  IF o.data_movimento IS DISTINCT FROM (SELECT data_saldo_inicial FROM financeiro_hml.contas_financeiras WHERE id=coalesce(o.conta_origem_id,o.conta_destino_id)) THEN RAISE EXCEPTION 'TES_INTEGRIDADE'; END IF;
   SELECT saldo_inicial_centavos INTO abertura FROM financeiro_hml.contas_financeiras WHERE id=coalesce(o.conta_origem_id,o.conta_destino_id);
   IF abertura IS NULL OR o.valor<>abs(abertura::numeric/100) OR n<>(CASE WHEN abertura=0 THEN 0 ELSE 1 END) OR creditos<>greatest(abertura::numeric/100,0) OR debitos<>greatest(-abertura::numeric/100,0) OR o.plano_conta_id IS NOT NULL OR o.centro_custo_id IS NOT NULL THEN RAISE EXCEPTION 'TES_INTEGRIDADE'; END IF;
  ELSIF o.tipo='estorno' THEN
@@ -32,19 +34,35 @@ BEGIN
   ) THEN RAISE EXCEPTION 'TES_INTEGRIDADE'; END IF;
  ELSE RAISE EXCEPTION 'TES_INTEGRIDADE';
  END IF;
+ IF EXISTS(SELECT 1 FROM financeiro_hml.tesouraria_movimentos m JOIN financeiro_hml.contas_financeiras c ON c.id=m.conta_financeira_id WHERE m.operacao_id=o.id AND o.data_movimento<c.data_saldo_inicial) THEN RAISE EXCEPTION 'TES_INTEGRIDADE'; END IF;
  IF o.tipo<>'estorno' AND EXISTS(SELECT 1 FROM financeiro_hml.tesouraria_movimentos m WHERE m.operacao_id=o.id AND m.conta_financeira_id IS DISTINCT FROM CASE WHEN m.direcao='credito' THEN o.conta_destino_id ELSE o.conta_origem_id END) THEN RAISE EXCEPTION 'TES_INTEGRIDADE'; END IF;
  RETURN NULL;
 END $$;
 
-CREATE OR REPLACE FUNCTION financeiro_hml.tes_executar(p jsonb) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,financeiro_hml AS $$
-DECLARE uid uuid:=auth.uid(); chave uuid; tipo text; valor numeric; abertura numeric; origem uuid; destino uuid; pc uuid; cc uuid; dt date; descricao text; motivo text; oid uuid:=gen_random_uuid(); cid uuid; snap jsonb; conta record; categoria record; anterior financeiro_hml.tesouraria_operacoes; original financeiro_hml.tesouraria_operacoes; req jsonb; resultado jsonb;
+CREATE OR REPLACE FUNCTION financeiro_hml.tes_executar(p jsonb) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,financeiro_hml,pg_temp AS $$
+DECLARE uid uuid:=auth.uid(); chave uuid; tipo text; valor numeric; abertura numeric; origem uuid; destino uuid; pc uuid; cc uuid; dt date; descricao text; motivo text; oid uuid:=gen_random_uuid(); cid uuid; snap jsonb; conta record; categoria record; anterior financeiro_hml.tesouraria_operacoes; original financeiro_hml.tesouraria_operacoes; req jsonb; resultado jsonb; campo text;
 BEGIN
  IF uid IS NULL OR NOT financeiro_hml.tem_papel(ARRAY['admin_geral','admin_financeiro','analista_financeiro']) THEN RAISE EXCEPTION 'TES_PERMISSAO' USING ERRCODE='42501'; END IF;
  IF p IS NULL OR jsonb_typeof(p)<>'object' THEN RAISE EXCEPTION 'TES_DADOS'; END IF;
  tipo:=p->>'tipo'; chave:=(p->>'chave')::uuid;
  IF chave IS NULL OR tipo IS NULL OR tipo NOT IN ('abertura','entrada','saida','transferencia','estorno') THEN RAISE EXCEPTION 'TES_DADOS: tipo/chave inválidos'; END IF;
  IF tipo IN ('abertura','estorno') AND NOT financeiro_hml.tem_papel(ARRAY['admin_geral','admin_financeiro']) THEN RAISE EXCEPTION 'TES_PERMISSAO' USING ERRCODE='42501'; END IF;
- req:=jsonb_strip_nulls(p-'chave');
+ -- Canonical request v1; no ledger rows exist under the required preflight.
+ IF coalesce(p->>'data','')!~'^\d{4}-\d{2}-\d{2}$' THEN RAISE EXCEPTION 'TES_DATA'; END IF;
+ p:=jsonb_set(p,'{data}',to_jsonb(((p->>'data')::date)::text));
+ IF tipo<>'estorno' THEN
+  IF coalesce(p->>'valor','')!~ (CASE WHEN tipo='abertura' THEN '^-?\d{1,16}(\.\d{1,2})?$' ELSE '^\d{1,16}(\.\d{1,2})?$' END) THEN RAISE EXCEPTION 'TES_VALOR'; END IF;
+  p:=jsonb_set(p,'{valor}',to_jsonb(((p->>'valor')::numeric(18,2))::text));
+ END IF;
+ FOREACH campo IN ARRAY ARRAY['origem','destino','plano','centro','original'] LOOP
+  IF p ? campo THEN p:=jsonb_set(p,ARRAY[campo],coalesce(to_jsonb((nullif(p->>campo,'')::uuid)::text),'null'::jsonb)); END IF;
+ END LOOP;
+ FOREACH campo IN ARRAY ARRAY['descricao','nome','banco','agencia','numero_conta','justificativa'] LOOP
+  IF p ? campo THEN p:=jsonb_set(p,ARRAY[campo],coalesce(to_jsonb(nullif(btrim(p->>campo),'')),'null'::jsonb)); END IF;
+ END LOOP;
+ SELECT coalesce(jsonb_object_agg(e.key,e.value),'{}'::jsonb) INTO req FROM jsonb_each(jsonb_strip_nulls(p)) e
+ WHERE e.key=ANY(ARRAY['tipo','data','descricao','valor','nome','conta_tipo','banco','agencia','numero_conta','origem','destino','plano','centro','original','justificativa']);
+ req:=req||jsonb_build_object('versao',1);
  PERFORM pg_advisory_xact_lock(hashtextextended(uid::text||chave::text,0));
  SELECT * INTO anterior FROM financeiro_hml.tesouraria_operacoes WHERE criado_por=uid AND chave_idempotencia=chave;
  IF FOUND THEN
@@ -114,6 +132,34 @@ BEGIN
  INSERT INTO financeiro_hml.auditoria(tabela,registro_id,acao,usuario_id,antes,depois) VALUES('tesouraria_operacoes',oid,'criar',uid,NULL,jsonb_build_object('tipo',tipo,'valor',valor::text,'original',original.id));
  RETURN jsonb_build_object('id',oid,'conta_id',coalesce(destino,origem),'repetida',false);
 END $$;
+
+-- Uma abertura por conta, inclusive quando o valor e zero.
+CREATE UNIQUE INDEX tes_op_abertura_conta_uq ON financeiro_hml.tesouraria_operacoes ((coalesce(conta_origem_id,conta_destino_id))) WHERE tipo='abertura';
+CREATE FUNCTION financeiro_hml.tes_conta_exige_abertura() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,financeiro_hml,pg_temp AS $$
+BEGIN
+ IF (SELECT count(*) FROM financeiro_hml.tesouraria_operacoes o WHERE o.tipo='abertura' AND coalesce(o.conta_origem_id,o.conta_destino_id)=NEW.id)<>1 THEN RAISE EXCEPTION 'TES_INTEGRIDADE: conta sem abertura unica'; END IF;
+ RETURN NULL;
+END $$;
+REVOKE ALL ON FUNCTION financeiro_hml.tes_conta_exige_abertura() FROM PUBLIC,anon,authenticated;
+CREATE CONSTRAINT TRIGGER tes_conta_abertura AFTER INSERT ON financeiro_hml.contas_financeiras DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION financeiro_hml.tes_conta_exige_abertura();
+-- Historico completo separado do extrato de efeitos. Inclui abertura zero e seu estorno.
+CREATE FUNCTION financeiro_hml.tesouraria_historico_operacoes(p jsonb) RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=pg_catalog,financeiro_hml,pg_temp AS $$
+ WITH parametros AS (SELECT nullif(p->>'conta','')::uuid conta,nullif(p->>'inicio','')::date inicio,nullif(p->>'fim','')::date fim,nullif(p->>'tipo','') tipo,nullif(p->>'plano','')::uuid plano,least(greatest(coalesce((p->>'pagina')::bigint,0),0),100000) pagina),
+ filtrado AS (SELECT o.* FROM financeiro_hml.tesouraria_operacoes o CROSS JOIN parametros p WHERE (p.conta IS NULL OR o.conta_origem_id=p.conta OR o.conta_destino_id=p.conta) AND (p.inicio IS NULL OR o.data_movimento>=p.inicio) AND (p.fim IS NULL OR o.data_movimento<=p.fim) AND (p.tipo IS NULL OR o.tipo=p.tipo) AND (p.plano IS NULL OR o.plano_conta_id=p.plano)),
+ pagina AS (SELECT * FROM filtrado ORDER BY data_movimento DESC,criado_em DESC,id DESC LIMIT 50 OFFSET (SELECT pagina*50 FROM parametros))
+ SELECT jsonb_build_object('total',(SELECT count(*) FROM filtrado),'operacoes',coalesce((SELECT jsonb_agg(to_jsonb(o)-'requisicao'||jsonb_build_object('efeitos',coalesce((SELECT jsonb_agg(jsonb_build_object('id',m.id,'conta_id',m.conta_financeira_id,'direcao',m.direcao,'valor',m.valor::text) ORDER BY m.id) FROM financeiro_hml.tesouraria_movimentos m WHERE m.operacao_id=o.id),'[]'::jsonb),'valor',o.valor::text) ORDER BY o.data_movimento DESC,o.criado_em DESC,o.id DESC) FROM pagina o),'[]'::jsonb));
+$$;
+REVOKE ALL ON FUNCTION financeiro_hml.tesouraria_historico_operacoes(jsonb) FROM PUBLIC,anon;
+GRANT EXECUTE ON FUNCTION financeiro_hml.tesouraria_historico_operacoes(jsonb) TO authenticated;
+
+CREATE OR REPLACE FUNCTION financeiro_hml.tesouraria_extrato(p jsonb) RETURNS jsonb LANGUAGE sql STABLE SECURITY INVOKER SET search_path=pg_catalog,financeiro_hml,pg_temp AS $$
+ WITH parametros AS (SELECT nullif(p->>'conta','')::uuid conta,nullif(p->>'inicio','')::date inicio,nullif(p->>'fim','')::date fim,nullif(p->>'tipo','') tipo,nullif(p->>'plano','')::uuid plano,least(greatest(coalesce((p->>'pagina')::bigint,0),0),100000) pagina),
+ base AS (SELECT o.*,m.id movimento_id,m.conta_financeira_id,m.direcao,m.valor efeito,c.nome conta_nome,orig.tipo tipo_original,orig.classificacao_snapshot snapshot_original,EXISTS(SELECT 1 FROM financeiro_hml.tesouraria_operacoes e WHERE e.operacao_original_id=o.id) estornada FROM financeiro_hml.tesouraria_operacoes o JOIN financeiro_hml.tesouraria_movimentos m ON m.operacao_id=o.id JOIN financeiro_hml.contas_financeiras c ON c.id=m.conta_financeira_id LEFT JOIN financeiro_hml.tesouraria_operacoes orig ON orig.id=o.operacao_original_id CROSS JOIN parametros p WHERE p.conta IS NULL OR m.conta_financeira_id=p.conta),
+ filtrado AS (SELECT b.* FROM base b CROSS JOIN parametros p WHERE (p.inicio IS NULL OR b.data_movimento>=p.inicio) AND (p.fim IS NULL OR b.data_movimento<=p.fim) AND (p.tipo IS NULL OR b.tipo=p.tipo) AND (p.plano IS NULL OR b.plano_conta_id=p.plano)),
+ pagina AS (SELECT f.* FROM filtrado f ORDER BY data_movimento DESC,criado_em DESC,id DESC,movimento_id DESC LIMIT 50 OFFSET (SELECT pagina*50 FROM parametros)),
+ resumo AS (SELECT coalesce(sum(CASE direcao WHEN 'credito' THEN efeito ELSE -efeito END) FILTER(WHERE p.inicio IS NOT NULL AND data_movimento<p.inicio),0)::text saldo_anterior,coalesce(sum(CASE direcao WHEN 'credito' THEN efeito ELSE -efeito END) FILTER(WHERE p.fim IS NULL OR data_movimento<=p.fim),0)::text saldo_final FROM base CROSS JOIN parametros p)
+ SELECT jsonb_build_object('linhas',coalesce((SELECT jsonb_agg(jsonb_build_object('id',id,'movimento_id',movimento_id,'tipo',tipo,'data',data_movimento,'descricao',descricao,'conta_nome',conta_nome,'conta_id',conta_financeira_id,'direcao',direcao,'valor',efeito::text,'plano_id',plano_conta_id,'centro_id',centro_custo_id,'classificacao',classificacao_snapshot,'original',operacao_original_id,'tipo_original',tipo_original,'estornada',estornada,'justificativa',justificativa,'criado_por',criado_por,'criado_em',criado_em) ORDER BY data_movimento DESC,criado_em DESC,id DESC,movimento_id DESC) FROM pagina),'[]'::jsonb),'total',(SELECT count(*) FROM filtrado),'saldo_anterior',(SELECT saldo_anterior FROM resumo),'saldo_final',(SELECT saldo_final FROM resumo),'subtotal',coalesce((SELECT sum(CASE direcao WHEN 'credito' THEN efeito ELSE -efeito END)::text FROM filtrado),'0'));
+$$;
 
 -- Nao conceder novas escritas. Funcoes privadas continuam privadas.
 REVOKE ALL ON FUNCTION financeiro_hml.tes_validar_efeitos(),financeiro_hml.tes_executar(jsonb) FROM PUBLIC,anon,authenticated;
