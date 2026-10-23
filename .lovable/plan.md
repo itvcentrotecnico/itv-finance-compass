@@ -7,61 +7,41 @@ Esta etapa realizou apenas consultas no banco e revisão da aplicação. **Nenhu
 
 Os testes funcionais de Plano de Contas e Centros de Custo com Administrador Geral foram confirmados pelo usuário. Convites e demais perfis continuam na homologação final, sem interromper a M3 autorizada.
 
-## 1. Inspeção confirmada
-- Cinco tabelas existentes: `perfis`, `plano_contas`, `centros_custo`, `contas_financeiras`, `auditoria`. Todas com RLS habilitado e obrigatório.
-- `contas_financeiras`: `id uuid`, `nome varchar`, `tipo varchar` (`banco` ou `caixa`), `moeda char` (somente BRL), `saldo_inicial_centavos bigint`, `data_saldo_inicial date`, `ativo boolean`, `criado_em timestamptz`, `criado_por uuid`. Não possui campo de saldo disponível nem dados bancários detalhados.
-- Restrições existentes: nome entre 2 e 160 caracteres, tipos banco/caixa, BRL, chave primária e autoria. **Não existe proteção específica do saldo inicial contra atualização direta.**
-- Políticas de contas: leitura por perfil ativo; criação/alteração apenas Administrador Geral e Financeiro. `authenticated` tem SELECT/INSERT/UPDATE e não DELETE. `anon` não tem acesso ao esquema ou às tabelas.
-- Plano de Contas fornece natureza, hierarquia, situação e aceite de lançamentos. Centros de Custo fornece descrição, responsável e situação. M2 já possui validações, autoria e auditoria por triggers.
-- Auditoria: tabela, registro, ação, usuário, data, antes/depois. Leitura apenas pelos dois administradores; usuários não podem escrever nela.
-- Contagens na inspeção: **0 contas financeiras, 1 conta contábil, 1 centro de custo, 1 perfil ativo Administrador Geral**. Nenhum conteúdo financeiro foi importado ou usado como exemplo.
-- Não há tabela de movimentações, operação de transferência, idempotência ou cálculo de saldo.
+## 1. Inspeção e reutilização
+- Cinco tabelas: perfis, plano_contas, centros_custo, contas_financeiras e auditoria. Todas com RLS habilitado e obrigatório.
+- Contas financeiras: id uuid, nome varchar (2–160 caracteres), tipo banco/caixa, moeda BRL, saldo_inicial_centavos bigint, data_saldo_inicial date, ativo, criado_em e criado_por. Sem saldo disponível, identificação bancária detalhada ou proteção específica da atualização de abertura.
+- Contas: perfil ativo lê; Administrador Geral/Financeiro cria e altera. authenticated tem SELECT/INSERT/UPDATE, não DELETE; anon sem acesso. Auditoria é lida só pelos administradores, sem escrita pelo usuário.
+- Plano de Contas tem natureza, pai, situação e aceite de lançamentos; Centros de Custo tem responsável/situação. M2 oferece autoria, validações e auditoria por triggers.
+- Contagens: 0 contas financeiras, 1 conta contábil, 1 centro e 1 Administrador Geral ativo. Não há ledger, transferência, idempotência ou cálculo de saldo.
+- Reutilizar login, sessão, proteção financeira, papel_atual/tem_papel, cadastros, controles, erros e identidade ITV com logo oficial/fundo claro. A Tesouraria já existe no registro de módulos: substituir seu estado “Em estruturação”, sem rota paralela.
 
-## 2. O que será reutilizado
-Login e sessão existentes, proteção de páginas financeiras, `papel_atual`/`tem_papel`, cadastros M2, identidade ITV com logo oficial e fundo claro, controles e tratamento de erros existentes.
+## 2. Matriz proposta
+Sessão válida e perfil ativo obrigatórios. Nenhum perfil exclui fisicamente registros.
 
-Tesouraria já está no registro de módulos. Sua tela operacional substituirá o estado “Em estruturação” dentro da página existente; não haverá navegação paralela. A matriz atual será espelhada nas regras do banco e ajustada para explicitar as ações M3.
-
-## 3. Matriz proposta
-Todas as permissões exigem sessão válida e perfil ativo. Não haverá exclusão física para nenhum perfil.
-
-| Ação | Admin. Geral | Admin. Financeiro | Analista Financeiro | Consulta Gerencial |
+| Ação | Geral | Financeiro | Analista | Consulta |
 |---|---|---|---|---|
-| Consultar contas, saldos, extrato e vínculos | Sim | Sim | Sim | Sim |
-| Criar contas e informar saldo inicial | Sim | Sim | Não | Não |
-| Editar dados cadastrais, ativar/inativar contas | Sim | Sim | Não | Não |
-| Registrar entrada/saída | Sim | Sim | Sim | Não |
-| Transferir entre contas | Sim | Sim | Sim | Não |
-| Estornar operação, com justificativa | Sim | Sim | Não | Não |
-| Consultar histórico financeiro das operações | Sim | Sim | Sim | Sim |
-| Consultar auditoria técnica antes/depois | Sim | Sim | Não | Não |
-| Alterar lançamento confirmado ou saldo diretamente | Não | Não | Não | Não |
-| Excluir fisicamente contas/operações/movimentos | Não | Não | Não | Não |
+| Ler contas/saldos/extrato/histórico financeiro | Sim | Sim | Sim | Sim |
+| Criar conta e abertura; editar/ativar/inativar conta | Sim | Sim | Não | Não |
+| Entrada/saída/transferência | Sim | Sim | Sim | Não |
+| Estorno com justificativa | Sim | Sim | Não | Não |
+| Auditoria técnica antes/depois | Sim | Sim | Não | Não |
+| Editar lançamento ou saldo diretamente; excluir | Não | Não | Não | Não |
 
-Consulta Gerencial terá **somente leitura da Tesouraria**, hoje não liberada no menu por `can()`. Isso não concede escrita nem acesso a outros módulos. Não incluir fluxo de aprovação ou fechamento de caixa nesta M3: não foi solicitado.
+Consulta Gerencial ganhará somente leitura da Tesouraria, hoje não liberada pelo menu; sem ampliar outros módulos. Não incluir aprovação ou fechamento de caixa, não solicitados.
 
-## 4. Modelo financeiro e relacionamentos propostos
-### Reutilizar `contas_financeiras`
-- Acrescentar `atualizado_em`/`atualizado_por` e dados opcionais de identificação bancária (`banco`, `agencia`, `numero_conta`), sem credenciais bancárias.
-- Preservar campos de abertura existentes, mas torná-los imutáveis após criação. Conta e respectivo registro de abertura nascem na mesma transação; abertura zero fica registrada como operação de abertura sem efeito monetário.
-- Não criar coluna editável de saldo disponível. Contas inativas continuam consultáveis; novas movimentações nelas são rejeitadas.
+## 3. Modelo proposto
+**contas_financeiras:** reutilizar, acrescentando atualizado_em/por e banco/agencia/numero_conta opcionais, sem credenciais. Abertura e conta criadas atomicamente; campos de abertura imutáveis. Abertura zero tem operação sem efeito monetário. Sem coluna editável de saldo; contas inativas continuam consultáveis.
 
-### Nova `tesouraria_operacoes` — cabeçalho imutável
-`id uuid`, `tipo` (abertura/entrada/saida/transferencia/estorno), `data_movimento date`, `descricao`, `valor numeric(18,2)`, `conta_origem_id`/`conta_destino_id`, `plano_conta_id` opcional conforme tipo, `centro_custo_id` opcional, `operacao_original_id` para estorno, `justificativa`, `chave_idempotencia uuid`, `criado_em`, `criado_por uuid`.
+**tesouraria_operacoes (nova):** id uuid, tipo (abertura/entrada/saida/transferencia/estorno), data_movimento, descricao, valor numeric(18,2), origem/destino, plano_conta_id, centro_custo_id, operacao_original_id, justificativa, chave_idempotencia, criado_em/por. Classificação e centro conforme tipo. Autoria do banco. FKs restritivas para cadastros e original, sem nova FK auth.users em tabelas de negócio. ID estável para integrações futuras, sem vínculos a módulos ainda inexistentes.
 
-Chaves estrangeiras para contas, Plano de Contas, Centros de Custo e operação original, com remoção restrita. Autoria preenchida pelo banco, sem FK nova para `auth.users` nas tabelas de negócio. Sem referência a Contas a Pagar/Receber ainda inexistentes; o ID estável da operação servirá para integração posterior.
+**tesouraria_movimentos (nova):** id, operacao_id, conta_financeira_id, direcao credito/debito, valor numeric(18,2) positivo. Não existe sem operação. Entrada: crédito; saída: débito; transferência: um débito e um crédito iguais, contas distintas e mesmo cabeçalho. Abertura negativa: débito absoluto; zero: sem efeito. Validação ao fim da transação garante quantidade/direção/contas/valores.
 
-### Nova `tesouraria_movimentos` — efeitos de saldo imutáveis
-`id uuid`, `operacao_id`, `conta_financeira_id`, `direcao` (credito/debito), `valor numeric(18,2)` positivo. Abertura zero não gera efeito; abertura negativa é representada por débito do valor absoluto. Nenhum movimento pode existir sem operação.
+Cabeçalhos e efeitos confirmados imutáveis, sem UPDATE/DELETE. Estorno cria inversos vinculados ao original, justificados e auditados; unicidade impede repetição e estorno de estorno. Correções exigem estornar e registrar novamente.
 
-- Entrada: um crédito; saída: um débito; transferência: **um débito e um crédito de mesmo valor**, em contas distintas, no mesmo cabeçalho.
-- Estorno: novo cabeçalho ligado ao original e efeitos exatamente inversos, com justificativa e autoria. Unicidade impede segundo estorno; não permitir estorno de estorno. Correção de classificação/valor exige estornar e registrar nova operação.
-- A integridade da quantidade, direção, contas e valores dos movimentos será verificada no banco ao final da transação. Cabeçalhos e efeitos não podem ser editados/excluídos depois de confirmados.
+## 4. Saldos e extrato
+Saldo = créditos − débitos incluindo abertura e estornos, **sem somar novamente saldo_inicial_centavos**. Transferências/abertura nunca são receita/despesa; estornos neutralizam a classificação original.
 
-### Saldos e extrato
-Saldo = soma de créditos − soma de débitos, incluindo abertura e estornos. **Não somar novamente o campo legado de saldo inicial.** Abertura e transferências são identificadas separadamente e nunca tratadas como receita/despesa. Estornos mantêm o vínculo e neutralizam a classificação original.
-
-Saldo de abertura do período inclui efeitos anteriores ao filtro; saldo final inclui efeitos até a data final. Filtros de tipo/categoria selecionam linhas, mas não podem adulterar o saldo real da conta: resultados filtrados têm subtotal separado. Transferências mostram os dois lados no extrato consolidado e apenas o lado correspondente no extrato de uma conta. Ordenação estável por data, criação e ID; paginação e totais no banco, sem depender do limite de 1.000 linhas.
+Saldo inicial do período inclui registros anteriores; final inclui até data final. Filtros período/conta/tipo/categoria; tipo/categoria filtram linhas, não o saldo real: subtotal separado. Transferência consolidada mostra os dois lados; por conta mostra só seu lado. Ordenação data/criação/ID, paginação e totais no banco, sem limite implícito de 1.000 linhas.
 
 ## 5. Migração M3 e segurança — detalhes técnicos
 Uma migração versionada, submetida pela ferramenta própria somente após aprovação:
