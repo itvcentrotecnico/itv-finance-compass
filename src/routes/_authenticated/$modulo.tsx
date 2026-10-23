@@ -5,13 +5,15 @@ import { EmptyState, PageHeader, Panel } from "@/components/shared/finance";
 import { UsuariosPanel } from "@/components/usuarios/UsuariosPanel";
 import { PlanoContasPanel } from "@/components/cadastros/PlanoContasPanel";
 import { CentrosCustoPanel } from "@/components/cadastros/CentrosCustoPanel";
+import { TesourariaPanel, tesourariaOptions } from "@/components/tesouraria/TesourariaPanel";
 import { findGroupOf, findModuleBySlug } from "@/lib/modules";
 import { can } from "@/lib/auth/permissions";
 
 export const Route = createFileRoute("/_authenticated/$modulo")({
-  loader: ({ params }) => {
+  loader: async ({ params, context }) => {
     const mod = findModuleBySlug(params.modulo);
     if (!mod || !mod.slug) throw notFound();
+    if (mod.key === "tesouraria") await context.queryClient.ensureQueryData(tesourariaOptions);
     return { slug: mod.slug, title: mod.title, description: mod.description };
   },
   head: ({ loaderData }) => {
@@ -34,7 +36,8 @@ export const Route = createFileRoute("/_authenticated/$modulo")({
 function ModulePage() {
   const { slug } = Route.useLoaderData();
   const { role } = Route.useRouteContext();
-  const mod = findModuleBySlug(slug)!;
+  const mod = findModuleBySlug(slug);
+  if (!mod) throw notFound();
   const group = findGroupOf(mod.key);
   const Icon = mod.icon;
 
@@ -47,7 +50,7 @@ function ModulePage() {
     );
   }
 
-  const Operacional = mod.key === "usuarios" ? UsuariosPanel : mod.key === "plano_contas" ? PlanoContasPanel : mod.key === "centros_custo" ? CentrosCustoPanel : null;
+  const Operacional = mod.key === "usuarios" ? UsuariosPanel : mod.key === "plano_contas" ? PlanoContasPanel : mod.key === "centros_custo" ? CentrosCustoPanel : mod.key === "tesouraria" ? TesourariaPanel : null;
 
   return (
     <AppShell>
