@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
-  chartAccountSchema, costCenterSchema, financialAccountSchema, transferSchema,
+  chartAccountSchema, costCenterSchema, financialAccountSchema, transferSchema, validIsoDate,
 } from "./domain";
 
 const origem = "11111111-1111-4111-8111-111111111111";
@@ -8,6 +8,11 @@ const destino = "22222222-2222-4222-8222-222222222222";
 const id = "33333333-3333-4333-8333-333333333333";
 
 describe("contratos financeiros", () => {
+  it("valida datas reais e rejeita datas impossíveis", () => {
+    expect(validIsoDate.safeParse("2026-10-23").success).toBe(true);
+    expect(validIsoDate.safeParse("2026-02-30").success).toBe(false);
+    expect(validIsoDate.safeParse("2026-13-01").success).toBe(false);
+  });
   it("aceita conta contábil bem formada", () => {
     expect(chartAccountSchema.safeParse({
       id, codigo: "3.1", descricao: "Receita de serviços", natureza: "receita",

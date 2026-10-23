@@ -30,13 +30,18 @@ export const costCenterSchema = z.object({
 }).strict();
 export type CostCenter = z.infer<typeof costCenterSchema>;
 
+export const validIsoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) => {
+  const date = new Date(value + "T00:00:00.000Z");
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}, "Data inválida");
+
 export const financialAccountSchema = z.object({
   id: z.string().uuid(),
   nome: entityName,
   tipo: z.enum(["banco", "caixa"]),
   moeda: z.literal("BRL"),
   saldo_inicial_centavos: z.number().int().safe(),
-  data_saldo_inicial: z.iso.date(),
+  data_saldo_inicial: validIsoDate,
   ativo: z.boolean(),
 }).strict();
 export type FinancialAccount = z.infer<typeof financialAccountSchema>;
@@ -46,7 +51,7 @@ export const transferSchema = z.object({
   conta_origem_id: z.string().uuid(),
   conta_destino_id: z.string().uuid(),
   valor_centavos: moneyCents.positive(),
-  data_operacao: z.iso.date(),
+  data_operacao: validIsoDate,
   observacao: z.string().trim().max(500).optional(),
 }).strict().refine(
   (value) => value.conta_origem_id !== value.conta_destino_id,
