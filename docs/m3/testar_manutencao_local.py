@@ -97,7 +97,7 @@ def main():
                   'financeiro_hml.tesouraria_operacoes'::regclass,
                   'financeiro_hml.tesouraria_movimentos'::regclass)""", (writer.info.backend_pid,)) == 0
                 if fn == cases[0][0]:
-                    gate(maintenance, db, False)
+                    gate(recovery, db, False)
                 assert clients(maintenance), 'Old clients unexpectedly vanished'
                 holder.execute('ROLLBACK')
                 outcome = future.result(timeout=18)
@@ -109,11 +109,9 @@ def main():
             # Existing connection deliberately reused: proves why complete drain is necessary.
             if fn != cases[-1][0]:
                 # New connections require reopening between the distinct controlled test cases.
-                gate(maintenance, db, True)
-                gate(maintenance, db, False)
                 # Reopen only to create next simulated pre-existing client.
-                gate(maintenance, db, True)
-        gate(maintenance, db, False)
+                gate(recovery, db, True)
+        gate(recovery, db, False)
         denied = []
         for attempt in range(2):
             try:
@@ -142,7 +140,7 @@ def main():
         assert preserved(maintenance) == before
         assert scalar(maintenance, "SELECT to_regclass('financeiro_hml.tes_op_abertura_conta_uq') IS NOT NULL")
         record('M3_2_apos_drenagem_M1_M2_RLS_preservadas', {'vazias': empty(maintenance)})
-        gate(maintenance, db, True)
+        gate(recovery, db, True)
         with connect(db, True) as resumed:
             p = request(nome='LOCAL RETOMADA', conta_tipo='caixa', valor='0.00')
             resumed.execute('BEGIN')
@@ -161,7 +159,7 @@ def main():
     occupied = make_db()
     with connect('postgres') as recovery, connect(occupied) as maintenance:
         with connect(occupied, True) as admin:
-            gate(maintenance, occupied, False)
+            gate(recovery, occupied, False)
             rpc(admin, 'tesouraria_criar_conta', request(nome='LOCAL ADMIN', conta_tipo='caixa', valor='0.00'))
         drained(maintenance)
         original = preserved(maintenance)
@@ -182,7 +180,7 @@ def main():
         recovery = connect('postgres')
         maintenance = connect(target)
         try:
-            gate(maintenance, target, False)
+            gate(recovery, target, False)
             drained(maintenance)
             # Execute exact prefix through new index/function/trigger inside same transaction.
             prefix, suffix = FINAL.decode().split('-- Historico completo separado', 1)
