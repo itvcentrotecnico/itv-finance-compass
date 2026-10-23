@@ -2,9 +2,17 @@
 -- Destino: financeiro_hml no Supabase ayjppexbzpgdkzbehvzw.
 -- Base exigida: M1, M2, M3 e correcao 20261023172359 ja aplicadas.
 -- Aplicacao somente pelo mecanismo oficial de migracoes, transacao unica.
+-- Exige manutencao: impedir novas RPCs e drenar chamadas/transacoes antigas.
+-- NOWAIT falha fechado se houver qualquer acesso conflitante; nao repetir automaticamente.
 BEGIN;
+SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
 SET LOCAL lock_timeout='5s';
 SET LOCAL statement_timeout='60s';
+-- Ordem fixa tambem usada na reversao. ACCESS EXCLUSIVE evita upgrade posterior
+-- para o DDL. Os tres locks precedem TODA leitura de dados e duram ate COMMIT/ROLLBACK.
+LOCK TABLE financeiro_hml.contas_financeiras,
+ financeiro_hml.tesouraria_operacoes,
+ financeiro_hml.tesouraria_movimentos IN ACCESS EXCLUSIVE MODE NOWAIT;
 DO $$ BEGIN
  IF to_regclass('financeiro_hml.tesouraria_operacoes') IS NULL OR to_regclass('financeiro_hml.tesouraria_movimentos') IS NULL THEN RAISE EXCEPTION 'M3.2: base ausente; nao reaplicar M3 automaticamente'; END IF;
  IF EXISTS(SELECT 1 FROM financeiro_hml.tesouraria_operacoes) OR EXISTS(SELECT 1 FROM financeiro_hml.tesouraria_movimentos) OR EXISTS(SELECT 1 FROM financeiro_hml.contas_financeiras) THEN RAISE EXCEPTION 'M3.2: existem dados; suspender para reconciliacao'; END IF;

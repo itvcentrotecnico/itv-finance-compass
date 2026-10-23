@@ -1,7 +1,16 @@
 -- PROPOSTA DE REVERSAO: SOMENTE APOS AUTORIZACAO. Retorna ao estado anterior, inclusive seus defeitos conhecidos.
+-- Exige manutencao e drenagem de RPCs/transacoes; nunca repetir automaticamente.
 BEGIN;
+SET TRANSACTION ISOLATION LEVEL READ COMMITTED;
 SET LOCAL lock_timeout='5s';
-DO $$ BEGIN IF EXISTS(SELECT 1 FROM financeiro_hml.tesouraria_operacoes) THEN RAISE EXCEPTION 'Reversao exige reconciliacao: existem operacoes'; END IF; END $$;
+SET LOCAL statement_timeout='60s';
+LOCK TABLE financeiro_hml.contas_financeiras,
+ financeiro_hml.tesouraria_operacoes,
+ financeiro_hml.tesouraria_movimentos IN ACCESS EXCLUSIVE MODE NOWAIT;
+DO $$ BEGIN IF EXISTS(SELECT 1 FROM financeiro_hml.tesouraria_operacoes)
+ OR EXISTS(SELECT 1 FROM financeiro_hml.tesouraria_movimentos)
+ OR EXISTS(SELECT 1 FROM financeiro_hml.contas_financeiras)
+ THEN RAISE EXCEPTION 'Reversao exige reconciliacao: existem contas/operacoes/movimentos'; END IF; END $$;
 DROP TRIGGER tes_conta_abertura ON financeiro_hml.contas_financeiras;
 DROP FUNCTION financeiro_hml.tes_conta_exige_abertura();
 DROP FUNCTION financeiro_hml.tesouraria_historico_operacoes(jsonb);
