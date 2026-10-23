@@ -1,0 +1,216 @@
+[
+  {
+    "teste": "compilacao_reversao_preservacao_M1_M2",
+    "resultado": "PASS",
+    "evidencia": "SQL completo aplicado/revertido/reaplicado localmente; registros, 7 funcoes, ACLs de tabelas e RLS identicos"
+  },
+  {
+    "teste": "migracao_escritor_anterior_e_dados_preservados",
+    "resultado": "PASS",
+    "evidencia": [
+      {
+        "ok": false,
+        "sqlstate": "55P03",
+        "erro": "could not obtain lock on relation \"financeiro_hml.contas_financeiras\"",
+        "pid": 18743
+      },
+      {
+        "ok": false,
+        "sqlstate": "P0001",
+        "erro": "M3.2: existem dados; suspender para reconciliacao",
+        "pid": 18743
+      }
+    ]
+  },
+  {
+    "teste": "migracao_bloqueia_escritor_ate_commit",
+    "resultado": "PASS",
+    "evidencia": {
+      "locks": 3,
+      "writer": {
+        "ok": true,
+        "valor": 0,
+        "pid": 18748
+      }
+    }
+  },
+  {
+    "teste": "migracao_bloqueia_escritor_ate_rollback",
+    "resultado": "PASS",
+    "evidencia": {
+      "locks": 3,
+      "writer": {
+        "ok": true,
+        "valor": 0,
+        "pid": 18755
+      }
+    }
+  },
+  {
+    "teste": "mesma_chave_conteudo_equivalente",
+    "resultado": "PASS",
+    "evidencia": {
+      "primeira": {
+        "id": "d9c6a99f-8ea6-4ec9-88e3-1c94afb483ad",
+        "conta_id": "bd34f3e5-8b5c-4c58-a151-e3de0bc15694",
+        "repetida": false
+      },
+      "segunda": {
+        "ok": true,
+        "valor": {
+          "id": "d9c6a99f-8ea6-4ec9-88e3-1c94afb483ad",
+          "conta_id": "bd34f3e5-8b5c-4c58-a151-e3de0bc15694",
+          "repetida": true
+        },
+        "pid": 18760
+      },
+      "delta": [
+        1,
+        2,
+        1
+      ]
+    }
+  },
+  {
+    "teste": "mesma_chave_conteudos_diferentes",
+    "resultado": "PASS",
+    "evidencia": {
+      "ok": false,
+      "sqlstate": "P0001",
+      "erro": "TES_IDEMPOTENCIA: mesma chave com conteúdo diferente",
+      "pid": 18764
+    }
+  },
+  {
+    "teste": "transferencias_sentidos_opostos",
+    "resultado": "PASS",
+    "evidencia": {
+      "pids": 18768,
+      "saldos_preservados": true
+    }
+  },
+  {
+    "teste": "dois_estornos_mesma_operacao",
+    "resultado": "PASS",
+    "evidencia": {
+      "ok": false,
+      "sqlstate": "P0001",
+      "erro": "TES_JA_ESTORNADA",
+      "pid": 18773
+    }
+  },
+  {
+    "teste": "inativacao_contas_financeiras_ambas_ordens",
+    "resultado": "PASS",
+    "evidencia": {
+      "inativacao_primeiro": {
+        "ok": false,
+        "sqlstate": "P0001",
+        "erro": "TES_CONTA_INATIVA",
+        "pid": 18776
+      },
+      "lancamento_primeiro": {
+        "ok": true,
+        "valor": 1,
+        "pid": 18780
+      }
+    }
+  },
+  {
+    "teste": "inativacao_plano_contas_ambas_ordens",
+    "resultado": "PASS",
+    "evidencia": {
+      "inativacao_primeiro": {
+        "ok": false,
+        "sqlstate": "P0001",
+        "erro": "TES_CLASSIFICACAO",
+        "pid": 18785
+      },
+      "lancamento_primeiro": {
+        "ok": true,
+        "valor": 1,
+        "pid": 18789
+      }
+    }
+  },
+  {
+    "teste": "inativacao_centros_custo_ambas_ordens",
+    "resultado": "PASS",
+    "evidencia": {
+      "inativacao_primeiro": {
+        "ok": false,
+        "sqlstate": "P0001",
+        "erro": "TES_CENTRO",
+        "pid": 18794
+      },
+      "lancamento_primeiro": {
+        "ok": true,
+        "valor": 1,
+        "pid": 18798
+      }
+    }
+  },
+  {
+    "teste": "deadlock_40P01_rollback_retry_mesma_chave",
+    "resultado": "PASS",
+    "evidencia": {
+      "sessao_A": {
+        "ok": true,
+        "valor": 1,
+        "pid": 18802
+      },
+      "sessao_B": {
+        "ok": false,
+        "sqlstate": "40P01",
+        "erro": "deadlock detected",
+        "pid": 18803
+      },
+      "retry": {
+        "id": "92675e61-bc32-4b8c-8991-01cc14b2b8a2",
+        "conta_id": "ff7591e7-1dc5-4885-8ef0-62017a1238f0",
+        "repetida": false
+      },
+      "replay": {
+        "id": "92675e61-bc32-4b8c-8991-01cc14b2b8a2",
+        "conta_id": "ff7591e7-1dc5-4885-8ef0-62017a1238f0",
+        "repetida": true
+      }
+    }
+  },
+  {
+    "teste": "falha_commit_sem_operacao_efeitos_auditoria_parciais",
+    "resultado": "PASS",
+    "evidencia": {
+      "falha": {
+        "ok": false,
+        "sqlstate": "P0001",
+        "erro": "LOCAL_DEFERRED_FAILURE",
+        "pid": 18807
+      },
+      "retry": {
+        "id": "f8407ff1-7cd4-494d-9c81-452beb485313",
+        "conta_id": "bd34f3e5-8b5c-4c58-a151-e3de0bc15694",
+        "repetida": false
+      }
+    }
+  },
+  {
+    "teste": "RLS_grants_sem_escrita_direta_ledger",
+    "resultado": "PASS",
+    "evidencia": {
+      "ok": false,
+      "sqlstate": "42501",
+      "erro": "permission denied for table tesouraria_movimentos",
+      "pid": 18809
+    }
+  },
+  {
+    "teste": "reconciliacao_final_sem_transferencias_parciais",
+    "resultado": "PASS",
+    "evidencia": {
+      "saldo_A": "99.50",
+      "saldo_B": "100.90",
+      "total": "200.40"
+    }
+  }
+]
