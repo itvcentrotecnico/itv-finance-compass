@@ -1,13 +1,14 @@
 # Autenticação segura — ITV FINANCEIRO HML
 
-- [ ] Solicitação 21:19 UTC: aplicar exclusivamente M3.2 integral e inalterada pelo mecanismo oficial, após conferir SHA-256, barreira e estado; validar integridade por leitura. Não restaurar nove grants temporários nem testar operações financeiras; interromper sem repetição em caso de erro.
+- [x] Solicitação 21:19 UTC: M3.2 aplicada em 21:26 UTC pelo mecanismo oficial, SQL integral e SHA-256 idêntico ao aprovado; integridade M1/M2, dados, RLS, ACLs, funções/triggers/índice e barreira verificadas por leitura. Nove grants temporários não restaurados; nenhuma operação financeira executada.
+- [ ] Restaurar nove grants temporários e homologar operações financeiras: aguarda autorização separada; escritas permanecem bloqueadas.
 
 - [x] Solicitação 21:03 UTC: comandos finais entregues para registro/validação de ACL de UPDATE, barreira temporária por REVOKE, eficácia persistente, drenagem após COMMIT, submissão oficial do SQL byte-idêntico e restauração exata de nove grants; nenhuma alteração executada no HML. Evidências hospedadas/backup informadas pelo usuário. Execução aguarda autorização expressa e controle administrativo dos escritores privilegiados.
 
 - [x] Solicitação 18:20 UTC: viabilidade verificada por SELECT; destino confirmado, template1 listado mas conexão B não comprovada; executor somente leitura, PIDs distintos, sem controle de conexões fixas/serviços/workers ou escolha de sessão no mecanismo de migração. Nenhuma ativação/migração; alternativa é janela operacional coordenada no HML, com risco residual explicitado e nova decisão antes de executar.
 
 - [x] Solicitação 18:15 UTC: proposta de barreira PostgreSQL entregue, SQL adicional separado/SQL M3.2 intacto e 13/13 testes locais de admissão/drenagem/retomada/recuperação; nenhuma alteração HML.
-- [ ] Manutenção proposta: aguarda aprovação e comprovação de conexões fixas em dois bancos do mesmo cluster, autoridade de admissão, drenagem graciosa dos pools/workers e executor oficial compatível; não fechar HML nem aplicar M3.2 sem esses controles.
+- [x] Manutenção: alternativa operacional por barreira ACL adotada pelo usuário; permissões false verificadas, produtores administrativos suspensos pelo responsável e ausência de transações observada antes da M3.2. Proposta de datallowconn não ativada.
 
 - [x] Conectar o projeto Supabase HML (ayjppexbzpgdkzbehvzw).
 - [x] Inspecionar `financeiro_hml` e apresentar proposta técnica (aprovada).
@@ -23,9 +24,9 @@ Não conectar o GESTÃO ITV, não publicar em produção e não adicionar dados 
 - [x] Plano de Contas e Centros de Custo: testes funcionais com Administrador Geral confirmados pelo usuário.
 - [x] M3: inspecionar banco/aplicação e apresentar plano de Tesouraria para aprovação, sem alterar o banco.
 - [x] M3 suspensa: revisão integral do SQL, causa raiz 42601 reproduzida localmente, inspeção de objetos e integridade M1/M2, SQL corrigido e relatório (somente leitura no HML).
-- [ ] M3: aplicar correções e realizar testes financeiros no banco (aguarda manutenção/drenagem operacional comprovada; SQL final autorizado condicionalmente).
+- [x] M3: correções M3.2 aplicadas; testes financeiros no HML reservados à homologação separada, sem autorização nesta execução.
 - [x] M3.2: bloqueio NOWAIT antes da pre-verificacao, 15 testes locais concorrentes e 29 de regressao aprovados; SQL final/relatorio entregues.
-- [ ] M3.2: aplicação controlada interrompida antes da execução em 23/10/2026 às 18:04 UTC: recuperação parcial aceita e íntegra, destino e tabelas vazias confirmados; bloqueio contínuo de novas escritas/manutenção não disponível ou comprovado. Aguardar esse controle e drenagem antes de aplicar somente SQL final e validar M1/M2/RLS/dados.
+- [x] M3.2: interrupções anteriores superadas pela autorização 21:19 UTC e barreira ACL operacional; aplicação oficial 20261023212630 concluída, integridade verificada, relatório docs/m3/RELATORIO_EXECUCAO_M3_2.md.
 - [x] Backup assistido parcial: exportação real de financeiro_hml (7 tabelas, 18 funções, dados/controles), recuperação em PostgreSQL 17.9 vazio e 102 verificações aprovadas; pacote/relatório disponíveis em Files. Não é backup completo Supabase; auth real e configurações hospedadas não recuperadas.
 - [x] Aceitação expressa da recuperação parcial em 23/10/2026 às 18:04 UTC, limitada ao HML; Auth/configurações hospedadas fora da cobertura.
 - [x] Autorização condicionada: destino, pacote CRC/SHA-256, identidade do SQL e tabelas vazias conferidos; 29 testes de regressão aprovados; relatório de interrupção e roteiro de homologação preparados, sem migração nem novos dados.
