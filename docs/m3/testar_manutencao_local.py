@@ -96,8 +96,7 @@ def main():
                   AND relation IN ('financeiro_hml.contas_financeiras'::regclass,
                   'financeiro_hml.tesouraria_operacoes'::regclass,
                   'financeiro_hml.tesouraria_movimentos'::regclass)""", (writer.info.backend_pid,)) == 0
-                if fn == cases[0][0]:
-                    gate(recovery, db, False)
+                gate(recovery, db, False)
                 assert clients(maintenance), 'Old clients unexpectedly vanished'
                 holder.execute('ROLLBACK')
                 outcome = future.result(timeout=18)
