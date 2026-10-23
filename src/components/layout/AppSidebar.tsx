@@ -37,8 +37,8 @@ export function AppSidebar() {
                   const href = m.slug ? `/${m.slug}` : "/";
                   const active = path === href;
                   return (
+                    <SidebarMenuItem key={m.key}>
                     <SidebarMenuButton
-                      key={m.key}
                       asChild
                       isActive={active}
                       tooltip={m.title}
@@ -56,6 +56,7 @@ export function AppSidebar() {
                         </Link>
                       )}
                     </SidebarMenuButton>
+                    </SidebarMenuItem>
                   );
                 })}
               </SidebarMenu>
@@ -72,5 +73,3 @@ export function AppSidebar() {
   );
 }
 
-// Re-export to keep SidebarMenuItem tree-shaken usage consistent
-export { SidebarMenuItem };
