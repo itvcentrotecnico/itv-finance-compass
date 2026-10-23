@@ -9,68 +9,68 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as ModuloRouteImport } from './routes/$modulo'
+import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as AuthenticatedModuloRouteImport } from './routes/_authenticated/$modulo'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
+const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
+  id: '/_authenticated/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ModuloRoute = ModuloRouteImport.update({
-  id: '/$modulo',
+const AuthenticatedModuloRoute = AuthenticatedModuloRouteImport.update({
+  id: '/_authenticated/$modulo',
   path: '/$modulo',
   getParentRoute: () => rootRouteImport,
 } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof IndexRoute
-  '/$modulo': typeof ModuloRoute
+  '/$modulo': typeof AuthenticatedModuloRoute
+  '/': typeof AuthenticatedIndexRoute
 }
 export interface FileRoutesByTo {
-  '/': typeof IndexRoute
-  '/$modulo': typeof ModuloRoute
+  '/$modulo': typeof AuthenticatedModuloRoute
+  '/': typeof AuthenticatedIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/': typeof IndexRoute
-  '/$modulo': typeof ModuloRoute
+  '/_authenticated/$modulo': typeof AuthenticatedModuloRoute
+  '/_authenticated/': typeof AuthenticatedIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/$modulo'
+  fullPaths: '/$modulo' | '/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/$modulo'
-  id: '__root__' | '/' | '/$modulo'
+  to: '/$modulo' | '/'
+  id: '__root__' | '/_authenticated/$modulo' | '/_authenticated/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  IndexRoute: typeof IndexRoute
-  ModuloRoute: typeof ModuloRoute
+  AuthenticatedModuloRoute: typeof AuthenticatedModuloRoute
+  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
+    '/_authenticated/': {
+      id: '/_authenticated/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+      preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/$modulo': {
-      id: '/$modulo'
+    '/_authenticated/$modulo': {
+      id: '/_authenticated/$modulo'
       path: '/$modulo'
       fullPath: '/$modulo'
-      preLoaderRoute: typeof ModuloRouteImport
+      preLoaderRoute: typeof AuthenticatedModuloRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
-  IndexRoute: IndexRoute,
-  ModuloRoute: ModuloRoute,
+  AuthenticatedModuloRoute: AuthenticatedModuloRoute,
+  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
