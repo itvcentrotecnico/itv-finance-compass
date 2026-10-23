@@ -1,8 +1,10 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
-import { Database, Inbox, Construction } from "lucide-react";
+import { Database, Inbox, Construction, ShieldOff } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { EmptyState, PageHeader, Panel } from "@/components/shared/finance";
+import { UsuariosPanel } from "@/components/usuarios/UsuariosPanel";
 import { findGroupOf, findModuleBySlug } from "@/lib/modules";
+import { can } from "@/lib/auth/permissions";
 
 export const Route = createFileRoute("/_authenticated/$modulo")({
   loader: ({ params }) => {
@@ -29,9 +31,19 @@ export const Route = createFileRoute("/_authenticated/$modulo")({
 
 function ModulePage() {
   const { slug } = Route.useLoaderData();
+  const { role } = Route.useRouteContext();
   const mod = findModuleBySlug(slug)!;
   const group = findGroupOf(mod.key);
   const Icon = mod.icon;
+
+  if (!role || !can(role, mod.key, "view")) {
+    return (
+      <AppShell>
+        <PageHeader eyebrow={group?.label} title={mod.title} description={mod.description} />
+        <EmptyState icon={ShieldOff} title="Sem permissão" description="Seu perfil não tem acesso a este módulo." />
+      </AppShell>
+    );
+  }
 
   return (
     <AppShell>
@@ -40,11 +52,14 @@ function ModulePage() {
         title={mod.title}
         description={mod.description}
         actions={
+          mod.key === "usuarios" ? undefined : (
           <span className="inline-flex items-center gap-1.5 rounded-full border bg-card px-3 py-1 text-xs text-muted-foreground">
             <Construction className="size-3.5" /> Em estruturação
           </span>
+          )
         }
       />
+      {mod.key === "usuarios" ? <UsuariosPanel /> : (
       <div className="grid gap-4 lg:grid-cols-3">
         <Panel title="Registros" subtitle="Nenhum dado cadastrado" className="lg:col-span-2">
           <EmptyState icon={Icon} title="Módulo ainda não ativado" description="A implementação deste módulo aguarda autorização da próxima etapa." />
@@ -75,6 +90,7 @@ function ModulePage() {
           </Panel>
         </div>
       </div>
+      )}
     </AppShell>
   );
 }
