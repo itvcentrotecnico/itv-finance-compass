@@ -55,7 +55,7 @@ def make_db():
         c.execute(f'CREATE DATABASE "{name}"')
     DATABASES.append(name)
     with connect(name) as c:
-        bootstrap = Path('/tmp/m3-review/bootstrap.sql').read_text().split('\n', 1)[1]
+        bootstrap = (ROOT / 'docs/m3/fixture_local.sql').read_text()
         c.execute(bootstrap)
         for path in sorted((ROOT / 'supabase/migrations').glob('*.sql')):
             c.execute(path.read_text())
@@ -168,7 +168,7 @@ def main():
             locks = scalar(mon, "SELECT count(*) FROM pg_locks WHERE pid=%s AND mode='AccessExclusiveLock' AND granted AND relation IN ('financeiro_hml.contas_financeiras'::regclass,'financeiro_hml.tesouraria_operacoes'::regclass,'financeiro_hml.tesouraria_movimentos'::regclass)", (migration.info.backend_pid,))
             assert locks == 3
             writer.execute('BEGIN')
-            future = POOL.submit(run_commit, writer, lambda: writer.execute("UPDATE financeiro_hml.contas_financeiras SET nome=nome WHERE false"))
+            future = POOL.submit(run_commit, writer, lambda: writer.execute("UPDATE financeiro_hml.contas_financeiras SET nome=nome WHERE false").rowcount)
             wait_block(mon, writer.info.backend_pid, migration.info.backend_pid)
             assert scalar(migration, 'SELECT count(*) FROM financeiro_hml.contas_financeiras') == 0
             if finish == 'COMMIT':
