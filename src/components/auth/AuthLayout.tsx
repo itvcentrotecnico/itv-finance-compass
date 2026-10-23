@@ -1,12 +1,13 @@
 import type { ReactNode } from "react";
 import { ShieldCheck } from "lucide-react";
+import itvLogo from "@/assets/itv-logo.png.asset.json";
 
 export function AuthLayout({ title, subtitle, children }: { title: string; subtitle?: string; children: ReactNode }) {
   return (
     <div className="grid min-h-screen bg-background lg:grid-cols-[1.1fr_1fr]">
       <aside className="relative hidden flex-col justify-between overflow-hidden bg-sidebar p-12 text-sidebar-foreground lg:flex">
         <div className="flex items-center gap-3">
-          <div className="flex size-10 items-center justify-center rounded-lg bg-brand font-display text-sm font-bold text-brand-foreground">ITV</div>
+          <div className="flex h-14 w-28 items-center justify-center rounded-lg bg-card px-3 py-2"><img src={itvLogo.url} alt="ITV Centro Técnico" className="max-h-full w-full object-contain" /></div>
           <div>
             <p className="font-display text-lg font-semibold leading-tight">ITV FINANCEIRO</p>
             <p className="text-xs text-sidebar-foreground/60">ITV Centro Técnico · Manaus</p>
@@ -23,7 +24,7 @@ export function AuthLayout({ title, subtitle, children }: { title: string; subti
       <main className="flex items-center justify-center px-6 py-12">
         <div className="w-full max-w-sm">
           <div className="mb-8 flex items-center gap-3 lg:hidden">
-            <div className="flex size-9 items-center justify-center rounded-lg bg-brand font-display text-xs font-bold text-brand-foreground">ITV</div>
+            <img src={itvLogo.url} alt="ITV Centro Técnico" className="h-10 w-auto" />
             <p className="font-display font-semibold">ITV FINANCEIRO</p>
           </div>
           <h1 className="font-display text-2xl font-semibold">{title}</h1>

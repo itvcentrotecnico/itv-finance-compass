@@ -1,3 +1,4 @@
+import itvLogo from "@/assets/itv-logo.png.asset.json";
 import { Link, useRouteContext, useRouterState } from "@tanstack/react-router";
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel,
@@ -20,8 +21,8 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border">
         <div className="flex items-center gap-2.5 px-1 py-1.5">
-          <div className="grid size-8 shrink-0 place-items-center rounded-md bg-sidebar-primary font-display text-sm font-bold text-sidebar-primary-foreground">
-            iTV
+          <div className={`grid shrink-0 place-items-center rounded-md bg-card ${collapsed ? "size-8 p-1" : "h-10 w-20 px-2 py-1.5"}`}>
+            <img src={itvLogo.url} alt="ITV Centro Técnico" className="max-h-full w-full object-contain" />
           </div>
           {!collapsed && (
             <div className="leading-tight">
