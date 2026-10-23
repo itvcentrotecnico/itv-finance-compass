@@ -10,11 +10,11 @@
     "teste": "RPC_antiga_antes_de_lock_tesouraria_criar_conta",
     "resultado": "PASS",
     "evidencia": {
-      "pid": 36462,
+      "pid": 36831,
       "fim": "ROLLBACK",
       "resultado": {
-        "id": "8384b5e8-5584-4905-a54d-7d13e57cb2ba",
-        "conta_id": "8fd3b61c-7d0c-48fc-96fa-13b6b90290a5",
+        "id": "8a55464c-2adf-49be-bdf7-80ca2f3b2d97",
+        "conta_id": "ddb7c9a0-9756-4510-99ff-16098b5a2644",
         "repetida": false
       }
     }
@@ -23,7 +23,7 @@
     "teste": "RPC_antiga_antes_de_lock_tesouraria_lancar",
     "resultado": "PASS",
     "evidencia": {
-      "pid": 36464,
+      "pid": 36833,
       "fim": "ROLLBACK",
       "sqlstate": "42702"
     }
@@ -32,7 +32,7 @@
     "teste": "RPC_antiga_antes_de_lock_tesouraria_transferir",
     "resultado": "PASS",
     "evidencia": {
-      "pid": 36465,
+      "pid": 36834,
       "fim": "ROLLBACK",
       "sqlstate": "P0001"
     }
@@ -41,7 +41,7 @@
     "teste": "RPC_antiga_antes_de_lock_tesouraria_estornar",
     "resultado": "PASS",
     "evidencia": {
-      "pid": 36466,
+      "pid": 36835,
       "fim": "ROLLBACK",
       "sqlstate": "P0001"
     }
@@ -59,13 +59,13 @@
     "resultado": "PASS",
     "evidencia": [
       {
-        "pid": 36460,
+        "pid": 36829,
         "state": "idle",
         "wait_event_type": "Client",
         "wait_event": "ClientRead"
       },
       {
-        "pid": 36461,
+        "pid": 36830,
         "state": "idle",
         "wait_event_type": "Client",
         "wait_event": "ClientRead"
