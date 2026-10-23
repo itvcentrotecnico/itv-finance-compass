@@ -9,3 +9,5 @@
 - [ ] Testes de acesso por perfil ponta a ponta em HML (aguarda usuários de teste para cada perfil).
 
 Não conectar o GESTÃO ITV, não publicar em produção e não adicionar dados financeiros reais.
+- [x] M2 e telas de Plano de Contas e Centros de Custo (auditoria, validações, testes de banco por perfil).
+- [ ] Teste ponta a ponta das telas com login real em HML (aguarda usuários de teste por perfil).

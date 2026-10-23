@@ -3,6 +3,8 @@ import { Database, Inbox, Construction, ShieldOff } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
 import { EmptyState, PageHeader, Panel } from "@/components/shared/finance";
 import { UsuariosPanel } from "@/components/usuarios/UsuariosPanel";
+import { PlanoContasPanel } from "@/components/cadastros/PlanoContasPanel";
+import { CentrosCustoPanel } from "@/components/cadastros/CentrosCustoPanel";
 import { findGroupOf, findModuleBySlug } from "@/lib/modules";
 import { can } from "@/lib/auth/permissions";
 
@@ -45,6 +47,8 @@ function ModulePage() {
     );
   }
 
+  const Operacional = mod.key === "usuarios" ? UsuariosPanel : mod.key === "plano_contas" ? PlanoContasPanel : mod.key === "centros_custo" ? CentrosCustoPanel : null;
+
   return (
     <AppShell>
       <PageHeader
@@ -52,14 +56,14 @@ function ModulePage() {
         title={mod.title}
         description={mod.description}
         actions={
-          mod.key === "usuarios" ? undefined : (
+          Operacional ? undefined : (
           <span className="inline-flex items-center gap-1.5 rounded-full border bg-card px-3 py-1 text-xs text-muted-foreground">
             <Construction className="size-3.5" /> Em estruturação
           </span>
           )
         }
       />
-      {mod.key === "usuarios" ? <UsuariosPanel /> : (
+      {Operacional ? <Operacional /> : (
       <div className="grid gap-4 lg:grid-cols-3">
         <Panel title="Registros" subtitle="Nenhum dado cadastrado" className="lg:col-span-2">
           <EmptyState icon={Icon} title="Módulo ainda não ativado" description="A implementação deste módulo aguarda autorização da próxima etapa." />
