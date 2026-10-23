@@ -44,7 +44,10 @@ export function UsuariosPanel() {
 
   function onInvite(e: FormEvent) {
     e.preventDefault();
-    if (!/^\S+@\S+\.\S+$/.test(email.trim())) return toast.error("Informe um e-mail válido.");
+    if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
+      toast.error("Informe um e-mail válido.");
+      return;
+    }
     inviteMut.mutate();
   }
 
