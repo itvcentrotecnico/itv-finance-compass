@@ -9,7 +9,7 @@ CREATE FUNCTION public.como(u int) RETURNS void LANGUAGE sql AS $$ SELECT set_co
 CREATE FUNCTION public.falha(q text, padrao text) RETURNS text LANGUAGE plpgsql AS $$
 BEGIN EXECUTE q; RETURN 'SEM ERRO'; EXCEPTION WHEN OTHERS THEN IF SQLERRM ~ padrao OR SQLSTATE ~ padrao THEN RETURN 'OK'; END IF; RETURN SQLSTATE||' '||SQLERRM; END $$;
 CREATE FUNCTION public.ok(t text, cond boolean, det text DEFAULT '') RETURNS void LANGUAGE sql AS $$ INSERT INTO public.resultado(teste,ok,detalhe) VALUES (t,cond,det) $$;
-GRANT EXECUTE ON FUNCTION public.como(int), public.falha(text,text), public.ok(text,boolean,text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.como(int), public.falha(text,text), public.ok(text,boolean,text) TO authenticated, anon;
 CREATE FUNCTION public.sync_admin() RETURNS uuid LANGUAGE sql SECURITY DEFINER AS $$
   SELECT financeiro_hml.integracao_iniciar() $$;
 CREATE FUNCTION public.item(ref text) RETURNS financeiro_hml.integracao_itens LANGUAGE sql SECURITY DEFINER AS $$
@@ -27,7 +27,8 @@ SELECT ok('01 analista não inicia sincronização', falha($$SELECT financeiro_h
 SELECT como(3);
 SELECT ok('02 consulta não inicia sincronização', falha($$SELECT financeiro_hml.integracao_iniciar()$$,'INT_PERMISSAO')='OK');
 SELECT como(1);
-SELECT ok('03 admin inicia e fica em andamento', (SELECT status='em_andamento' AND responsavel_id='a0000000-0000-4000-8000-000000000001' FROM financeiro_hml.integracao_sincronizacoes WHERE id=public.sync_admin()));
+SELECT public.sync_admin() IS NOT NULL AS sinc03;
+SELECT ok('03 admin inicia e fica em andamento', (SELECT status='em_andamento' AND responsavel_id='a0000000-0000-4000-8000-000000000001' FROM financeiro_hml.integracao_sincronizacoes ORDER BY iniciado_em DESC LIMIT 1));
 
 -- 2. Sincronização com pagamento simples, misto, cartão, boleto e título em aberto
 WITH s AS (SELECT public.sync_admin() AS id)
@@ -93,8 +94,9 @@ SELECT ok('16 falha registrada com erros', (SELECT status='falha' AND erros IS N
 SELECT como(3);
 SELECT ok('17 consulta gerencial lê itens e sincronizações', (SELECT count(*) > 0 FROM financeiro_hml.integracao_itens) AND (SELECT count(*) > 0 FROM financeiro_hml.integracao_sincronizacoes));
 SELECT ok('18 perfis não escrevem itens diretamente', falha($$INSERT INTO financeiro_hml.integracao_itens(referencia_origem,tipo,conteudo_hash,resumo,situacao) VALUES ('x','pagamento','h','{}','novo')$$,'42501')='OK');
+SET ROLE anon;
+SELECT ok('19 anon não lê itens', falha($$SELECT count(*) FROM financeiro_hml.integracao_itens$$,'42501')='OK');
 RESET ROLE;
-SELECT ok('19 anon não lê itens', (SELECT count(*)=0 FROM financeiro_hml.integracao_itens));
 SELECT ok('20 auditoria registrou sincronizações e itens', (SELECT count(*) > 0 FROM financeiro_hml.auditoria WHERE tabela IN ('integracao_sincronizacoes','integracao_itens')));
 SELECT ok('21 nenhuma movimentação financeira em toda a suíte', public.movs()=0);
 
