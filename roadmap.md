@@ -1,6 +1,7 @@
 # Autenticação segura — ITV FINANCEIRO HML
 
 - [x] Solicitação 26/10/2026 20:18 UTC: análise da fonte original jan–out entregue em Files (Excel e pacote de relatórios/evidências); 3.332 candidatos/revisões, 622 subtotais e 20 lados mensais conhecidos conferem, 1.145 fórmulas originais recalculadas, zero divergências ≥centavo. Comparação anterior: 424 candidatos novos / 48 auxiliares excluídos da base, evidências preservadas. Pendências financeiras: 35 valores indefinidos, 225 datas inferidas/24 em revisão, 8 negativos, 19 grupos repetidos, contas e classificação a validar; importação bloqueada, fonte SHA preservado, somente SELECT cadastral HML, sem alterações no aplicativo/banco/GESTÃO ITV.
+- [x] Solicitação 26/10/2026 22:15 UTC: filtro do exercício 2026 aplicado em ITV_BASE_VALIDACAO_2026.xlsx (3.002 elegíveis, 225 de outros anos, 105 pendentes); importação bloqueada, sem alterações em sistemas.
 
 - [x] Etapa 1 autorizada em 26/10/2026: recuperação persistente com consulta prévia e mesma chave, rejeição inicial distinta de resultado incerto, histórico completo e 48 testes locais aprovados; compilação OK, acesso sem sessão protegido. Sem migrações, mudanças no banco ou operações financeiras no HML. Relatório: docs/m3/RELATORIO_CORRECOES_FUNCIONAIS_ETAPA_1.md. Validação autenticada/financeira fica para homologação autorizada; persistência limitada ao navegador/origem.
 
