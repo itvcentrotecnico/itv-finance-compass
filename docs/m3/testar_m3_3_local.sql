@@ -97,9 +97,9 @@ SELECT ok('28 transferência interna não gera receita', saldo('MERCADO PAGO —
 SELECT financeiro_hml.tesouraria_estornar(jsonb_build_object('chave',gen_random_uuid(),'data','2026-09-20','descricao','Estorno · DESPESA LOCAL','justificativa','Teste local de estorno','original',(SELECT operacao_id FROM financeiro_hml.tesouraria_conferencias WHERE referencia_origem='T|SAI')));
 SELECT ok('29 estorno restaura saldo e preserva vínculo', saldo('CAIXA FÍSICO ITV')=430 AND (SELECT operacao_id IS NOT NULL FROM financeiro_hml.tesouraria_conferencias WHERE referencia_origem='T|SAI'));
 -- 11. Atomicidade
-UPDATE financeiro_hml.tesouraria_conferencias SET status='conciliado' WHERE referencia_origem='T|MIX|2';
+UPDATE financeiro_hml.tesouraria_conferencias SET valor_liquido=690, data_liquidacao='2026-10-10', status='conciliado' WHERE referencia_origem='T|MIX|2';
 RESET ROLE; UPDATE financeiro_hml.plano_contas SET aceita_lancamentos=false WHERE codigo='R1'; SET ROLE authenticated; SELECT como(1);
-SELECT ok('30 falha intermediária não lança nem vincula', 'SEM ERRO' <> falha($$UPDATE financeiro_hml.tesouraria_conferencias SET valor_liquido=690, data_liquidacao='2026-10-10' WHERE referencia_origem='T|MIX|2'; SELECT financeiro_hml.tesouraria_lancar_conferencia(jsonb_build_object('id',(SELECT id FROM financeiro_hml.tesouraria_conferencias WHERE referencia_origem='T|MIX|2')))$$,'^$') AND (SELECT operacao_id IS NULL FROM financeiro_hml.tesouraria_conferencias WHERE referencia_origem='T|MIX|2') AND saldo('MERCADO PAGO — RECEBIMENTOS')=39.40);
+SELECT ok('30 falha intermediária não lança nem vincula', 'SEM ERRO' <> falha($$SELECT financeiro_hml.tesouraria_lancar_conferencia(jsonb_build_object('id',(SELECT id FROM financeiro_hml.tesouraria_conferencias WHERE referencia_origem='T|MIX|2')))$$,'^$') AND (SELECT operacao_id IS NULL FROM financeiro_hml.tesouraria_conferencias WHERE referencia_origem='T|MIX|2') AND saldo('MERCADO PAGO — RECEBIMENTOS')=39.40);
 RESET ROLE; UPDATE financeiro_hml.plano_contas SET aceita_lancamentos=true WHERE codigo='R1'; SET ROLE authenticated;
 -- 12. Permissões
 SELECT como(3);
