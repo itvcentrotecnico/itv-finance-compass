@@ -50,4 +50,19 @@ export const carregarHistoricoTesouraria = createServerFn({ method: "POST" }).mi
     for (const r of reversoes ?? []) estornadas.add(r.operacao_original_id);
   }
   return { ...historico, operacoes: historico.operacoes.map((o) => ({ ...o, estornada: estornadas.has(o.id) })) };
+});const idSchema = z.object({ id: z.string().uuid() });
+/** Conciliated review record → one treasury operation; retry-safe (DB row lock + link). */
+export const lancarConferencia = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).inputValidator((v: unknown) => idSchema.parse(v)).handler(async ({ data, context }) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = (context.supabase as any).schema("financeiro_hml");
+  const { data: result, error } = await db.rpc("tesouraria_lancar_conferencia", { p: data });
+  if (error) return resultadoErro(error);
+  return { estado: "confirmada", id: result.id } as ResultadoEnvio;
+});
+export const habilitarConta = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).inputValidator((v: unknown) => idSchema.extend({ chave: z.string().uuid(), data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), valor: z.string().regex(/^-?\d{1,16}\.\d{2}$/), responsavel: z.string().trim().min(2).max(160) }).parse(v)).handler(async ({ data, context }) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = (context.supabase as any).schema("financeiro_hml");
+  const { data: result, error } = await db.rpc("tesouraria_habilitar_conta", { p: data });
+  if (error) return resultadoErro(error);
+  return { estado: "confirmada", id: result.id } as ResultadoEnvio;
 });
