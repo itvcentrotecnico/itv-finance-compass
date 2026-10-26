@@ -57,7 +57,7 @@ export const carregarEstadoIntegracao = createServerFn({ method: "POST" }).middl
   if (erroItens) throw new Error("Falha ao consultar os itens da integração.");
   const totais: Record<string, number> = {};
   for (const i of itens ?? []) totais[i.situacao] = (totais[i.situacao] ?? 0) + 1;
-  return { configurada: Boolean(process.env.GESTAO_ITV_USUARIO && process.env.GESTAO_ITV_SENHA), ultima: (ultima as Sincronizacao | null) ?? null, totais };
+  return { configurada: Boolean(process.env["GESTAO_ITV_USUARIO"] && process.env["GESTAO_ITV_SENHA"]), ultima: (ultima as Sincronizacao | null) ?? null, totais };
 });
 
 export const carregarItensIntegracao = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
@@ -106,7 +106,7 @@ export const sincronizarGestaoItv = createServerFn({ method: "POST" }).middlewar
     for (let desde = 0; ; desde += 1000) {
       const { data, error } = await origem.from(tabela).select(colunas).order(ordenar).range(desde, desde + 999);
       if (error) throw new Error(tabela);
-      linhas.push(...((data ?? []) as Record<string, unknown>[]));
+      linhas.push(...((data ?? []) as unknown as Record<string, unknown>[]));
       if (!data || data.length < 1000) return linhas;
     }
   };
