@@ -1,5 +1,7 @@
 # Autenticação segura — ITV FINANCEIRO HML
 
+- [ ] Solicitação 26/10/2026 20:18 UTC: analisar fonte original jan–out, preservar códigos numéricos, reconciliar blocos/subtotais/fechamentos, preparar base rastreável, relatórios gerenciais/pendências e plano de importação; somente arquivos intermediários e leitura dos cadastros HML, sem importação ou alteração da fonte/aplicativo/banco.
+
 - [x] Etapa 1 autorizada em 26/10/2026: recuperação persistente com consulta prévia e mesma chave, rejeição inicial distinta de resultado incerto, histórico completo e 48 testes locais aprovados; compilação OK, acesso sem sessão protegido. Sem migrações, mudanças no banco ou operações financeiras no HML. Relatório: docs/m3/RELATORIO_CORRECOES_FUNCIONAIS_ETAPA_1.md. Validação autenticada/financeira fica para homologação autorizada; persistência limitada ao navegador/origem.
 
 - [x] Solicitação 21:19 UTC: M3.2 aplicada em 21:26 UTC pelo mecanismo oficial, SQL integral e SHA-256 idêntico ao aprovado; integridade M1/M2, dados, RLS, ACLs, funções/triggers/índice e barreira verificadas por leitura. Nove grants temporários não restaurados; nenhuma operação financeira executada.
