@@ -6,6 +6,7 @@ import { UsuariosPanel } from "@/components/usuarios/UsuariosPanel";
 import { PlanoContasPanel } from "@/components/cadastros/PlanoContasPanel";
 import { CentrosCustoPanel } from "@/components/cadastros/CentrosCustoPanel";
 import { TesourariaPanel, tesourariaOptions } from "@/components/tesouraria/TesourariaPanel";
+import { IntegracaoPanel } from "@/components/integracao/IntegracaoPanel";
 import { findGroupOf, findModuleBySlug } from "@/lib/modules";
 import { can } from "@/lib/auth/permissions";
 
@@ -50,7 +51,7 @@ function ModulePage() {
     );
   }
 
-  const Operacional = mod.key === "usuarios" ? UsuariosPanel : mod.key === "plano_contas" ? PlanoContasPanel : mod.key === "centros_custo" ? CentrosCustoPanel : mod.key === "tesouraria" ? TesourariaPanel : null;
+  const Operacional = mod.key === "usuarios" ? UsuariosPanel : mod.key === "plano_contas" ? PlanoContasPanel : mod.key === "centros_custo" ? CentrosCustoPanel : mod.key === "tesouraria" ? TesourariaPanel : mod.key === "integracoes" ? IntegracaoPanel : null;
 
   return (
     <AppShell>

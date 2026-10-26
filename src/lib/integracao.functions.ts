@@ -11,7 +11,7 @@ import { montarItens, type FonteGestao } from "./integracao";
 
 // URL e chave pública (publishable) da origem: seguras para código-fonte.
 const ORIGEM_URL = "https://lyfgkhryrhytggexvjvn.supabase.co";
-const ORIGEM_KEY = "__ORIGEM_PUBLISHABLE_KEY__";
+const ORIGEM_KEY = "sb_publishable_NUGiKn_kkYWC2bLzWrKTPg_q6qHprsq";
 
 export interface Sincronizacao {
   id: string;
