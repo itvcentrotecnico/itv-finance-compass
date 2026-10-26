@@ -61,7 +61,7 @@ export function ConferenciaPanel({ role, contas, planos, centros }: { role: Role
   const [edit, setEdit] = useState<Conferencia | null>(null);
   const q = useQuery({ queryKey: ["tesouraria", "conferencias"], queryFn: async () => { const { data, error } = await fin().from("tesouraria_conferencias").select("*").order("data_ocorrencia").order("referencia_origem").limit(5000); if (error) throw new Error(erroTesouraria(error)); return data as Conferencia[]; } });
   const pode = podeOperar(role);
-  const faltantes = useMemo(() => { const tem = new Set((q.data ?? []).map((c) => c.referencia_origem)); return (lote as string[][]).filter((l) => !tem.has(l[0])); }, [q.data]);
+  const faltantes = useMemo(() => { const tem = new Set((q.data ?? []).map((c) => c.referencia_origem)); return (lote as string[][]).filter((l) => !tem.has(l[0] ?? "")); }, [q.data]);
   const carga = useMutation({ mutationFn: async () => {
     for (let i = 0; i < faltantes.length; i += 100) {
       const rows = faltantes.slice(i, i + 100).map(([referencia_origem, natureza, forma, data_ocorrencia, descricao, valor_bruto, observacao]) => ({ referencia_origem, natureza, forma, data_ocorrencia, descricao, valor_bruto, observacao, boleto_status: forma === "boleto" ? "pendente" : null, status: "pendente" }));
