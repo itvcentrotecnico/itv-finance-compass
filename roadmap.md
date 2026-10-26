@@ -40,3 +40,4 @@ Não conectar o GESTÃO ITV, não publicar em produção e não adicionar dados 
 - [x] Solicitação 18:11 UTC: RPCs, triggers, privilégios de tabela/coluna e acessos diretos mapeados; destino/recuperação/SQL/tabelas vazias reconfirmados; roteiro de manutenção entregue. M3.2 não aplicada: bloqueio de admissão e drenagem de chamadas antigas não comprováveis apenas com NOWAIT; aguarda controle operacional verificado, sem migrações adicionais.
 
 Testes de convites e demais perfis ficam para homologação final; não bloqueiam o planejamento e desenvolvimento autorizados da M3.
+- [x] Execução final 26/10 23:07 UTC: estado verificado (6 migrações, M3.3 ativa, 3 contas oficiais preparadas pendentes de abertura, 0 conferências/movimentos); 59/59 testes locais; lote set/out revalidado (474, totais e referências íntegros); importação bloqueada até abertura validada das contas oficiais e sessão autenticada; GESTÃO ITV sem vínculo.
