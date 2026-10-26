@@ -27,7 +27,7 @@ describe("formulários da Tesouraria sem comunicação financeira externa", () =
   it("rejeição inicial libera campos para correção", async () => {
     mocks.enviar.mockResolvedValue({ estado: "rejeitada", mensagem: "Rejeição financeira local" }); abrir(); await preencherAbertura();
     fireEvent.click(screen.getByRole("button", { name: "Salvar" }));
-    await screen.findByText("Rejeição financeira local");
+    await screen.findAllByText("Rejeição financeira local");
     expect(screen.getByLabelText("Nome da conta")).toBeEnabled(); expect(screen.getByRole("button", { name: "Salvar" })).toBeEnabled(); expect(localStorage.getItem(chavePendente("usuario-local"))).toBeNull();
   });
   it("perda de resposta bloqueia nova operação após fechar/reabrir e recupera por consulta", async () => {
