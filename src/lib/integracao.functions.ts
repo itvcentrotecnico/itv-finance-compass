@@ -121,10 +121,12 @@ export const sincronizarGestaoItv = createServerFn({ method: "POST" }).middlewar
       lerTudo("contas_receber_saldos", "*", "vencimento"),
     ]);
     fonte = {
-      formas, lancamentos, pagamentos, recebimentos,
+      formas: formas as FonteGestao["formas"],
+      lancamentos: lancamentos as FonteGestao["lancamentos"],
+      pagamentos: pagamentos as FonteGestao["pagamentos"],
+      recebimentos: recebimentos as FonteGestao["recebimentos"],
       // Títulos em aberto: informativos; exigem identificador e saldo positivo.
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      titulosAbertos: (titulos as any[]).filter((t) => t.id && Number(t.saldo) > 0),
+      titulosAbertos: (titulos as { id?: string; saldo?: number | string }[]).filter((t) => t.id && Number(t.saldo) > 0) as FonteGestao["titulosAbertos"],
     };
   } catch {
     return falhar("leitura_origem");
