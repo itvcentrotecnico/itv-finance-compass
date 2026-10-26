@@ -11,32 +11,32 @@ CREATE FUNCTION public.falha(q text, padrao text) RETURNS text LANGUAGE plpgsql 
 BEGIN EXECUTE q; RETURN 'SEM ERRO'; EXCEPTION WHEN OTHERS THEN IF SQLERRM ~ padrao OR SQLSTATE ~ padrao THEN RETURN 'OK'; END IF; RETURN SQLSTATE||' '||SQLERRM; END $$;
 CREATE FUNCTION public.ok(t text, cond boolean, det text DEFAULT '') RETURNS void LANGUAGE sql AS $$ INSERT INTO public.resultado(teste,ok,detalhe) VALUES (t,cond,det) $$;
 GRANT EXECUTE ON FUNCTION public.como(int), public.falha(text,text), public.ok(text,boolean,text) TO authenticated;
-CREATE FUNCTION public.cid(n text) RETURNS uuid LANGUAGE sql SECURITY DEFINER AS $$ SELECT id FROM financeiro_hml.contas_preparadas WHERE nome=n $$;
-CREATE FUNCTION public.fid(n text) RETURNS uuid LANGUAGE sql SECURITY DEFINER AS $$ SELECT conta_financeira_id FROM financeiro_hml.contas_preparadas WHERE nome=n $$;
-CREATE FUNCTION public.saldo(n text) RETURNS numeric LANGUAGE sql SECURITY DEFINER AS $$ SELECT coalesce(sum(CASE direcao WHEN 'credito' THEN valor ELSE -valor END),0) FROM financeiro_hml.tesouraria_movimentos WHERE conta_financeira_id=public.fid(n) $$;
-GRANT EXECUTE ON FUNCTION public.cid(text), public.fid(text), public.saldo(text) TO authenticated;
+CREATE FUNCTION public.cprep(n text) RETURNS uuid LANGUAGE sql SECURITY DEFINER AS $$ SELECT id FROM financeiro_hml.contas_preparadas WHERE nome=n $$;
+CREATE FUNCTION public.cfin(n text) RETURNS uuid LANGUAGE sql SECURITY DEFINER AS $$ SELECT conta_financeira_id FROM financeiro_hml.contas_preparadas WHERE nome=n $$;
+CREATE FUNCTION public.saldo(n text) RETURNS numeric LANGUAGE sql SECURITY DEFINER AS $$ SELECT coalesce(sum(CASE direcao WHEN 'credito' THEN valor ELSE -valor END),0) FROM financeiro_hml.tesouraria_movimentos WHERE conta_financeira_id=public.cfin(n) $$;
+GRANT EXECUTE ON FUNCTION public.cprep(text), public.cfin(text), public.saldo(text) TO authenticated;
 
 SET ROLE authenticated;
 -- 1. Cadastro de contas
 SELECT como(1);
 SELECT ok('01 três contas pendentes sem conta operacional', (SELECT count(*)=3 AND bool_and(situacao='pendente_abertura' AND conta_financeira_id IS NULL) FROM financeiro_hml.contas_preparadas) AND (SELECT count(*)=0 FROM financeiro_hml.contas_financeiras));
 SELECT como(2);
-SELECT ok('02 analista não habilita conta', falha($$SELECT financeiro_hml.tesouraria_habilitar_conta(jsonb_build_object('id',cid('CAIXA FÍSICO ITV'),'chave',gen_random_uuid(),'data','2026-09-01','valor','0.00','responsavel','X Y'))$$,'TES_PERMISSAO')='OK');
+SELECT ok('02 analista não habilita conta', falha($$SELECT financeiro_hml.tesouraria_habilitar_conta(jsonb_build_object('id',cprep('CAIXA FÍSICO ITV'),'chave',gen_random_uuid(),'data','2026-09-01','valor','0.00','responsavel','X Y'))$$,'TES_PERMISSAO')='OK');
 SELECT como(3);
-SELECT ok('03 consulta não habilita conta', falha($$SELECT financeiro_hml.tesouraria_habilitar_conta(jsonb_build_object('id',cid('CAIXA FÍSICO ITV'),'chave',gen_random_uuid(),'data','2026-09-01','valor','0.00','responsavel','X Y'))$$,'TES_PERMISSAO')='OK');
+SELECT ok('03 consulta não habilita conta', falha($$SELECT financeiro_hml.tesouraria_habilitar_conta(jsonb_build_object('id',cprep('CAIXA FÍSICO ITV'),'chave',gen_random_uuid(),'data','2026-09-01','valor','0.00','responsavel','X Y'))$$,'TES_PERMISSAO')='OK');
 SELECT como(1);
-SELECT ok('04 habilitação exige responsável', falha($$SELECT financeiro_hml.tesouraria_habilitar_conta(jsonb_build_object('id',cid('CAIXA FÍSICO ITV'),'chave',gen_random_uuid(),'data','2026-09-01','valor','10.00'))$$,'TES_RESPONSAVEL')='OK');
-SELECT ok('05 habilitação exige saldo informado', falha($$SELECT financeiro_hml.tesouraria_habilitar_conta(jsonb_build_object('id',cid('CAIXA FÍSICO ITV'),'chave',gen_random_uuid(),'data','2026-09-01','responsavel','Resp Local'))$$,'TES_DADOS')='OK');
+SELECT ok('04 habilitação exige responsável', falha($$SELECT financeiro_hml.tesouraria_habilitar_conta(jsonb_build_object('id',cprep('CAIXA FÍSICO ITV'),'chave',gen_random_uuid(),'data','2026-09-01','valor','10.00'))$$,'TES_RESPONSAVEL')='OK');
+SELECT ok('05 habilitação exige saldo informado', falha($$SELECT financeiro_hml.tesouraria_habilitar_conta(jsonb_build_object('id',cprep('CAIXA FÍSICO ITV'),'chave',gen_random_uuid(),'data','2026-09-01','responsavel','Resp Local'))$$,'TES_DADOS')='OK');
 -- 2. Abertura financeira (valores locais fictícios)
-SELECT financeiro_hml.tesouraria_habilitar_conta(jsonb_build_object('id',cid('CAIXA FÍSICO ITV'),'chave','c0000000-0000-4000-8000-000000000001','data','2026-09-01','valor','100.00','responsavel','Resp Local')) IS NOT NULL;
-SELECT financeiro_hml.tesouraria_habilitar_conta(jsonb_build_object('id',cid('SICREDI — CONTA PRINCIPAL'),'chave','c0000000-0000-4000-8000-000000000002','data','2026-09-01','valor','0.00','responsavel','Resp Local')) IS NOT NULL;
-SELECT financeiro_hml.tesouraria_habilitar_conta(jsonb_build_object('id',cid('MERCADO PAGO — RECEBIMENTOS'),'chave','c0000000-0000-4000-8000-000000000003','data','2026-09-01','valor','0.00','responsavel','Resp Local')) IS NOT NULL;
+SELECT financeiro_hml.tesouraria_habilitar_conta(jsonb_build_object('id',cprep('CAIXA FÍSICO ITV'),'chave','c0000000-0000-4000-8000-000000000001','data','2026-09-01','valor','100.00','responsavel','Resp Local')) IS NOT NULL;
+SELECT financeiro_hml.tesouraria_habilitar_conta(jsonb_build_object('id',cprep('SICREDI — CONTA PRINCIPAL'),'chave','c0000000-0000-4000-8000-000000000002','data','2026-09-01','valor','0.00','responsavel','Resp Local')) IS NOT NULL;
+SELECT financeiro_hml.tesouraria_habilitar_conta(jsonb_build_object('id',cprep('MERCADO PAGO — RECEBIMENTOS'),'chave','c0000000-0000-4000-8000-000000000003','data','2026-09-01','valor','0.00','responsavel','Resp Local')) IS NOT NULL;
 SELECT ok('06 abertura cria conta e saldo validado', saldo('CAIXA FÍSICO ITV')=100 AND (SELECT count(*)=3 FROM financeiro_hml.contas_financeiras) AND (SELECT count(*)=3 FROM financeiro_hml.tesouraria_operacoes WHERE tipo='abertura'));
-SELECT ok('07 habilitação repetida não duplica', (financeiro_hml.tesouraria_habilitar_conta(jsonb_build_object('id',cid('CAIXA FÍSICO ITV'),'chave',gen_random_uuid(),'data','2026-09-02','valor','999.00','responsavel','Outro')))->>'repetida'='true' AND (SELECT count(*)=3 FROM financeiro_hml.contas_financeiras));
+SELECT ok('07 habilitação repetida não duplica', (financeiro_hml.tesouraria_habilitar_conta(jsonb_build_object('id',cprep('CAIXA FÍSICO ITV'),'chave',gen_random_uuid(),'data','2026-09-02','valor','999.00','responsavel','Outro')))->>'repetida'='true' AND (SELECT count(*)=3 FROM financeiro_hml.contas_financeiras));
 -- 3. Pix
 SELECT como(2);
 INSERT INTO financeiro_hml.tesouraria_conferencias(referencia_origem,natureza,forma,data_ocorrencia,descricao,valor_bruto,plano_conta_id,conta_financeira_id,status)
- VALUES ('T|PIX','entrada','pix','2026-09-05','PIX LOCAL',50.00,'b0000000-0000-4000-8000-000000000001',fid('SICREDI — CONTA PRINCIPAL'),'pendente');
+ VALUES ('T|PIX','entrada','pix','2026-09-05','PIX LOCAL',50.00,'b0000000-0000-4000-8000-000000000001',cfin('SICREDI — CONTA PRINCIPAL'),'pendente');
 SELECT ok('08 pendente não gera lançamento', falha($$SELECT financeiro_hml.tesouraria_lancar_conferencia(jsonb_build_object('id',(SELECT id FROM financeiro_hml.tesouraria_conferencias WHERE referencia_origem='T|PIX')))$$,'TES_CONF_NAO_CONCILIADA')='OK' AND saldo('SICREDI — CONTA PRINCIPAL')=0);
 UPDATE financeiro_hml.tesouraria_conferencias SET status='conciliado' WHERE referencia_origem='T|PIX';
 SELECT financeiro_hml.tesouraria_lancar_conferencia(jsonb_build_object('id',(SELECT id FROM financeiro_hml.tesouraria_conferencias WHERE referencia_origem='T|PIX')));
@@ -50,35 +50,35 @@ SELECT ok('14 referência de origem repetida é bloqueada', falha($$INSERT INTO 
 SELECT ok('15 usuário não grava vínculo manualmente', falha($$UPDATE financeiro_hml.tesouraria_conferencias SET operacao_id=NULL WHERE referencia_origem='T|PIX'$$,'42501')='OK');
 -- 4. Dinheiro
 INSERT INTO financeiro_hml.tesouraria_conferencias(referencia_origem,natureza,forma,data_ocorrencia,descricao,valor_bruto,plano_conta_id,conta_financeira_id,status)
- VALUES ('T|DIN','entrada','dinheiro','2026-09-06','DINHEIRO LOCAL',30.00,'b0000000-0000-4000-8000-000000000001',fid('CAIXA FÍSICO ITV'),'conciliado');
+ VALUES ('T|DIN','entrada','dinheiro','2026-09-06','DINHEIRO LOCAL',30.00,'b0000000-0000-4000-8000-000000000001',cfin('CAIXA FÍSICO ITV'),'conciliado');
 SELECT financeiro_hml.tesouraria_lancar_conferencia(jsonb_build_object('id',(SELECT id FROM financeiro_hml.tesouraria_conferencias WHERE referencia_origem='T|DIN')));
 SELECT ok('16 dinheiro credita Caixa Físico', saldo('CAIXA FÍSICO ITV')=130);
 -- 5. Cartão e taxa
 INSERT INTO financeiro_hml.tesouraria_conferencias(referencia_origem,natureza,forma,data_ocorrencia,descricao,valor_bruto,plano_conta_id,conta_financeira_id,status)
- VALUES ('T|CRED','entrada','credito','2026-09-07','CARTÃO LOCAL',100.00,'b0000000-0000-4000-8000-000000000001',fid('MERCADO PAGO — RECEBIMENTOS'),'em_conferencia');
+ VALUES ('T|CRED','entrada','credito','2026-09-07','CARTÃO LOCAL',100.00,'b0000000-0000-4000-8000-000000000001',cfin('MERCADO PAGO — RECEBIMENTOS'),'em_conferencia');
 SELECT ok('17 cartão sem líquido não concilia', falha($$UPDATE financeiro_hml.tesouraria_conferencias SET status='conciliado' WHERE referencia_origem='T|CRED'$$,'23514')='OK' AND saldo('MERCADO PAGO — RECEBIMENTOS')=0);
 SELECT ok('18 líquido acima do bruto é rejeitado', falha($$UPDATE financeiro_hml.tesouraria_conferencias SET valor_liquido=101 WHERE referencia_origem='T|CRED'$$,'23514')='OK');
 UPDATE financeiro_hml.tesouraria_conferencias SET valor_liquido=95.37, data_liquidacao='2026-10-07', status='conciliado' WHERE referencia_origem='T|CRED';
 SELECT financeiro_hml.tesouraria_lancar_conferencia(jsonb_build_object('id',(SELECT id FROM financeiro_hml.tesouraria_conferencias WHERE referencia_origem='T|CRED')));
 SELECT ok('19 cartão lança líquido na data de liquidação, taxa calculada', saldo('MERCADO PAGO — RECEBIMENTOS')=95.37 AND (SELECT taxa=4.63 FROM financeiro_hml.tesouraria_conferencias WHERE referencia_origem='T|CRED') AND EXISTS(SELECT 1 FROM financeiro_hml.tesouraria_operacoes WHERE data_movimento='2026-10-07' AND valor=95.37));
 INSERT INTO financeiro_hml.tesouraria_conferencias(referencia_origem,natureza,forma,data_ocorrencia,descricao,valor_bruto,valor_liquido,data_liquidacao,plano_conta_id,conta_financeira_id,status)
- VALUES ('T|DEB','entrada','debito','2026-09-07','DÉBITO LOCAL',40.00,39.40,'2026-09-08','b0000000-0000-4000-8000-000000000001',fid('MERCADO PAGO — RECEBIMENTOS'),'conciliado');
+ VALUES ('T|DEB','entrada','debito','2026-09-07','DÉBITO LOCAL',40.00,39.40,'2026-09-08','b0000000-0000-4000-8000-000000000001',cfin('MERCADO PAGO — RECEBIMENTOS'),'conciliado');
 SELECT financeiro_hml.tesouraria_lancar_conferencia(jsonb_build_object('id',(SELECT id FROM financeiro_hml.tesouraria_conferencias WHERE referencia_origem='T|DEB')));
 SELECT ok('20 débito lança líquido', saldo('MERCADO PAGO — RECEBIMENTOS')=134.77);
 -- 6. Pagamento misto
 INSERT INTO financeiro_hml.tesouraria_conferencias(referencia_origem,grupo_id,natureza,forma,data_ocorrencia,descricao,valor_bruto,status)
  VALUES ('T|MIX','d0000000-0000-4000-8000-000000000001','entrada','misto','2026-09-10','VENDA MISTA LOCAL',1000.00,'pendente');
-SELECT ok('21 registro misto não lança sozinho', falha($$UPDATE financeiro_hml.tesouraria_conferencias SET conta_financeira_id=fid('CAIXA FÍSICO ITV'),plano_conta_id='b0000000-0000-4000-8000-000000000001',status='conciliado' WHERE referencia_origem='T|MIX'; SELECT financeiro_hml.tesouraria_lancar_conferencia(jsonb_build_object('id',(SELECT id FROM financeiro_hml.tesouraria_conferencias WHERE referencia_origem='T|MIX')))$$,'TES_CONF_FORMA')='OK');
+SELECT ok('21 registro misto não lança sozinho', falha($$UPDATE financeiro_hml.tesouraria_conferencias SET conta_financeira_id=cfin('CAIXA FÍSICO ITV'),plano_conta_id='b0000000-0000-4000-8000-000000000001',status='conciliado' WHERE referencia_origem='T|MIX'; SELECT financeiro_hml.tesouraria_lancar_conferencia(jsonb_build_object('id',(SELECT id FROM financeiro_hml.tesouraria_conferencias WHERE referencia_origem='T|MIX')))$$,'TES_CONF_FORMA')='OK');
 INSERT INTO financeiro_hml.tesouraria_conferencias(referencia_origem,grupo_id,natureza,forma,data_ocorrencia,descricao,valor_bruto,plano_conta_id,conta_financeira_id,status)
- VALUES ('T|MIX|1','d0000000-0000-4000-8000-000000000001','entrada','dinheiro','2026-09-10','VENDA MISTA · DINHEIRO',300.00,'b0000000-0000-4000-8000-000000000001',fid('CAIXA FÍSICO ITV'),'conciliado'),
-        ('T|MIX|2','d0000000-0000-4000-8000-000000000001','entrada','credito','2026-09-10','VENDA MISTA · CARTÃO',600.00,'b0000000-0000-4000-8000-000000000001',fid('MERCADO PAGO — RECEBIMENTOS'),'pendente');
+ VALUES ('T|MIX|1','d0000000-0000-4000-8000-000000000001','entrada','dinheiro','2026-09-10','VENDA MISTA · DINHEIRO',300.00,'b0000000-0000-4000-8000-000000000001',cfin('CAIXA FÍSICO ITV'),'conciliado'),
+        ('T|MIX|2','d0000000-0000-4000-8000-000000000001','entrada','credito','2026-09-10','VENDA MISTA · CARTÃO',600.00,'b0000000-0000-4000-8000-000000000001',cfin('MERCADO PAGO — RECEBIMENTOS'),'pendente');
 SELECT ok('22 rateio incompleto é bloqueado', falha($$SELECT financeiro_hml.tesouraria_lancar_conferencia(jsonb_build_object('id',(SELECT id FROM financeiro_hml.tesouraria_conferencias WHERE referencia_origem='T|MIX|1')))$$,'TES_CONF_RATEIO')='OK' AND saldo('CAIXA FÍSICO ITV')=130);
 UPDATE financeiro_hml.tesouraria_conferencias SET valor_bruto=700.00 WHERE referencia_origem='T|MIX|2';
 SELECT financeiro_hml.tesouraria_lancar_conferencia(jsonb_build_object('id',(SELECT id FROM financeiro_hml.tesouraria_conferencias WHERE referencia_origem='T|MIX|1')));
 SELECT ok('23 componente em dinheiro lançado; cartão aguarda liquidação', saldo('CAIXA FÍSICO ITV')=430 AND saldo('MERCADO PAGO — RECEBIMENTOS')=134.77);
 -- 7. Boleto
 INSERT INTO financeiro_hml.tesouraria_conferencias(referencia_origem,natureza,forma,data_ocorrencia,descricao,valor_bruto,boleto_vencimento,boleto_status,plano_conta_id,conta_financeira_id,status)
- VALUES ('T|BOL','entrada','boleto','2026-09-11','BOLETO LOCAL',80.00,'2026-09-20','pendente','b0000000-0000-4000-8000-000000000001',fid('SICREDI — CONTA PRINCIPAL'),'em_conferencia');
+ VALUES ('T|BOL','entrada','boleto','2026-09-11','BOLETO LOCAL',80.00,'2026-09-20','pendente','b0000000-0000-4000-8000-000000000001',cfin('SICREDI — CONTA PRINCIPAL'),'em_conferencia');
 SELECT ok('24 boleto não pago não concilia', falha($$UPDATE financeiro_hml.tesouraria_conferencias SET status='conciliado' WHERE referencia_origem='T|BOL'$$,'23514')='OK');
 UPDATE financeiro_hml.tesouraria_conferencias SET boleto_status='pago', boleto_pagamento='2026-09-19', status='conciliado' WHERE referencia_origem='T|BOL';
 SELECT financeiro_hml.tesouraria_lancar_conferencia(jsonb_build_object('id',(SELECT id FROM financeiro_hml.tesouraria_conferencias WHERE referencia_origem='T|BOL')));
@@ -87,11 +87,11 @@ SELECT ok('25 boleto pago entra na data de pagamento', saldo('SICREDI — CONTA 
 INSERT INTO financeiro_hml.tesouraria_conferencias(referencia_origem,natureza,forma,data_ocorrencia,descricao,valor_bruto,plano_conta_id,conta_financeira_id,status)
  VALUES ('T|SAI','saida','indefinida','2026-09-12','DESPESA LOCAL',20.00,'b0000000-0000-4000-8000-000000000002',NULL,'pendente');
 SELECT ok('26 saída sem conta não concilia', falha($$UPDATE financeiro_hml.tesouraria_conferencias SET status='conciliado' WHERE referencia_origem='T|SAI'$$,'23514')='OK');
-UPDATE financeiro_hml.tesouraria_conferencias SET forma='dinheiro', conta_financeira_id=fid('CAIXA FÍSICO ITV'), status='conciliado' WHERE referencia_origem='T|SAI';
+UPDATE financeiro_hml.tesouraria_conferencias SET forma='dinheiro', conta_financeira_id=cfin('CAIXA FÍSICO ITV'), status='conciliado' WHERE referencia_origem='T|SAI';
 SELECT financeiro_hml.tesouraria_lancar_conferencia(jsonb_build_object('id',(SELECT id FROM financeiro_hml.tesouraria_conferencias WHERE referencia_origem='T|SAI')));
 SELECT ok('27 despesa debita a conta escolhida', saldo('CAIXA FÍSICO ITV')=410);
 -- 9. Transferência Mercado Pago → Sicredi
-SELECT financeiro_hml.tesouraria_transferir(jsonb_build_object('chave',gen_random_uuid(),'data','2026-10-08','descricao','REPASSE MP LOCAL','valor','95.37','origem',fid('MERCADO PAGO — RECEBIMENTOS'),'destino',fid('SICREDI — CONTA PRINCIPAL')));
+SELECT financeiro_hml.tesouraria_transferir(jsonb_build_object('chave',gen_random_uuid(),'data','2026-10-08','descricao','REPASSE MP LOCAL','valor','95.37','origem',cfin('MERCADO PAGO — RECEBIMENTOS'),'destino',cfin('SICREDI — CONTA PRINCIPAL')));
 SELECT ok('28 transferência interna não gera receita', saldo('MERCADO PAGO — RECEBIMENTOS')=39.40 AND saldo('SICREDI — CONTA PRINCIPAL')=225.37 AND (SELECT plano_conta_id IS NULL FROM financeiro_hml.tesouraria_operacoes WHERE tipo='transferencia'));
 -- 10. Estorno
 SELECT financeiro_hml.tesouraria_estornar(jsonb_build_object('chave',gen_random_uuid(),'data','2026-09-20','descricao','Estorno · DESPESA LOCAL','justificativa','Teste local de estorno','original',(SELECT operacao_id FROM financeiro_hml.tesouraria_conferencias WHERE referencia_origem='T|SAI')));
