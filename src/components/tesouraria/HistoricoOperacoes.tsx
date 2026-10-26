@@ -1,0 +1,9 @@
+import { History } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { EmptyState } from "@/components/shared/finance";
+import { dinheiro, TIPOS, type HistoricoOperacoes as Dados, type OperacaoHistorico } from "@/lib/tesouraria";
+
+export function HistoricoOperacoes({ dados, nomeConta, onDetalhe }: { dados: Dados | undefined; nomeConta: (id: string | null) => string; onDetalhe: (o: OperacaoHistorico) => void }) {
+  if (!dados?.operacoes.length) return <EmptyState icon={History} title="Nenhuma operação encontrada" description="Sem registros para os filtros selecionados" />;
+  return <div className="overflow-x-auto"><table className="w-full min-w-[650px] text-sm"><thead className="border-b text-left text-xs text-muted-foreground"><tr>{["Data", "Operação", "Contas", "Estado", "Valor", ""].map((s, i) => <th key={i} className="px-2 py-3">{s}</th>)}</tr></thead><tbody>{dados.operacoes.map((o) => <tr key={o.id} className="border-b"><td className="whitespace-nowrap px-2 py-3">{o.data_movimento.split("-").reverse().join("/")}</td><td className="max-w-64 px-2 py-3"><p>{TIPOS[o.tipo]}</p><p className="break-words text-xs text-muted-foreground">{o.descricao}</p></td><td className="px-2">{[o.conta_origem_id, o.conta_destino_id].filter(Boolean).map((id) => nomeConta(id)).join(" → ")}</td><td className="px-2">{o.estornada ? "Estornada" : "Confirmada"}</td><td className="whitespace-nowrap px-2 text-right font-mono">{dinheiro(o.valor)}</td><td><Button variant="ghost" size="icon" aria-label={`Detalhes ${o.descricao}`} onClick={() => onDetalhe(o)}><History className="size-4" /></Button></td></tr>)}</tbody></table></div>;
+}
