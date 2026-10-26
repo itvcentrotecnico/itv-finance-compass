@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { executarSeguro, chavePendente, lerPendente, type RecuperacaoAPI, type TravaEnvio } from "./tesouraria-recuperacao";
-import { resultadoErro, type Pedido, type HistoricoOperacoes } from "./tesouraria";
+import { resultadoErro, type Pedido } from "./tesouraria";
 
 const usuario = "usuario-local";
 const p: Pedido = { tipo: "entrada", chave: "00000000-0000-4000-8000-000000000001", data: "2026-10-26", descricao: "Teste somente local", valor: "0.30", destino: "conta", plano: "plano" };
@@ -9,7 +9,7 @@ const api = (): RecuperacaoAPI => ({ consultar: vi.fn().mockResolvedValue(null),
 beforeEach(() => localStorage.clear());
 describe("recuperação de operações sem acesso ao HML", () => {
   it("persiste identificação original antes de enviar", async () => {
-    const a = api(); a.enviar = vi.fn(async (pedido) => { expect(lerPendente(localStorage, usuario)).toEqual(p); expect(pedido.chave).toBe(p.chave); return { estado: "confirmada", id: "op" }; });
+    const a = api(); a.enviar = vi.fn(async (pedido: Pedido) => { expect(lerPendente(localStorage, usuario)).toEqual(p); expect(pedido.chave).toBe(p.chave); return { estado: "confirmada" as const, id: "op" }; });
     expect((await executarSeguro(localStorage, usuario, a, trava, p)).estado).toBe("confirmada");
     expect(lerPendente(localStorage, usuario)).toBeNull();
   });
@@ -33,7 +33,7 @@ describe("recuperação de operações sem acesso ao HML", () => {
     const pedido = { ...p, tipo }; localStorage.setItem(chavePendente(usuario), JSON.stringify(pedido)); const a = api();
     await executarSeguro(localStorage, usuario, a, trava, undefined, true);
     expect(a.consultar).toHaveBeenCalledWith(p.chave); expect(a.enviar).toHaveBeenCalledExactlyOnceWith(pedido);
-    expect(vi.mocked(a.consultar).mock.invocationCallOrder[0]).toBeLessThan(vi.mocked(a.enviar).mock.invocationCallOrder[0]);
+    expect(vi.mocked(a.consultar).mock.invocationCallOrder[0] ?? Infinity).toBeLessThan(vi.mocked(a.enviar).mock.invocationCallOrder[0] ?? 0);
   });
   it("impede outra chave enquanto existe resultado incerto", async () => {
     localStorage.setItem(chavePendente(usuario), JSON.stringify(p)); const a = api();

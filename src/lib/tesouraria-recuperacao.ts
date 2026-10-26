@@ -5,7 +5,7 @@ const pedido = z.object({ tipo: z.enum(["abertura", "entrada", "saida", "transfe
 export const chavePendente = (usuario: string) => `itv:ayjppexbzpgdkzbehvzw:tesouraria:v1:${usuario}`;
 export function lerPendente(storage: Pick<Storage, "getItem">, usuario: string): Pedido | null {
   const raw = storage.getItem(chavePendente(usuario));
-  return raw === null ? null : pedido.parse(JSON.parse(raw));
+  return raw === null ? null : pedido.parse(JSON.parse(raw)) as Pedido;
 }
 export interface RecuperacaoAPI { consultar: (chave: string) => Promise<{ id: string } | null>; enviar: (p: Pedido) => Promise<ResultadoEnvio> }
 export type TravaEnvio = (acao: () => Promise<ResultadoEnvio>) => Promise<ResultadoEnvio>;
