@@ -112,7 +112,7 @@ RESET ROLE; SET ROLE anon;
 SELECT ok('36 anônimo sem acesso', public.falha($$SELECT count(*) FROM financeiro_hml.tesouraria_conferencias$$,'42501')='OK');
 RESET ROLE;
 -- 13. Auditoria
-SELECT ok('37 auditoria registra responsável, data e alteração', (SELECT count(*) FROM financeiro_hml.auditoria WHERE tabela='tesouraria_conferencias' AND usuario_id IS NOT NULL AND criado_em IS NOT NULL)>=10 AND EXISTS(SELECT 1 FROM financeiro_hml.auditoria WHERE tabela='contas_preparadas' AND acao='alterar'));
+SELECT ok('37 auditoria registra responsável, data e alteração', (SELECT count(*) FROM financeiro_hml.auditoria WHERE tabela='tesouraria_conferencias' AND usuario_id IS NOT NULL AND ocorrido_em IS NOT NULL)>=10 AND EXISTS(SELECT 1 FROM financeiro_hml.auditoria WHERE tabela='contas_preparadas' AND acao='alterar'));
 SELECT ok('38 entradas preservadas na origem', (SELECT count(*)=0 FROM financeiro_hml.tesouraria_conferencias WHERE criado_por IS NULL));
 SELECT n, teste, ok, detalhe FROM public.resultado ORDER BY n;
 SELECT count(*) FILTER (WHERE ok) AS aprovados, count(*) AS total FROM public.resultado;
