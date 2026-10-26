@@ -97,7 +97,7 @@ export function IntegracaoPanel() {
       </div>
 
       <Panel title="Itens sincronizados" subtitle="Registros recebidos do GESTÃO ITV" className="lg:col-span-2">
-        {e && (e.totais.alterado || e.totais.possivel_duplicidade) ? (
+        {e && (e.totais["alterado"] || e.totais["possivel_duplicidade"]) ? (
           <p role="alert" className="mb-4 flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
             <TriangleAlert className="size-4 shrink-0" />
             Há itens divergentes ou com possível duplicidade aguardando revisão antes de qualquer lançamento.
