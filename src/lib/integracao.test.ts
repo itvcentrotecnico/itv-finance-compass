@@ -55,11 +55,11 @@ describe("montarItens", () => {
   it("pagamento simples vira item de pagamento", () => {
     const itens = montarItens(fonte({ lancamentos: [lanc], pagamentos: [{ id: "P1", lancamento_id: "L1", forma_pagamento_id: "f-pix", valor: 150, parcelas: 1, valor_liquido: null }] }));
     expect(itens).toHaveLength(1);
-    expect(itens[0].tipo).toBe("pagamento");
-    expect(itens[0].referencia).toBe("gestao_itv:caixa_pagamentos:P1");
-    expect(itens[0].resumo.valor_bruto).toBe("150.00");
-    expect(itens[0].resumo.forma).toBe("pix");
-    expect(itens[0].resumo.descricao).toBe("OS 100 · CLIENTE A");
+    expect(itens[0]!.tipo).toBe("pagamento");
+    expect(itens[0]!.referencia).toBe("gestao_itv:caixa_pagamentos:P1");
+    expect(itens[0]!.resumo.valor_bruto).toBe("150.00");
+    expect(itens[0]!.resumo.forma).toBe("pix");
+    expect(itens[0]!.resumo.descricao).toBe("OS 100 · CLIENTE A");
   });
 
   it("pagamento misto gera um item por pagamento, com referências distintas", () => {
@@ -72,8 +72,8 @@ describe("montarItens", () => {
     }));
     expect(itens).toHaveLength(2);
     expect(new Set(itens.map((i) => i.referencia)).size).toBe(2);
-    expect(itens[1].resumo.forma).toBe("parcelado");
-    expect(itens[1].resumo.valor_liquido).toBe("291.00");
+    expect(itens[1]!.resumo.forma).toBe("parcelado");
+    expect(itens[1]!.resumo.valor_liquido).toBe("291.00");
   });
 
   it("pagamento de lançamento estornado ou cancelado é ignorado", () => {
@@ -86,15 +86,15 @@ describe("montarItens", () => {
 
   it("valor líquido inválido vira nulo (fica para conferência)", () => {
     const itens = montarItens(fonte({ lancamentos: [lanc], pagamentos: [{ id: "P4", lancamento_id: "L1", forma_pagamento_id: "f-cred", valor: 100, parcelas: 1, valor_liquido: 101 }] }));
-    expect(itens[0].resumo.valor_liquido).toBeNull();
+    expect(itens[0]!.resumo.valor_liquido).toBeNull();
   });
 
   it("recebimento de título usa a data do recebimento", () => {
     const itens = montarItens(fonte({ recebimentos: [{ id: "R1", conta_receber_id: "T1", data_recebimento: "2026-09-10", valor: 500, forma_pagamento_id: "f-bol", referencia: "NF 55", estorno_de_id: null }] }));
     expect(itens).toHaveLength(1);
-    expect(itens[0].tipo).toBe("recebimento_titulo");
-    expect(itens[0].resumo.data).toBe("2026-09-10");
-    expect(itens[0].resumo.forma).toBe("boleto");
+    expect(itens[0]!.tipo).toBe("recebimento_titulo");
+    expect(itens[0]!.resumo.data).toBe("2026-09-10");
+    expect(itens[0]!.resumo.forma).toBe("boleto");
   });
 
   it("recebimento de estorno é ignorado", () => {
@@ -105,8 +105,8 @@ describe("montarItens", () => {
   it("título em aberto é informativo e nunca receita", () => {
     const itens = montarItens(fonte({ titulosAbertos: [{ id: "T2", os: "103", cliente: "EMPRESA D", valor_original: 700, saldo: 700, vencimento: "2026-10-01" }] }));
     expect(itens).toHaveLength(1);
-    expect(itens[0].tipo).toBe("titulo_aberto");
-    expect(itens[0].resumo.forma).toBe("indefinida");
+    expect(itens[0]!.tipo).toBe("titulo_aberto");
+    expect(itens[0]!.resumo.forma).toBe("indefinida");
   });
 
   it("título sem saldo não entra", () => {
