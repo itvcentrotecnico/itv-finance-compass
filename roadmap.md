@@ -41,3 +41,5 @@ Não conectar o GESTÃO ITV, não publicar em produção e não adicionar dados 
 
 Testes de convites e demais perfis ficam para homologação final; não bloqueiam o planejamento e desenvolvimento autorizados da M3.
 - [x] Execução final 26/10 23:07 UTC: estado verificado (6 migrações, M3.3 ativa, 3 contas oficiais preparadas pendentes de abertura, 0 conferências/movimentos); 59/59 testes locais; lote set/out revalidado (474, totais e referências íntegros); importação bloqueada até abertura validada das contas oficiais e sessão autenticada; GESTÃO ITV sem vínculo.
+- [x] Integração GESTÃO ITV → HML: diagnóstico read-only concluído 26/10 (snapshot 42892eab, Supabase lyfgkhryrhytggexvjvn — banco distinto); relatório docs/integracao/RELATORIO_DIAGNOSTICO_INTEGRACAO.md. Sem tabela central de OS nem vendas; fontes: caixa_lancamentos, caixa_pagamentos, contas_receber(+_recebimentos); os é texto não único; âncora HML: referencia_origem gestao_itv:<tabela>:<uuid>.
+- [ ] Integração: aguarda credencial de leitura dedicada no GESTÃO ITV (configuração do responsável) e autorização para implementar leitura/importação no HML.
