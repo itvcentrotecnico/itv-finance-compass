@@ -5,7 +5,7 @@ INSERT INTO auth.users VALUES ('a0000000-0000-4000-8000-000000000001'),('a000000
 INSERT INTO financeiro_hml.perfis(usuario_id,papel) VALUES ('a0000000-0000-4000-8000-000000000001','admin_geral'),('a0000000-0000-4000-8000-000000000002','analista_financeiro'),('a0000000-0000-4000-8000-000000000003','consulta_gerencial');
 INSERT INTO financeiro_hml.plano_contas(id,codigo,descricao,natureza) VALUES ('b0000000-0000-4000-8000-000000000001','R1','RECEITA LOCAL','receita'),('b0000000-0000-4000-8000-000000000002','D1','DESPESA LOCAL','despesa');
 CREATE TABLE public.resultado(n serial, teste text, ok boolean, detalhe text);
-GRANT ALL ON public.resultado, public.resultado_n_seq TO authenticated;
+GRANT ALL ON public.resultado, public.resultado_n_seq TO authenticated, anon;
 CREATE FUNCTION public.como(u int) RETURNS void LANGUAGE sql AS $$ SELECT set_config('request.jwt.claim.sub','a0000000-0000-4000-8000-00000000000'||u,false) $$;
 CREATE FUNCTION public.falha(q text, padrao text) RETURNS text LANGUAGE plpgsql AS $$
 BEGIN EXECUTE q; RETURN 'SEM ERRO'; EXCEPTION WHEN OTHERS THEN IF SQLERRM ~ padrao OR SQLSTATE ~ padrao THEN RETURN 'OK'; END IF; RETURN SQLSTATE||' '||SQLERRM; END $$;
