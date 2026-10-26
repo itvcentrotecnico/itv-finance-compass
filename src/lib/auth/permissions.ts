@@ -59,6 +59,7 @@ export function can(role: Role, module: ModuleKey, action: Action): boolean {
     case "admin_geral":
       return true;
     case "admin_financeiro":
+      if (module === "integracoes") return action === "view" || action === "create"; // sincronização manual autorizada
       if (ADMIN_ONLY.includes(module)) return action === "view" && module !== "usuarios";
       return true;
     case "analista_financeiro":
