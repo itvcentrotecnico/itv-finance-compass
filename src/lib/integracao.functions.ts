@@ -72,8 +72,8 @@ export const carregarItensIntegracao = createServerFn({ method: "POST" }).middle
 
 export const sincronizarGestaoItv = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).handler(async ({ context }): Promise<ResultadoSincronizacao> => {
   const db = (context.supabase as Db).schema("financeiro_hml");
-  const usuario = process.env.GESTAO_ITV_USUARIO;
-  const senha = process.env.GESTAO_ITV_SENHA;
+  const usuario = process.env["GESTAO_ITV_USUARIO"];
+  const senha = process.env["GESTAO_ITV_SENHA"];
   if (!usuario || !senha) return { estado: "desabilitada", motivo: "Credencial de leitura ainda não configurada. A integração permanece desabilitada." };
 
   // Permissão decidida pelo banco (admin_geral/admin_financeiro).
@@ -106,7 +106,7 @@ export const sincronizarGestaoItv = createServerFn({ method: "POST" }).middlewar
     for (let desde = 0; ; desde += 1000) {
       const { data, error } = await origem.from(tabela).select(colunas).order(ordenar).range(desde, desde + 999);
       if (error) throw new Error(tabela);
-      linhas.push(...(data ?? []));
+      linhas.push(...((data ?? []) as Record<string, unknown>[]));
       if (!data || data.length < 1000) return linhas;
     }
   };
