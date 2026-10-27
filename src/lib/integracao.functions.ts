@@ -91,7 +91,10 @@ function janela(): { inicio: string; fim: string } {
   return { inicio: `${hoje.slice(0, 4)}-01-01`, fim: hoje };
 }
 
-export const sincronizarGestaoItv = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).handler(async ({ context }): Promise<ResultadoSincronizacao> => {
+const dia = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+export const sincronizarGestaoItv = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+  .inputValidator((v: unknown) => z.object({ dia: dia.optional() }).parse(v ?? {}))
+  .handler(async ({ data, context }): Promise<ResultadoSincronizacao> => {
   const db = (context.supabase as Db).schema("financeiro_hml");
   const token = process.env["GESTAO_ITV_READ_TOKEN"];
   const base = (process.env["GESTAO_ITV_URL"] || ORIGEM_URL_PADRAO).replace(/\/$/, "");
@@ -106,7 +109,8 @@ export const sincronizarGestaoItv = createServerFn({ method: "POST" }).middlewar
     return { estado: "falha", etapa };
   };
 
-  const { inicio, fim } = janela();
+  // Sincronização controlada: um único dia, quando informado.
+  const { inicio, fim } = data.dia ? { inicio: data.dia, fim: data.dia } : janela();
   let fonte: FonteGestao;
   try {
     const [formas, lancamentos, pagamentos, recebimentos, titulos] = await Promise.all([
@@ -123,7 +127,7 @@ export const sincronizarGestaoItv = createServerFn({ method: "POST" }).middlewar
       pagamentos: pagamentos as FonteGestao["pagamentos"],
       recebimentos: recebimentos.map((r) => ({ ...r, referencia: null })) as FonteGestao["recebimentos"],
       // Títulos em aberto: informativos; exigem identificador e saldo positivo.
-      titulosAbertos: titulos.filter((t) => t.id && Number(t.saldo) > 0).map((t) => ({ ...t, os: null, cliente: null })) as FonteGestao["titulosAbertos"],
+      titulosAbertos: titulos.filter((t) => t["id"] && Number(t["saldo"]) > 0).map((t) => ({ ...t, os: null, cliente: null })) as FonteGestao["titulosAbertos"],
     };
   } catch (e) {
     const msg = e instanceof Error ? e.message : "";

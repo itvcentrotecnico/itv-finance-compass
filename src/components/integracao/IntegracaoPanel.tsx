@@ -33,13 +33,14 @@ export function IntegracaoPanel() {
   const { role } = useRouteContext({ from: "/_authenticated" });
   const qc = useQueryClient();
   const [pagina, setPagina] = useState(0);
+  const [dia, setDia] = useState("");
   const sincronizar = useServerFn(sincronizarGestaoItv);
 
   const estado = useQuery({ queryKey: ["integracao", "estado"], queryFn: () => carregarEstadoIntegracao() });
   const itens = useQuery({ queryKey: ["integracao", "itens", pagina], queryFn: () => carregarItensIntegracao({ data: { pagina } }) });
 
   const sync = useMutation({
-    mutationFn: () => sincronizar(),
+    mutationFn: () => sincronizar({ data: dia ? { dia } : {} }),
     onSuccess: (r) => {
       qc.invalidateQueries({ queryKey: ["integracao"] });
       if (r.estado === "concluida") toast.success(`Sincronização concluída: ${r.novos} novo(s), ${r.enviados_conferencia} enviado(s) à conferência.`);
@@ -70,10 +71,14 @@ export function IntegracaoPanel() {
               : "A identidade de leitura ainda não foi configurada no GESTÃO ITV. A integração permanece desabilitada até a configuração."}
           </p>
           {podeSincronizar && (
-            <Button className="mt-4" size="sm" disabled={!e?.configurada || sync.isPending} onClick={() => sync.mutate()}>
-              <RefreshCw className={sync.isPending ? "size-4 animate-spin" : "size-4"} />
-              {sync.isPending ? "Sincronizando…" : "Sincronizar agora"}
-            </Button>
+            <div className="mt-4 flex flex-col gap-2">
+              <label className="text-xs text-muted-foreground" htmlFor="dia-sync">Dia a sincronizar (vazio = exercício até hoje)</label>
+              <input id="dia-sync" type="date" value={dia} onChange={(ev) => setDia(ev.target.value)} className="h-9 rounded-md border bg-background px-2 text-sm" />
+              <Button size="sm" disabled={!e?.configurada || sync.isPending} onClick={() => sync.mutate()}>
+                <RefreshCw className={sync.isPending ? "size-4 animate-spin" : "size-4"} />
+                {sync.isPending ? "Sincronizando…" : dia ? "Sincronizar este dia" : "Sincronizar agora"}
+              </Button>
+            </div>
           )}
         </Panel>
 
