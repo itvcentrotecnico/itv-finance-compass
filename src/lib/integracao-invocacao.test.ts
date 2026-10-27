@@ -98,3 +98,17 @@ describe("invocação padrão do HTTP sem rede real", () => {
     await expect(lerFonteHttp(base, credencial, inicio, fim, { registrar: () => {} })).rejects.toMatchObject({ etapa: "timeout_origem" });
   });
 });
+describe("redirecionamento da origem", () => {
+  it("não segue 3xx e falha como http_origem com o código recebido", async () => {
+    const logs: DiagnosticoLeitura[] = [];
+    let chamadas = 0;
+    vi.stubGlobal("fetch", (_i: unknown, init?: RequestInit) => {
+      if (init?.redirect === "error") throw new TypeError("Invalid redirect value");
+      chamadas++;
+      return Promise.resolve(new Response(null, { status: 302, headers: { Location: "https://outro.example/" } }));
+    });
+    await expect(lerFonteHttp(base, credencial, inicio, fim, { registrar: e => logs.push(e) })).rejects.toBeTruthy();
+    expect(logs[0]).toMatchObject({ status_http: 302 });
+    expect(chamadas).toBeLessThanOrEqual(5);
+  });
+});
