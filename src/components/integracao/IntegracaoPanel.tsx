@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { can } from "@/lib/auth/permissions";
 import { carregarEstadoIntegracao, carregarItensIntegracao, sincronizarGestaoItv } from "@/lib/integracao.functions";
+import { proximaExecucao } from "@/lib/agendamento";
 
 const SITUACOES: Record<string, { rotulo: string; variante: "default" | "secondary" | "destructive" | "outline" }> = {
   novo: { rotulo: "Novo", variante: "secondary" },
@@ -67,7 +68,7 @@ export function IntegracaoPanel() {
           </div>
           <p className="mt-3 text-xs text-muted-foreground">
             {e?.configurada
-              ? "A identidade de leitura está configurada. A sincronização é manual e não gera movimentações financeiras."
+              ? "A identidade de leitura está configurada. A sincronização não gera movimentações financeiras."
               : "A identidade de leitura ainda não foi configurada no GESTÃO ITV. A integração permanece desabilitada até a configuração."}
           </p>
           {podeSincronizar && (
@@ -98,6 +99,38 @@ export function IntegracaoPanel() {
           ) : (
             <EmptyState compact icon={ArrowLeftRight} title="Sem histórico" description="A primeira sincronização ainda não foi executada." />
           )}
+        </Panel>
+
+        <Panel title="Sincronização automática" subtitle="Todos os dias às 18h30 (horário de Manaus) · últimos 7 dias">
+          {(() => {
+            const a = e?.automatica;
+            const ua = a?.ultima ?? null;
+            return (
+              <dl className="grid grid-cols-2 gap-3 text-sm">
+                <div className="col-span-2">
+                  <dt className="text-xs text-muted-foreground">Situação</dt>
+                  <dd className="mt-1">
+                    {!a?.preparada ? (
+                      <Badge variant="secondary" className="gap-1.5"><CircleOff className="size-3.5" /> Aguardando ativação</Badge>
+                    ) : ua ? (
+                      <Badge className="gap-1.5"><CircleCheck className="size-3.5" /> Ativa</Badge>
+                    ) : (
+                      <Badge variant="outline" className="gap-1.5"><TriangleAlert className="size-3.5" /> Preparada — sem execução ainda</Badge>
+                    )}
+                  </dd>
+                </div>
+                <div><dt className="text-xs text-muted-foreground">Horário programado</dt><dd className="font-medium">18:30 · Manaus</dd></div>
+                <div><dt className="text-xs text-muted-foreground">Próxima execução</dt><dd className="font-medium">{a?.preparada ? dataHora(proximaExecucao(new Date()).toISOString()) : "—"}</dd></div>
+                <div className="col-span-2">
+                  <dt className="text-xs text-muted-foreground">Última execução automática</dt>
+                  <dd className="font-medium">
+                    {ua ? `${dataHora(ua.iniciado_em)} · ${ua.status === "concluida" ? `Concluída (${ua.consultados} consultados, ${ua.novos} novos)` : ua.status === "falha" ? `Falha (${ua.erros?.map((x) => x.etapa).join(", ") ?? "—"})` : "Em andamento"}` : "Nenhuma"}
+                  </dd>
+                </div>
+                <p className="col-span-2 text-xs text-muted-foreground">Envia registros apenas para a conferência; não gera lançamentos nem altera saldos. Em caso de falha, nova tentativa às 19h00 e 19h30.</p>
+              </dl>
+            );
+          })()}
         </Panel>
       </div>
 
