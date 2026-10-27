@@ -6,7 +6,7 @@ import { janelaAutomatica } from "./agendamento";
 export const VERSAO_DIAGNOSTICO = "m5-diagnostico-isolado-v1";
 export const recursoDiagnostico = z.enum(["formas_pagamento", "recebimentos", "pagamentos", "recebimentos_titulos", "titulos"]);
 export type RecursoDiagnostico = z.infer<typeof recursoDiagnostico>;
-type Permissao = { rpc: (nome: string, args: { p: string[] }) => Promise<{ data: unknown; error: unknown }> };
+type Permissao = { rpc: (nome: string, args: { p: string[] }) => PromiseLike<{ data: unknown; error: unknown }> };
 
 /** Verifica a permissão como o usuário; única leitura de banco é autorização existente. */
 export async function autorizarDiagnostico(db: Permissao): Promise<boolean> {
