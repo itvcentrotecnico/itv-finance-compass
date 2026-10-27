@@ -89,16 +89,14 @@ GRANT EXECUTE ON FUNCTION financeiro_hml.diagnostico_reservar(uuid,text) TO auth
 -- pelo browser enquanto a leitura ainda está em andamento.
 CREATE FUNCTION financeiro_hml.diagnostico_finalizar(p_tentativa uuid,p_usuario uuid,p_http integer,p_duracao integer,p_categoria text,p_tipo text) RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,financeiro_hml,pg_temp AS $$
-DECLARE t financeiro_hml.diagnostico_tentativas;
+DECLARE t financeiro_hml.diagnostico_tentativas; compativel boolean;
 BEGIN
   IF current_setting('request.jwt.claim.role',true) IS DISTINCT FROM 'service_role'
      AND coalesce(current_setting('request.jwt.claims',true),'{}')::jsonb->>'role' IS DISTINCT FROM 'service_role' THEN
     RAISE EXCEPTION USING ERRCODE='42501',MESSAGE='DIAG_SERVIDOR_OBRIGATORIO';
   END IF;
   -- Validação integral antes de qualquer alteração; exceção desfaz tudo e mantém a reserva.
-  IF p_categoria IS NULL OR btrim(p_categoria) = '' OR p_duracao IS NULL OR p_duracao < 0 OR p_duracao > 600000
-     OR (p_tipo IS NOT NULL AND p_tipo <> ALL(ARRAY['TypeError','Error','AbortError','TimeoutError','DOMException','nao_identificado','codigo_dns','codigo_tls','codigo_conexao']))
-     OR NOT CASE p_categoria
+  compativel := coalesce(CASE p_categoria
        WHEN 'leitura_valida' THEN p_http BETWEEN 200 AND 299 AND p_tipo IS NULL
        WHEN 'autenticacao_origem' THEN p_http = 401 AND p_tipo IS NULL
        WHEN 'autorizacao_origem' THEN p_http = 403 AND p_tipo IS NULL
@@ -113,7 +111,10 @@ BEGIN
        WHEN 'configuracao_origem' THEN p_http IS NULL AND p_tipo IS NULL
        WHEN 'leitura_nao_autorizada' THEN p_http IS NULL AND p_tipo IS NULL
        WHEN 'falha_interna' THEN p_http IS NULL AND p_tipo IS NULL
-       ELSE false END IS TRUE THEN
+       ELSE false END, false);
+  IF p_categoria IS NULL OR btrim(p_categoria) = '' OR p_duracao IS NULL OR p_duracao < 0 OR p_duracao > 600000
+     OR (p_tipo IS NOT NULL AND p_tipo <> ALL(ARRAY['TypeError','Error','AbortError','TimeoutError','DOMException','nao_identificado','codigo_dns','codigo_tls','codigo_conexao']))
+     OR NOT compativel THEN
     RAISE EXCEPTION USING ERRCODE='22023', MESSAGE='DIAG_CONCLUSAO_INVALIDA';
   END IF;
   IF NOT pg_try_advisory_xact_lock(527041,5) THEN RETURN jsonb_build_object('registrada',false); END IF;
