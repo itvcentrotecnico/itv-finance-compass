@@ -12,9 +12,9 @@ it("não chama diagnóstico sem sessão existente", async () => {
 });
 it("usa sessão existente somente em GET sem recurso e não repete", async () => {
   mocks.sessao.mockResolvedValue({ data: { session: { access_token: "apenas-simulado" } }, error: null });
-  const fetch = vi.fn().mockResolvedValue(Response.json({ versao: "m5-diagnostico-acesso-v2", leitura_preparada: false, limite_gets: 5 }));
+  const fetch = vi.fn().mockResolvedValue(Response.json({ versao: "m5-diagnostico-controle-v3", leitura_preparada: false, limite_gets: 5 }));
   vi.stubGlobal("fetch", fetch);
-  expect(await validarAcessoDiagnostico()).toEqual({ estado: "administrador_confirmado", status_http: 200, versao: "m5-diagnostico-acesso-v2", leitura_preparada: false });
+  expect(await validarAcessoDiagnostico()).toEqual({ estado: "administrador_confirmado", status_http: 200, versao: "m5-diagnostico-controle-v3", leitura_preparada: false });
   expect(fetch).toHaveBeenCalledTimes(1);
   expect(fetch).toHaveBeenCalledWith("/api/public/integracao/diagnostico", expect.objectContaining({ method: "GET", headers: { Authorization: "Bearer apenas-simulado" } }));
 });

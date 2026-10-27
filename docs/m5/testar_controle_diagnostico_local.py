@@ -29,11 +29,36 @@ sql("INSERT INTO financeiro_hml.diagnostico_autorizacoes(id,administrador_id,enc
 import json
 def reserve(resource): return json.loads(sql(actor()+call(resource)))
 def finish(t, category='leitura_valida'):
-    return sql(actor('service_role')+f"SELECT financeiro_hml.diagnostico_finalizar('{t}','00000000-0000-4000-8000-000000000001',200,12,'{category}',NULL);")
+    http,tipo=('200','NULL') if category=='leitura_valida' else ('NULL',"'TypeError'")
+    return sql(actor('service_role')+f"SELECT financeiro_hml.diagnostico_finalizar('{t}','00000000-0000-4000-8000-000000000001',{http},12,'{category}',{tipo});")
+def finish_raw(t, http, dur, cat, tipo):
+    return subprocess.run(CMD+['-c',actor('service_role')+f"SELECT financeiro_hml.diagnostico_finalizar('{t}','00000000-0000-4000-8000-000000000001',{http},{dur},{cat},{tipo});"],capture_output=True,text=True)
+def state(t): return sql(f"SELECT estado||'|'||coalesce(categoria,'-')||'|'||coalesce(duracao_ms::text,'-') FROM financeiro_hml.diagnostico_tentativas WHERE id='{t}';")
 resources=['formas_pagamento','recebimentos','pagamentos','recebimentos_titulos','titulos']
 r=reserve(resources[0]);check('primeiro recurso reservado',r['ordinal']==1)
+invalidos=[('categoria ausente','200','12','NULL','NULL'),('categoria vazia','200','12',"''",'NULL'),('categoria inválida','200','12',"'xyz'",'NULL'),
+ ('categoria de bloqueio','NULL','12',"'limite'",'NULL'),('duração ausente','200','NULL',"'leitura_valida'",'NULL'),('duração negativa','200','-1',"'leitura_valida'",'NULL'),
+ ('duração não finita',"200","'NaN'::float::int","'leitura_valida'",'NULL'),('duração excessiva','200','600001',"'leitura_valida'",'NULL'),
+ ('HTTP incompatível com sucesso','500','12',"'leitura_valida'",'NULL'),('sucesso sem HTTP','NULL','12',"'leitura_valida'",'NULL'),
+ ('HTTP 401 incompatível','403','12',"'autenticacao_origem'",'NULL'),('rede com HTTP','200','12',"'rede_origem'","'TypeError'"),
+ ('rede sem tipo','NULL','12',"'rede_origem'",'NULL'),('tipo livre','NULL','12',"'rede_origem'","'segredo'")]
+for nome,h,d,c,tp in invalidos:
+    pr=finish_raw(r['tentativa_id'],h,d,c,tp)
+    check('rejeita '+nome,pr.returncode!=0 and state(r['tentativa_id'])=='reservada|-|-')
+check('conclusão inválida não libera nova leitura',reserve(resources[1])['categoria']=='concorrencia')
+# Falha durante a conclusão: UPDATE válido seguido de erro na mesma transação é desfeito.
+pr=subprocess.run(CMD+['-c',actor('service_role')+f"BEGIN; SELECT financeiro_hml.diagnostico_finalizar('{r['tentativa_id']}','00000000-0000-4000-8000-000000000001',NULL,12,'rede_origem','TypeError'); SELECT 1/0; COMMIT;"],capture_output=True,text=True)
+check('falha durante conclusão desfeita integralmente',pr.returncode!=0 and state(r['tentativa_id'])=='reservada|-|-')
+pc=subprocess.Popen(CMD+['-c',"BEGIN; SELECT pg_advisory_xact_lock(527041,5); SELECT pg_sleep(2); COMMIT;"],stdout=subprocess.DEVNULL)
+import time
+for _ in range(40):
+    if sql("SELECT count(*) FROM pg_locks WHERE locktype='advisory' AND granted;")=='1': break
+    time.sleep(.05)
+check('conclusão concorrente recusada sem alterar',json.loads(finish(r['tentativa_id'],'rede_origem'))['registrada'] is False and state(r['tentativa_id'])=='reservada|-|-')
+pc.wait()
 check('concorrência após commit/entre conexões',reserve(resources[1])['categoria']=='concorrencia')
-finish(r['tentativa_id'],'rede_origem')
+check('conclusão válida registrada',json.loads(finish(r['tentativa_id'],'rede_origem'))['registrada'] is True)
+check('conclusão duplicada recusada',json.loads(finish(r['tentativa_id'],'leitura_valida'))['registrada'] is False and state(r['tentativa_id'])=='falha|rede_origem|12')
 check('falha consome e impede repetição',reserve(resources[0])['categoria']=='repeticao')
 for i,resource in enumerate(resources[1:],2):
     r=reserve(resource);check(f'recurso {i} permitido uma vez',r['ordinal']==i);finish(r['tentativa_id'])
@@ -66,5 +91,11 @@ check('reserva perdida sobrevive reinicialização e bloqueia concorrência',res
 proc=subprocess.run(CMD+['-c',actor('service_role')+f"SELECT financeiro_hml.diagnostico_finalizar('{r['tentativa_id']}','00000000-0000-4000-8000-000000000001',200,12,'mensagem-livre-proibida',NULL);"],capture_output=True,text=True)
 check('auditoria rejeita categoria livre sensível',proc.returncode!=0)
 check('reserva não liberada após resultado inválido',reserve(resources[0])['categoria']=='concorrencia')
+pr=finish_raw(r['tentativa_id'],'NULL','NULL',"'falha_interna'",'NULL')
+check('reserva após reinicialização rejeita conclusão incompleta',pr.returncode!=0 and state(r['tentativa_id'])=='reservada|-|-')
 finish(r['tentativa_id'],'rede_origem')
+check('reutilizar reserva consumida recusado',json.loads(finish(r['tentativa_id'],'rede_origem'))['registrada'] is False)
+check('recurso consumido não volta a ficar disponível',json.loads(sql(actor()+"SELECT financeiro_hml.diagnostico_reservar('00000000-0000-4000-8000-000000000011','pagamentos');"))['categoria']=='repeticao')
+check('administrador não grava diretamente',subprocess.run(CMD+['-c',actor()+"UPDATE financeiro_hml.diagnostico_tentativas SET estado='falha';"],capture_output=True).returncode!=0)
+check('saldos sentinela inalterados ao final',sql('SELECT saldo::text FROM financeiro_hml.financeiro_sentinela WHERE id=1;')=='0')
 print('Testes PostgreSQL isolados concluídos; nenhuma origem ou HML acessado.')
