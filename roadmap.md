@@ -5,7 +5,8 @@
 - [ ] Operação diária M5: bloqueada pela falha leitura_origem; diagnosticar antes de novo teste ou habilitação definitiva.
 - [x] Diagnóstico leitura M5 27/10 02:43 UTC: GET sequencial/simultâneo dos cinco recursos HTTP 200 e contrato atual válido; causa histórica perdida pelo catch genérico, não determinada. Relatório docs/m5/DIAGNOSTICO_LEITURA_M5.md. Nenhuma sincronização executada.
 - [x] Instrumentação segura da leitura M5 aprovada e implementada: leitor server-only compartilhado, diagnósticos sanitizados, validação JSON/paginação e prazos 20s/página e 120s/total; testes simulados, sem migração ou sincronização real.
-- [ ] Publicação e novo teste real M5: aguardam autorização separada do usuário; tarefa externa continua desabilitada.
+- [ ] Publicação do diagnóstico M5 autorizada 27/10 02:50 UTC: confirmar 39 testes, publicar e verificar exclusivamente conectividade/leitura e logs, sem sincronização ou escrita financeira.
+- [ ] Novo teste real M5: aguarda autorização separada do usuário; tarefa externa deve continuar desabilitada.
 
 - [x] Solicitação 26/10/2026 20:18 UTC: análise da fonte original jan–out entregue em Files (Excel e pacote de relatórios/evidências); 3.332 candidatos/revisões, 622 subtotais e 20 lados mensais conhecidos conferem, 1.145 fórmulas originais recalculadas, zero divergências ≥centavo. Comparação anterior: 424 candidatos novos / 48 auxiliares excluídos da base, evidências preservadas. Pendências financeiras: 35 valores indefinidos, 225 datas inferidas/24 em revisão, 8 negativos, 19 grupos repetidos, contas e classificação a validar; importação bloqueada, fonte SHA preservado, somente SELECT cadastral HML, sem alterações no aplicativo/banco/GESTÃO ITV.
 - [x] Solicitação 26/10/2026 22:15 UTC: filtro do exercício 2026 aplicado em ITV_BASE_VALIDACAO_2026.xlsx (3.002 elegíveis, 225 de outros anos, 105 pendentes); importação bloqueada, sem alterações em sistemas.
