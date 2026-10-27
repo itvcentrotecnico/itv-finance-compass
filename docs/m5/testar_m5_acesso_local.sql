@@ -8,6 +8,9 @@ CREATE TEMP TABLE baseline AS SELECT
   (SELECT md5(coalesce(jsonb_agg(to_jsonb(c) ORDER BY c.id)::text,'')) FROM financeiro_hml.contas_financeiras c) AS contas;
 -- Limpa somente o estado de integração do banco descartável; tudo será revertido.
 UPDATE financeiro_hml.integracao_sincronizacoes SET status='falha', iniciado_em=iniciado_em-interval '10 days';
+-- Reproduz a ACL real do HML (apenas authenticated tinha USAGE).
+REVOKE USAGE ON SCHEMA financeiro_hml FROM PUBLIC, anon;
+GRANT USAGE ON SCHEMA financeiro_hml TO authenticated;
 REVOKE USAGE ON SCHEMA financeiro_hml FROM service_role;
 SET ROLE service_role;
 SELECT public.como_servidor();
