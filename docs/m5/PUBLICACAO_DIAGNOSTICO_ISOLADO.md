@@ -1,0 +1,18 @@
+# M5 — diagnóstico isolado preparado e publicado
+
+Autorização 27/10/2026 14:05 UTC. Preparado transporte comum buscarPaginaM5 usado pelo leitor financeiro e pelo diagnóstico, preservando GET/Bearer/redirect error/signal/contexto. Nenhuma retentativa. POST automático inalterado. Diagnóstico recebe um recurso por requisição, primeira página de 500, janela automática de sete dias; nunca normaliza itens, chama sincronização, cliente administrativo, grava banco ou faz paginação. Retorno exclusivamente identificador gerado, HTTP/null, duração, categoria, tipo seguro de exceção. Mensagens/causas/códigos arbitrários não retornam.
+
+Rota GET /api/public/integracao/diagnostico: valida sessão Supabase e tem_papel como o chamador para admin_geral/admin_financeiro. Única consulta HML feita pela rota é autorização existente, sem escrita. Sem recurso retorna versão; recurso inválido/parâmetros extras recusados. Leitura real bloqueada por padrão por M5_DIAGNOSTICO_LEITURA_AUTORIZADA: não configurada nesta etapa. Versão técnica também pode ser conferida pelo GET técnico existente com diagnostico=versao, sem acesso à origem ou consulta financeira; isso não autoriza execução diagnóstica nem substitui a verificação administrativa da rota.
+
+## Publicação comprovada
+Solicitada aproximadamente 14:08 UTC. Commit debde98aacace1d43566b1ad6bcd44ae3dcc8d9f. GET técnico publicado às 14:13:36 UTC (10:13:36 Manaus): HTTP 200, no-store, versao_diagnostico m5-diagnostico-isolado-v1. Cabeçalho identifica implantação 19af23fe-d867-4245-b392-ba6242e406dc. Rota diagnóstica publicada sem sessão retorna 401. Horário exato de conclusão da publicação não disponibilizado; build preview concluído 14:09:05 UTC não equivale a conclusão de deploy.
+
+86/86 testes simulados aprovados antes/depois da publicação: 70 regressões anteriores, dez testes diagnóstico e seis acesso. Verificam recusa sem sessão/sessão inválida/não admin, versão para admin, bloqueio sem autorização real para cinco recursos, chamada única simulada, tipo seguro e ausência de dados/credenciais. Os testes do leitor mantêm contexto e categorias anteriores. Compilação automática OK após ajuste PromiseLike do tipo RPC.
+
+Limite: sessão administrativa real não disponível no executor externo; acesso autenticado admin/não admin foi validado apenas por testes simulados. Não declarar fluxo administrativo publicado validado ponta a ponta. Tipos DNS/TLS não são distinguidos por esse transporte sem evidência de códigos expostos; rede_origem permanece genérico para causa desconhecida. A flag protege preparação, mas não é contador durável global de cinco chamadas; limite da futura sessão deverá ser cumprido por procedimento autorizado e executor único, ou controle adicional aprovado. Não ativar flag/publicar novos segredos nesta etapa.
+
+## Integridade em 14:13:42 UTC
+16 itens, 16 conferências; hashes idênticos ao baseline: itens 01b3de508a9f7f43ea0a52d1bbad02a0, conferências e3483b93e924a9be95ec5d65df4350bb. Zero movimentos/operações não abertura; aberturas 0.00 e nenhuma conta com abertura não zero; saldos R$ 0,00. Permanecem 12 execuções e 112 auditorias desde o teste já informado: nenhuma nova execução/auditoria pela preparação/consulta técnica.
+
+## Próxima autorização
+Não houve chamada real ao GESTÃO ITV ou habilitação de cron. Solicitar autorização específica para sessão de no máximo cinco GETs individuais, um por recurso, sem repetição; antes do primeiro GET exigir sessão administrativa válida, comprovar acesso e habilitar leitura apenas de modo autorizado. Se sessão não estiver disponível, permanecer bloqueado; não solicitar senha nem usar service_role para simular usuário. Não homologar M5 por esta publicação.
