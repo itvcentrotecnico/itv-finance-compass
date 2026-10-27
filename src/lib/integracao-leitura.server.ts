@@ -4,7 +4,7 @@ import type { FonteGestao } from "./integracao";
 
 const RECURSOS = ["formas_pagamento", "recebimentos", "pagamentos", "recebimentos_titulos", "titulos"] as const;
 type Recurso = (typeof RECURSOS)[number];
-type Categoria = "autenticacao_origem" | "autorizacao_origem" | "limite_origem" | "timeout_origem" | "rede_origem" | "resposta_invalida_origem" | "erro_interno_origem" | "http_origem" | "paginacao_origem" | "configuracao_origem";
+type Categoria = "autenticacao_origem" | "autorizacao_origem" | "limite_origem" | "timeout_origem" | "rede_origem" | "invocacao_origem" | "conexao_origem" | "resposta_invalida_origem" | "erro_interno_origem" | "http_origem" | "paginacao_origem" | "configuracao_origem";
 type Linha = Record<string, unknown> & { id: string };
 export interface DiagnosticoLeitura {
   evento: "integracao_leitura_falhou";
@@ -15,6 +15,18 @@ export interface DiagnosticoLeitura {
 }
 export class ErroLeitura extends Error {
   constructor(public readonly etapa: Categoria) { super(etapa); this.name = "ErroLeitura"; }
+}
+
+/** Classifica apenas códigos conhecidos; nunca copia mensagens ou causas para o log. */
+function classificarTransporte(erro: unknown, abortado: boolean): ErroLeitura {
+  if (erro instanceof ErroLeitura) return erro;
+  if (abortado || (erro instanceof Error && (erro.name === "AbortError" || erro.name === "TimeoutError"))) return new ErroLeitura("timeout_origem");
+  const e = erro && typeof erro === "object" ? erro as { code?: unknown; cause?: unknown } : {};
+  const causa = e.cause && typeof e.cause === "object" ? e.cause as { code?: unknown } : {};
+  const codigo = e.code ?? causa.code;
+  if (codigo === "ETIMEDOUT" || codigo === "UND_ERR_CONNECT_TIMEOUT" || codigo === "UND_ERR_HEADERS_TIMEOUT" || codigo === "UND_ERR_BODY_TIMEOUT") return new ErroLeitura("timeout_origem");
+  if (codigo === "ECONNREFUSED" || codigo === "ECONNRESET" || codigo === "EPIPE" || codigo === "UND_ERR_SOCKET") return new ErroLeitura("conexao_origem");
+  return new ErroLeitura("rede_origem");
 }
 
 const envelope = z.object({
@@ -34,7 +46,8 @@ export interface OpcoesLeitura {
 export async function lerFonteHttp(base: string, token: string, inicio: string, fim: string, opcoes: OpcoesLeitura = {}): Promise<FonteGestao> {
   const url = new URL(base);
   if (url.protocol !== "https:" || url.username || url.password || url.search || url.hash || !token) throw new ErroLeitura("configuracao_origem");
-  const buscar = opcoes.fetch ?? fetch;
+  // APIs nativas podem exigir o receptor global; não destacar a referência de fetch.
+  const buscar: typeof fetch = opcoes.fetch ?? ((input, init) => globalThis.fetch(input, init));
   const registrar = opcoes.registrar ?? ((evento) => console.error(JSON.stringify(evento)));
   const controller = new AbortController();
   const total = setTimeout(() => controller.abort(), opcoes.prazoTotalMs ?? 120_000);
@@ -55,9 +68,18 @@ export async function lerFonteHttp(base: string, token: string, inicio: string, 
         try {
           status = null;
           const q = new URLSearchParams({ recurso, inicio, fim, offset: String(offset), limite: "500" });
-          const r = await buscar(`${base.replace(/\/$/, "")}/api/public/integracao-financeiro?${q}`, {
-            method: "GET", headers: { Authorization: `Bearer ${token}` }, redirect: "error", signal: pagina.signal,
-          });
+          let pendente: Promise<Response>;
+          try {
+            pendente = buscar(`${base.replace(/\/$/, "")}/api/public/integracao-financeiro?${q}`, {
+              method: "GET", headers: { Authorization: `Bearer ${token}` }, redirect: "error", signal: pagina.signal,
+            });
+          } catch {
+            // Erro síncrono antes de obter a promessa, não uma causa de rede inferida.
+            throw new ErroLeitura("invocacao_origem");
+          }
+          let r: Response;
+          try { r = await pendente; } catch (erro) { throw classificarTransporte(erro, pagina.signal.aborted); }
+          if (!(r instanceof Response)) throw new ErroLeitura("resposta_invalida_origem");
           status = r.status;
           if (!r.ok) {
             const categoria = r.status === 401 ? "autenticacao_origem" : r.status === 403 ? "autorizacao_origem" : r.status === 429 ? "limite_origem" : r.status >= 500 ? "erro_interno_origem" : "http_origem";
@@ -85,7 +107,7 @@ export async function lerFonteHttp(base: string, token: string, inicio: string, 
         }
       }
     } catch (erro) {
-      const seguro = erro instanceof ErroLeitura ? erro : new ErroLeitura(controller.signal.aborted || (erro instanceof Error && (erro.name === "AbortError" || erro.name === "TimeoutError")) ? "timeout_origem" : "rede_origem");
+      const seguro = classificarTransporte(erro, controller.signal.aborted);
       if (!falhou) {
         falhou = true;
         controller.abort();
