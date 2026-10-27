@@ -1,4 +1,4 @@
--- PROPOSTA: NÃO APLICADA. Requer aprovação explícita da migração HML.
+-- APLICADA ao HML ayjppexbzpgdkzbehvzw em 27/10/2026 (versão com validação de conclusão).
 -- Sem INSERT de autorização: esta migração não autoriza leitura real.
 BEGIN;
 CREATE TABLE financeiro_hml.diagnostico_autorizacoes (
