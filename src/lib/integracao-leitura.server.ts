@@ -1,3 +1,4 @@
+import "@tanstack/react-start/server-only";
 import { z } from "zod";
 import type { FonteGestao } from "./integracao";
 
