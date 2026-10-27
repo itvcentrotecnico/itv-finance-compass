@@ -25,7 +25,7 @@ export function UsuariosPanel() {
   const [papel, setPapel] = useState<Role>("consulta_gerencial");
 
   const inviteMut = useMutation({
-    mutationFn: () => invite({ data: { email: email.trim(), papel, redirectTo: `${window.location.origin}/definir-senha` } }),
+    mutationFn: () => invite({ data: { email: email.trim(), papel, redirectTo: urlRetorno("/definir-senha", window.location.origin) } }),
     onSuccess: () => {
       toast.success("Convite enviado.");
       setEmail("");

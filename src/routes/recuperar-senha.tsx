@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AuthLayout, FormError } from "@/components/auth/AuthLayout";
+import { mensagemEnvio, urlRetorno } from "@/lib/auth/recuperacao";
 
 export const Route = createFileRoute("/recuperar-senha")({
   head: () => ({
@@ -33,11 +34,13 @@ function RecoverPage() {
     if (!/^\S+@\S+\.\S+$/.test(email.trim())) return setError("Informe um e-mail válido.");
     setError(null);
     setLoading(true);
-    // Resposta idêntica exista ou não o e-mail (não revela contas).
-    await supabase.auth.resetPasswordForEmail(email.trim(), {
-      redirectTo: `${window.location.origin}/redefinir-senha`,
+    // Resposta idêntica exista ou não o e-mail (não revela contas); só limite/conexão são mostrados.
+    const { error: err } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: urlRetorno("/redefinir-senha", window.location.origin),
     });
     setLoading(false);
+    const msg = mensagemEnvio(err);
+    if (msg) return setError(msg);
     setSent(true);
   }
 
@@ -47,7 +50,7 @@ function RecoverPage() {
         <div className="space-y-4">
           <p className="flex items-start gap-2 rounded-md border bg-muted px-3 py-3 text-sm">
             <MailCheck className="mt-0.5 size-4 shrink-0 text-brand" />
-            Se o e-mail estiver cadastrado, você receberá o link em instantes.
+            Se o e-mail estiver cadastrado, você receberá o link em instantes. Use somente o e-mail mais recente; o link vale uma única vez e expira em pouco tempo. Não peça vários links seguidos.
           </p>
           <Link to="/auth" className="text-sm font-medium text-brand hover:underline">Voltar para o login</Link>
         </div>
