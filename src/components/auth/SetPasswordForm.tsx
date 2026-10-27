@@ -1,17 +1,27 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
-import { Loader2 } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { CheckCircle2, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { FormError } from "./AuthLayout";
 import { MIN_PASSWORD, translateAuthError, validatePassword } from "@/lib/auth/session";
+import { lerLink, mensagemLinkInvalido } from "@/lib/auth/recuperacao";
 
-/** Define a senha usando a sessão temporária criada pelo link (convite ou recuperação). */
+type Estado =
+  | { s: "checking" }
+  | { s: "ready" }
+  | { s: "invalid"; motivo: "expirado" | "invalido" | "sem_link" }
+  | { s: "done" };
+
+/**
+ * Define a senha usando a sessão temporária criada pelo link (convite ou recuperação).
+ * Só libera o formulário quando o próprio link do e-mail foi validado pelo Supabase;
+ * abrir a página sem link (ou com sessão comum) não permite trocar a senha.
+ */
 export function SetPasswordForm({ submitLabel }: { submitLabel: string }) {
-  const navigate = useNavigate();
-  const [state, setState] = useState<"checking" | "ready" | "invalid">("checking");
+  const [estado, setEstado] = useState<Estado>({ s: "checking" });
   const [pw, setPw] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -19,21 +29,45 @@ export function SetPasswordForm({ submitLabel }: { submitLabel: string }) {
 
   useEffect(() => {
     let active = true;
-    const hash = typeof window !== "undefined" ? window.location.hash : "";
-    if (hash.includes("error")) {
-      setState("invalid");
+    const link = lerLink(window.location.search, window.location.hash);
+    const pronto = () => {
+      if (!active) return;
+      // Remove o token da barra de endereço depois de validado.
+      window.history.replaceState(null, "", window.location.pathname);
+      setEstado({ s: "ready" });
+    };
+    const invalido = (motivo: "expirado" | "invalido" | "sem_link") => active && setEstado({ s: "invalid", motivo });
+
+    if (link.tipo === "erro") {
+      invalido(link.motivo);
       return;
     }
-    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
-      if (active && session) setState("ready");
+    if (link.tipo === "nenhum") {
+      invalido("sem_link");
+      return;
+    }
+    if (link.tipo === "token_hash") {
+      supabase.auth.verifyOtp({ token_hash: link.tokenHash, type: link.otpTipo }).then(({ data, error }) => {
+        if (error || !data.session) invalido("expirado");
+        else pronto();
+      });
+      return () => {
+        active = false;
+      };
+    }
+
+    // Sessão no próprio link (#access_token ou ?code): o cliente do Supabase a processa.
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session && (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN" || event === "INITIAL_SESSION")) pronto();
     });
-    supabase.auth.getSession().then(({ data }) => {
-      if (!active) return;
-      if (data.session) setState("ready");
-      else setTimeout(() => active && setState((s) => (s === "checking" ? "invalid" : s)), 2500);
-    });
+    const timer = setTimeout(async () => {
+      const { data } = await supabase.auth.getUser();
+      if (data.user) pronto();
+      else invalido("expirado");
+    }, 4000);
     return () => {
       active = false;
+      clearTimeout(timer);
       sub.subscription.unsubscribe();
     };
   }, []);
@@ -45,22 +79,45 @@ export function SetPasswordForm({ submitLabel }: { submitLabel: string }) {
     setError(null);
     setSaving(true);
     const { error } = await supabase.auth.updateUser({ password: pw });
+    if (error) {
+      setSaving(false);
+      const m = error.message.toLowerCase();
+      if (m.includes("session") || m.includes("jwt") || m.includes("expired"))
+        return setEstado({ s: "invalid", motivo: "expirado" });
+      return setError(translateAuthError(error.message));
+    }
+    // Encerra a sessão temporária: o usuário entra de novo com a nova senha.
+    await supabase.auth.signOut();
     setSaving(false);
-    if (error) return setError(translateAuthError(error.message));
-    navigate({ to: "/", replace: true });
+    setEstado({ s: "done" });
   }
 
-  if (state === "checking")
+  if (estado.s === "checking")
     return (
       <p className="flex items-center gap-2 text-sm text-muted-foreground">
         <Loader2 className="size-4 animate-spin" /> Validando link…
       </p>
     );
-  if (state === "invalid")
+  if (estado.s === "invalid")
     return (
       <div className="space-y-4">
-        <FormError message="Link inválido ou expirado. Solicite um novo link." />
-        <Link to="/recuperar-senha" className="text-sm font-medium text-brand hover:underline">Solicitar novo link</Link>
+        <FormError message={mensagemLinkInvalido(estado.motivo)} />
+        <div className="flex flex-col gap-2">
+          <Link to="/recuperar-senha" className="text-sm font-medium text-brand hover:underline">Solicitar novo link</Link>
+          <Link to="/auth" className="text-sm text-muted-foreground hover:underline">Voltar para o login</Link>
+        </div>
+      </div>
+    );
+  if (estado.s === "done")
+    return (
+      <div className="space-y-4">
+        <p className="flex items-start gap-2 rounded-md border bg-muted px-3 py-3 text-sm">
+          <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-brand" />
+          Senha alterada com sucesso. Entre com seu e-mail e a nova senha.
+        </p>
+        <Button asChild className="w-full">
+          <Link to="/auth">Ir para o login</Link>
+        </Button>
       </div>
     );
 

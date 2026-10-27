@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Panel, EmptyState } from "@/components/shared/finance";
+import { urlRetorno } from "@/lib/auth/recuperacao";
 import { ROLES, ROLE_LABELS, type Role } from "@/lib/auth/permissions";
 import { inviteUser, listUsers, updateUserRole } from "@/lib/usuarios.functions";
 
