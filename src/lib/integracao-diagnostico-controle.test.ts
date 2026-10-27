@@ -15,7 +15,9 @@ it("reserva antes do único GET e finaliza somente auditoria técnica",async()=>
   const m=preparar(); const r=await executarDiagnosticoLimitado({rpc:m.rpc},id,id,"pagamentos",m.finalizar,m.ler);
   expect(r.status).toBe(200); expect(m.ler).toHaveBeenCalledTimes(1); expect(m.finalizar).toHaveBeenCalledTimes(1);
   expect(m.rpc.mock.calls.map(([n])=>n)).toEqual(["tem_papel","diagnostico_reservar"]);
-  expect(m.rpc.mock.invocationCallOrder[1]).toBeLessThan(m.ler.mock.invocationCallOrder[0]);
+  const reservaOrdem=m.rpc.mock.invocationCallOrder[1]; const leituraOrdem=m.ler.mock.invocationCallOrder[0];
+  if (reservaOrdem === undefined || leituraOrdem === undefined) throw new Error("reserva ou leitura não chamada");
+  expect(reservaOrdem).toBeLessThan(leituraOrdem);
 });
 it.each(["concorrencia","repeticao","limite","autorizacao_inativa"])("bloqueio %s impede GET e escrita financeira",async categoria=>{
   const m=preparar();m.rpc.mockReset().mockResolvedValueOnce({data:true,error:null}).mockResolvedValueOnce({data:{permitida:false,categoria},error:null});

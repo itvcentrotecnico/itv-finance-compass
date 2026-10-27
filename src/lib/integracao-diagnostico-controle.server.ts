@@ -3,6 +3,7 @@ import { z } from "zod";
 import { autorizarDiagnostico, diagnosticarRecurso, type RecursoDiagnostico } from "./integracao-diagnostico.server";
 
 type Banco = { rpc: (nome: string, args: Record<string, unknown>) => PromiseLike<{ data: unknown; error: unknown }> };
+export type ClienteDiagnostico = { schema: (nome: string) => Banco };
 const reservaSchema = z.discriminatedUnion("permitida", [
   z.object({ permitida: z.literal(true), tentativa_id: z.string().uuid(), ordinal: z.number().int().min(1).max(5) }),
   z.object({ permitida: z.literal(false), categoria: z.enum(["concorrencia", "repeticao", "limite", "autorizacao_inativa"]) }),
@@ -27,7 +28,7 @@ export async function executarDiagnosticoLimitado(
   } catch { return bloqueio(503, "controle_indisponivel"); }
   if (!reserva.permitida) return bloqueio(409, reserva.categoria);
   const inicio = Date.now();
-  let resultado: Awaited<ReturnType<typeof diagnosticarRecurso>>;
+  let resultado: { identificador: string; status_http: number | null; duracao_ms: number; categoria: string; tipo_excecao: string | null };
   try { resultado = await ler(recurso); }
   catch { resultado = { identificador: reserva.tentativa_id, status_http: null, duracao_ms: Math.max(0, Date.now()-inicio), categoria: "falha_interna", tipo_excecao: null }; }
   const corpo = { ...resultado, identificador: reserva.tentativa_id, ordinal: reserva.ordinal };

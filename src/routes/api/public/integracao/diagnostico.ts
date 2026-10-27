@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
+import type { ClienteDiagnostico } from "@/lib/integracao-diagnostico-controle.server";
 
 export const Route = createFileRoute("/api/public/integracao/diagnostico")({
   server: { handlers: { GET: async ({ request }) => {
@@ -24,7 +25,7 @@ export const Route = createFileRoute("/api/public/integracao/diagnostico")({
     const { executarDiagnosticoLimitado } = await import("@/lib/integracao-diagnostico-controle.server");
     const resultado = await executarDiagnosticoLimitado(db.schema("financeiro_hml"), data.claims.sub, a.data, r.data, async args => {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      return supabaseAdmin.schema("financeiro_hml").rpc("diagnostico_finalizar", args);
+      return (supabaseAdmin as unknown as ClienteDiagnostico).schema("financeiro_hml").rpc("diagnostico_finalizar", args);
     });
     return responder(resultado.status, resultado.corpo);
   } } },
