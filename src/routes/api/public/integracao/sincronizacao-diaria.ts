@@ -13,6 +13,10 @@ const resposta = (status: number, corpo: Record<string, unknown>) =>
 export const Route = createFileRoute("/api/public/integracao/sincronizacao-diaria")({
   server: {
     handlers: {
+      GET: async ({ request }) => {
+        const { consultarVersaoIntegracao } = await import("@/lib/integracao-versao.server");
+        return consultarVersaoIntegracao(request);
+      },
       POST: async ({ request }) => {
         const segredo = process.env["INTEGRACAO_CRON_SECRET"];
         if (!segredo) return resposta(503, { estado: "desabilitada" });

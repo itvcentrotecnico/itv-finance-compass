@@ -2,6 +2,12 @@ import "@tanstack/react-start/server-only";
 import { z } from "zod";
 import type { FonteGestao } from "./integracao";
 
+/** Identifica a revisão aprovada nos 63 testes, antes da adição deste marcador. */
+export const REVISAO_LEITOR_HTTP = Object.freeze({
+  versao: "m5-http-contexto-v1",
+  revisao_leitor: "95cf17c3f13734bf55260c2f5802d615d679c907ebda792be400072d7cd76389",
+});
+
 const RECURSOS = ["formas_pagamento", "recebimentos", "pagamentos", "recebimentos_titulos", "titulos"] as const;
 type Recurso = (typeof RECURSOS)[number];
 type Categoria = "autenticacao_origem" | "autorizacao_origem" | "limite_origem" | "timeout_origem" | "rede_origem" | "invocacao_origem" | "conexao_origem" | "resposta_invalida_origem" | "erro_interno_origem" | "http_origem" | "paginacao_origem" | "configuracao_origem";
