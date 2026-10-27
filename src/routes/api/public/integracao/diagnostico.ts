@@ -16,9 +16,11 @@ export const Route = createFileRoute("/api/public/integracao/diagnostico")({
     const { autorizarDiagnostico, diagnosticarRecurso, recursoDiagnostico, VERSAO_DIAGNOSTICO } = await import("@/lib/integracao-diagnostico.server");
     if (!await autorizarDiagnostico(db.schema("financeiro_hml"))) return responder(403, { estado: "acesso_negado" });
     const q = new URL(request.url).searchParams;
-    if (q.size === 0) return responder(200, { versao: VERSAO_DIAGNOSTICO });
+    if (q.size === 0) return responder(200, { versao: VERSAO_DIAGNOSTICO, leitura_preparada: false, limite_gets: 5 });
     const r = recursoDiagnostico.safeParse(q.get("recurso"));
     if (q.size !== 1 || !r.success) return responder(400, { estado: "parametros_invalidos" });
-    return responder(200, await diagnosticarRecurso(r.data));
+    // Não liberar apenas por flag: falta reserva durável para garantir cinco GETs
+    // únicos entre abas, usuários e instâncias do servidor.
+    return responder(200, { categoria: "leitura_nao_autorizada", status_http: null, limite_gets: 5 });
   } } },
 });

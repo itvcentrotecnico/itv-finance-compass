@@ -3,7 +3,7 @@ import { z } from "zod";
 import { buscarPaginaM5, FalhaTransporte } from "./integracao-transporte.server";
 import { janelaAutomatica } from "./agendamento";
 
-export const VERSAO_DIAGNOSTICO = "m5-diagnostico-isolado-v1";
+export const VERSAO_DIAGNOSTICO = "m5-diagnostico-acesso-v2";
 export const recursoDiagnostico = z.enum(["formas_pagamento", "recebimentos", "pagamentos", "recebimentos_titulos", "titulos"]);
 export type RecursoDiagnostico = z.infer<typeof recursoDiagnostico>;
 type Permissao = { rpc: (nome: string, args: { p: string[] }) => PromiseLike<{ data: unknown; error: unknown }> };

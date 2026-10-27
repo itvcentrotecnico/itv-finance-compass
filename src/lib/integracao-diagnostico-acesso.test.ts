@@ -24,7 +24,7 @@ it("recusa perfil não administrativo", async () => {
 });
 it("retorna versão para administrador sem leitura financeira", async () => {
   configurar(); const r = await get({ request: req() });
-  expect(r.status).toBe(200); expect(await r.json()).toEqual({ versao: "m5-diagnostico-isolado-v1" });
+  expect(r.status).toBe(200); expect(await r.json()).toEqual({ versao: "m5-diagnostico-acesso-v2", leitura_preparada: false, limite_gets: 5 });
   expect(r.headers.get("Cache-Control")).toBe("no-store"); expect(mocks.fetch).not.toHaveBeenCalled();
   expect(mocks.rpc).toHaveBeenCalledTimes(1); expect(mocks.rpc).toHaveBeenCalledWith("tem_papel", { p: ["admin_geral", "admin_financeiro"] });
 });
@@ -35,4 +35,13 @@ it("bloqueia consulta real mesmo para administrador na publicação preparada", 
 it("recusa recurso ou parâmetros extras", async () => {
   configurar(); expect((await get({ request: req("?recurso=outro") })).status).toBe(400);
   expect((await get({ request: req("?recurso=pagamentos&url=https://outro.example") })).status).toBe(400); expect(mocks.fetch).not.toHaveBeenCalled();
+});
+it("não libera origem por flag sem reserva durável do limite cinco", async () => {
+  configurar(); vi.stubEnv("M5_DIAGNOSTICO_LEITURA_AUTORIZADA", "true");
+  for (const recurso of ["formas_pagamento", "recebimentos", "pagamentos", "recebimentos_titulos", "titulos"]) {
+    const r = await get({ request: req(`?recurso=${recurso}`) });
+    expect(await r.json()).toMatchObject({ categoria: "leitura_nao_autorizada", limite_gets: 5 });
+  }
+  expect(mocks.fetch).not.toHaveBeenCalled();
+  expect(mocks.rpc.mock.calls.every(([nome]) => nome === "tem_papel")).toBe(true);
 });
