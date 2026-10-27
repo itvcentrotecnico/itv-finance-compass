@@ -24,7 +24,7 @@ it("recusa perfil não administrativo", async () => {
 });
 it("retorna versão para administrador sem leitura financeira", async () => {
   configurar(); const r = await get({ request: req() });
-  expect(r.status).toBe(200); expect(await r.json()).toEqual({ versao: "m5-diagnostico-acesso-v2", leitura_preparada: false, limite_gets: 5 });
+  expect(r.status).toBe(200); expect(await r.json()).toEqual({ versao: "m5-diagnostico-controle-v3", leitura_preparada: false, limite_gets: 5 });
   expect(r.headers.get("Cache-Control")).toBe("no-store"); expect(mocks.fetch).not.toHaveBeenCalled();
   expect(mocks.rpc).toHaveBeenCalledTimes(1); expect(mocks.rpc).toHaveBeenCalledWith("tem_papel", { p: ["admin_geral", "admin_financeiro"] });
 });

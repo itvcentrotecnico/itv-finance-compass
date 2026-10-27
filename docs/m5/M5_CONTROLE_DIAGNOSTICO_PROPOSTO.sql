@@ -29,7 +29,12 @@ CREATE TABLE financeiro_hml.diagnostico_tentativas (
   tipo_excecao text CHECK (tipo_excecao IN ('TypeError','Error','AbortError','TimeoutError','DOMException','nao_identificado','codigo_dns','codigo_tls','codigo_conexao')),
   criado_em timestamptz NOT NULL DEFAULT clock_timestamp(),
   concluido_em timestamptz,
-  CHECK ((estado = 'bloqueada') = (ordinal IS NULL))
+  CHECK ((estado = 'bloqueada') = (ordinal IS NULL)),
+  -- Conclusão sempre completa; reserva nunca tem resultado parcial.
+  CHECK (estado <> 'reservada' OR (categoria IS NULL AND status_http IS NULL AND duracao_ms IS NULL AND tipo_excecao IS NULL AND concluido_em IS NULL)),
+  CHECK (estado NOT IN ('concluida','falha') OR (categoria IS NOT NULL AND duracao_ms IS NOT NULL AND concluido_em IS NOT NULL)),
+  CHECK (estado <> 'concluida' OR categoria = 'leitura_valida'),
+  CHECK (estado <> 'bloqueada' OR categoria IN ('concorrencia','repeticao','limite','autorizacao_inativa'))
 );
 REVOKE ALL ON financeiro_hml.diagnostico_tentativas FROM PUBLIC, anon, authenticated, service_role;
 GRANT SELECT ON financeiro_hml.diagnostico_tentativas TO authenticated;
@@ -84,11 +89,33 @@ GRANT EXECUTE ON FUNCTION financeiro_hml.diagnostico_reservar(uuid,text) TO auth
 -- pelo browser enquanto a leitura ainda está em andamento.
 CREATE FUNCTION financeiro_hml.diagnostico_finalizar(p_tentativa uuid,p_usuario uuid,p_http integer,p_duracao integer,p_categoria text,p_tipo text) RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,financeiro_hml,pg_temp AS $$
-DECLARE t financeiro_hml.diagnostico_tentativas;
+DECLARE t financeiro_hml.diagnostico_tentativas; compativel boolean;
 BEGIN
   IF current_setting('request.jwt.claim.role',true) IS DISTINCT FROM 'service_role'
      AND coalesce(current_setting('request.jwt.claims',true),'{}')::jsonb->>'role' IS DISTINCT FROM 'service_role' THEN
     RAISE EXCEPTION USING ERRCODE='42501',MESSAGE='DIAG_SERVIDOR_OBRIGATORIO';
+  END IF;
+  -- Validação integral antes de qualquer alteração; exceção desfaz tudo e mantém a reserva.
+  compativel := coalesce(CASE p_categoria
+       WHEN 'leitura_valida' THEN p_http BETWEEN 200 AND 299 AND p_tipo IS NULL
+       WHEN 'autenticacao_origem' THEN p_http = 401 AND p_tipo IS NULL
+       WHEN 'autorizacao_origem' THEN p_http = 403 AND p_tipo IS NULL
+       WHEN 'limite_origem' THEN p_http = 429 AND p_tipo IS NULL
+       WHEN 'erro_interno_origem' THEN p_http BETWEEN 500 AND 599 AND p_tipo IS NULL
+       WHEN 'http_origem' THEN p_http BETWEEN 300 AND 499 AND p_http NOT IN (401,403,429) AND p_tipo IS NULL
+       WHEN 'resposta_invalida_origem' THEN (p_http IS NULL OR p_http BETWEEN 200 AND 299) AND p_tipo IS NULL
+       WHEN 'timeout_origem' THEN (p_http IS NULL AND p_tipo IS NOT NULL) OR (p_http BETWEEN 200 AND 299 AND p_tipo IS NULL)
+       WHEN 'rede_origem' THEN p_http IS NULL AND p_tipo IS NOT NULL
+       WHEN 'invocacao_origem' THEN p_http IS NULL AND p_tipo IS NOT NULL
+       WHEN 'conexao_origem' THEN p_http IS NULL AND p_tipo IS NOT NULL
+       WHEN 'configuracao_origem' THEN p_http IS NULL AND p_tipo IS NULL
+       WHEN 'leitura_nao_autorizada' THEN p_http IS NULL AND p_tipo IS NULL
+       WHEN 'falha_interna' THEN p_http IS NULL AND p_tipo IS NULL
+       ELSE false END, false);
+  IF p_categoria IS NULL OR btrim(p_categoria) = '' OR p_duracao IS NULL OR p_duracao < 0 OR p_duracao > 600000
+     OR (p_tipo IS NOT NULL AND p_tipo <> ALL(ARRAY['TypeError','Error','AbortError','TimeoutError','DOMException','nao_identificado','codigo_dns','codigo_tls','codigo_conexao']))
+     OR NOT compativel THEN
+    RAISE EXCEPTION USING ERRCODE='22023', MESSAGE='DIAG_CONCLUSAO_INVALIDA';
   END IF;
   IF NOT pg_try_advisory_xact_lock(527041,5) THEN RETURN jsonb_build_object('registrada',false); END IF;
   SELECT * INTO t FROM financeiro_hml.diagnostico_tentativas WHERE id=p_tentativa AND usuario_id=p_usuario FOR UPDATE;
