@@ -39,7 +39,7 @@ export function mensagemLinkInvalido(motivo: "expirado" | "invalido" | "sem_link
 }
 
 /** Mensagem do pedido de recuperação: só limites e falhas de conexão são revelados (não expõe se o e-mail existe). */
-export function mensagemEnvio(erro?: { status?: number; code?: string; message?: string } | null): string | null {
+export function mensagemEnvio(erro?: { status?: number | undefined; code?: string | undefined; message?: string } | null): string | null {
   if (!erro) return null;
   const m = `${erro.code ?? ""} ${erro.message ?? ""}`.toLowerCase();
   if (erro.status === 429 || m.includes("rate limit") || m.includes("over_email_send_rate_limit"))
