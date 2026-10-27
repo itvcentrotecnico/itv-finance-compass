@@ -9,9 +9,6 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { montarItens, type FonteGestao } from "./integracao";
 
-// Endereço publicado do GESTÃO ITV; GESTAO_ITV_URL (opcional) substitui.
-const ORIGEM_URL_PADRAO = "https://itvcentrotecnico.lovable.app";
-
 export interface Sincronizacao {
   id: string;
   iniciado_em: string;
@@ -80,54 +77,16 @@ export const carregarItensIntegracao = createServerFn({ method: "POST" }).middle
     return { itens: (itens ?? []) as ItemIntegracaoLinha[], pagina: data.pagina };
   });
 
-type Linha = Record<string, unknown>;
-
-/** Lê um recurso do endpoint protegido do GESTÃO ITV (somente GET, paginado). */
-async function lerRecurso(base: string, token: string, recurso: string, inicio: string, fim: string): Promise<Linha[]> {
-  const linhas: Linha[] = [];
-  for (let offset = 0; ; offset += 500) {
-    const q = new URLSearchParams({ recurso, inicio, fim, offset: String(offset), limite: "500" });
-    const r = await fetch(`${base}/api/public/integracao-financeiro?${q}`, { method: "GET", headers: { Authorization: `Bearer ${token}` } });
-    if (!r.ok) throw new Error(`${recurso}:${r.status}`);
-    const corpo = (await r.json()) as { dados?: Linha[] };
-    const dados = corpo.dados ?? [];
-    linhas.push(...dados);
-    if (dados.length < 500) return linhas;
-  }
-}
-
 /** Janela de leitura: do início do exercício até hoje (limite da origem: 366 dias). */
 function janela(): { inicio: string; fim: string } {
   const hoje = new Date().toISOString().slice(0, 10);
   return { inicio: `${hoje.slice(0, 4)}-01-01`, fim: hoje };
 }
 
-/** Lê todas as fontes do GESTÃO ITV na janela; lança "autenticacao_origem" ou "leitura_origem". */
+/** Manual e automática delegam ao mesmo leitor, carregado apenas no servidor. */
 export async function lerFonteGestao(inicio: string, fim: string): Promise<FonteGestao> {
-  const token = process.env["GESTAO_ITV_READ_TOKEN"];
-  const base = (process.env["GESTAO_ITV_URL"] || ORIGEM_URL_PADRAO).replace(/\/$/, "");
-  if (!token) throw new Error("desabilitada");
-  try {
-    const [formas, lancamentos, pagamentos, recebimentos, titulos] = await Promise.all([
-      lerRecurso(base, token, "formas_pagamento", inicio, fim),
-      lerRecurso(base, token, "recebimentos", inicio, fim),
-      lerRecurso(base, token, "pagamentos", inicio, fim),
-      lerRecurso(base, token, "recebimentos_titulos", inicio, fim),
-      lerRecurso(base, token, "titulos", inicio, fim),
-    ]);
-    return {
-      formas: formas as FonteGestao["formas"],
-      // A origem não expõe OS/cliente/descrição (dados pessoais excluídos).
-      lancamentos: lancamentos.map((l) => ({ ...l, os: null, cliente: null, descricao: null })) as FonteGestao["lancamentos"],
-      pagamentos: pagamentos as FonteGestao["pagamentos"],
-      recebimentos: recebimentos.map((r) => ({ ...r, referencia: null })) as FonteGestao["recebimentos"],
-      // Títulos em aberto: informativos; exigem identificador e saldo positivo.
-      titulosAbertos: titulos.filter((t) => t["id"] && Number(t["saldo"]) > 0).map((t) => ({ ...t, os: null, cliente: null })) as FonteGestao["titulosAbertos"],
-    };
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : "";
-    throw new Error(msg.endsWith(":401") ? "autenticacao_origem" : "leitura_origem");
-  }
+  const { lerFonteGestaoServidor } = await import("./integracao-leitura.server");
+  return lerFonteGestaoServidor(inicio, fim);
 }
 
 /** Lê a origem e conclui a sincronização já iniciada (manual ou automática) pela RPC idempotente. */
