@@ -17,7 +17,7 @@ describe("invocação padrão do HTTP sem rede real", () => {
     vi.stubGlobal("fetch", function(this: unknown, input: string | URL | Request, init?: RequestInit) {
       if (this !== globalThis) throw new TypeError("Illegal invocation");
       expect(init?.method).toBe("GET");
-      expect(init?.redirect).toBe("error");
+      expect(init?.redirect).toBe("manual");
       expect(new Headers(init?.headers).get("Authorization")).toBe(`Bearer ${credencial}`);
       const url = new URL(String(input));
       expect(url.origin).toBe(base);
