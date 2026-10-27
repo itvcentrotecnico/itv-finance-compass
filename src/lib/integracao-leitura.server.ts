@@ -1,6 +1,7 @@
 import "@tanstack/react-start/server-only";
 import { z } from "zod";
 import type { FonteGestao } from "./integracao";
+import { buscarPaginaM5, FalhaTransporte } from "./integracao-transporte.server";
 
 /** Identifica a revisão aprovada nos 63 testes, antes da adição deste marcador. */
 export const REVISAO_LEITOR_HTTP = Object.freeze({
@@ -26,6 +27,7 @@ export class ErroLeitura extends Error {
 /** Classifica apenas códigos conhecidos; nunca copia mensagens ou causas para o log. */
 function classificarTransporte(erro: unknown, abortado: boolean): ErroLeitura {
   if (erro instanceof ErroLeitura) return erro;
+  if (erro instanceof FalhaTransporte) return new ErroLeitura(erro.diagnostico.categoria as Categoria);
   if (abortado || (erro instanceof Error && (erro.name === "AbortError" || erro.name === "TimeoutError"))) return new ErroLeitura("timeout_origem");
   const e = erro && typeof erro === "object" ? erro as { code?: unknown; cause?: unknown } : {};
   const causa = e.cause && typeof e.cause === "object" ? e.cause as { code?: unknown } : {};
@@ -74,17 +76,8 @@ export async function lerFonteHttp(base: string, token: string, inicio: string, 
         try {
           status = null;
           const q = new URLSearchParams({ recurso, inicio, fim, offset: String(offset), limite: "500" });
-          let pendente: Promise<Response>;
-          try {
-            pendente = buscar(`${base.replace(/\/$/, "")}/api/public/integracao-financeiro?${q}`, {
-              method: "GET", headers: { Authorization: `Bearer ${token}` }, redirect: "error", signal: pagina.signal,
-            });
-          } catch {
-            // Erro síncrono antes de obter a promessa, não uma causa de rede inferida.
-            throw new ErroLeitura("invocacao_origem");
-          }
           let r: Response;
-          try { r = await pendente; } catch (erro) { throw classificarTransporte(erro, pagina.signal.aborted); }
+          try { r = await buscarPaginaM5(`${base.replace(/\/$/, "")}/api/public/integracao-financeiro?${q}`, token, pagina.signal, buscar); } catch (erro) { throw classificarTransporte(erro, pagina.signal.aborted); }
           if (!(r instanceof Response)) throw new ErroLeitura("resposta_invalida_origem");
           status = r.status;
           if (!r.ok) {
