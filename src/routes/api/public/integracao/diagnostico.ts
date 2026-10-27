@@ -13,7 +13,7 @@ export const Route = createFileRoute("/api/public/integracao/diagnostico")({
     const db = createClient(url, key, { global: { headers: { Authorization: cab }, fetch: (input, init) => globalThis.fetch(input, init) }, auth: { persistSession: false, autoRefreshToken: false } });
     const { data, error } = await db.auth.getClaims(cab.slice(7));
     if (error || !data?.claims.sub) return responder(401, { estado: "nao_autorizado" });
-    const { autorizarDiagnostico, diagnosticarRecurso, recursoDiagnostico, VERSAO_DIAGNOSTICO } = await import("@/lib/integracao-diagnostico.server");
+    const { autorizarDiagnostico, recursoDiagnostico, VERSAO_DIAGNOSTICO } = await import("@/lib/integracao-diagnostico.server");
     if (!await autorizarDiagnostico(db.schema("financeiro_hml"))) return responder(403, { estado: "acesso_negado" });
     const q = new URL(request.url).searchParams;
     if (q.size === 0) return responder(200, { versao: VERSAO_DIAGNOSTICO, leitura_preparada: false, limite_gets: 5 });
