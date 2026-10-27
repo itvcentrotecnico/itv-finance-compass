@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { can } from "@/lib/auth/permissions";
 import { carregarEstadoIntegracao, carregarItensIntegracao, sincronizarGestaoItv } from "@/lib/integracao.functions";
 import { proximaExecucao } from "@/lib/agendamento";
+import { DiagnosticoAcesso } from "./DiagnosticoAcesso";
 
 const SITUACOES: Record<string, { rotulo: string; variante: "default" | "secondary" | "destructive" | "outline" }> = {
   novo: { rotulo: "Novo", variante: "secondary" },
@@ -58,6 +59,7 @@ export function IntegracaoPanel() {
   return (
     <div className="grid gap-4 lg:grid-cols-3">
       <div className="flex flex-col gap-4 lg:col-span-1">
+        {(role === "admin_geral" || role === "admin_financeiro") && <DiagnosticoAcesso />}
         <Panel title="Conexão com o GESTÃO ITV" subtitle="Leitura somente consulta — a origem nunca é alterada">
           <div className="flex items-center gap-3">
             {e?.configurada ? (
