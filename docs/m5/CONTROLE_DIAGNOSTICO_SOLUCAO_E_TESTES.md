@@ -26,7 +26,7 @@ Aplicação no HML exige aprovação expressa da migração antes da publicaçã
 
 102/102 testes de aplicação aprovados, incluindo dez novos da orquestração: reserva antes de leitura; bloqueios de limite/repetição/concorrência/inatividade; administrador exigido; flag desabilitada; perda de resposta da reserva/conclusão; exceção segura contabilizada sem repetição. Transporte somente simulado.
 
-Script `testar_controle_diagnostico_local.py` executa proposta SQL em cluster local descartável, nunca HML: cinco recursos; sexta tentativa; falha/repetição; conexões independentes e concorrência durante transação; orçamento sem reset; finalização negada ao navegador; auditoria existente; sentinela financeira intacta. Inclui reinicialização física do banco e persistência da reserva/orçamento. A sentinela prova ausência de escrita no ensaio, não substitui futura verificação do HML após aplicação autorizada.
+22/22 verificações PostgreSQL aprovadas pelo script `testar_controle_diagnostico_local.py` em cluster local descartável, nunca HML: cinco recursos; sexta tentativa; falha/repetição; conexões independentes e concorrência durante transação; orçamento sem reset; finalização negada ao navegador; auditoria existente; sentinela financeira intacta. Inclui reinicialização física do banco e persistência da reserva/orçamento. A sentinela prova ausência de escrita no ensaio, não substitui futura verificação do HML após aplicação autorizada. Última regressão 102/102 às 14:39 UTC e verificação automática da aplicação OK às 14:38:58 UTC. Banco descartável encerrado após o ensaio.
 
 ## Arquivos afetados
 
