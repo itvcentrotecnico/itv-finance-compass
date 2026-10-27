@@ -59,7 +59,6 @@ RESET ROLE;
 SELECT ok('13 alteração na origem detectada sem nova conferência', (SELECT situacao='alterado' FROM public.item('gestao_itv:caixa_pagamentos:p1')));
 
 -- E. Falha e reprocessamento
-DELETE FROM financeiro_hml.integracao_sincronizacoes WHERE modo='automatica' AND id <> ((:'a1'::jsonb)->>'id')::uuid;
 UPDATE financeiro_hml.integracao_sincronizacoes SET status='falha' WHERE id=((:'a1'::jsonb)->>'id')::uuid; -- simula: a do dia falhou
 SET ROLE service_role;
 SELECT como_servidor();
@@ -73,7 +72,7 @@ SELECT ok('15 reprocessamento não cria itens nem conferências duplicadas', pub
 RESET ROLE;
 
 -- F. Execução travada expira e libera
-DELETE FROM financeiro_hml.integracao_sincronizacoes WHERE modo='automatica';
+UPDATE financeiro_hml.integracao_sincronizacoes SET iniciado_em = iniciado_em - interval '2 days' WHERE modo='automatica';
 SET ROLE service_role; SELECT como_servidor();
 SELECT financeiro_hml.integracao_iniciar_automatica(:'antes', :'hoje') AS a3 \gset
 RESET ROLE;
