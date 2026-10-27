@@ -16,6 +16,7 @@ import { Route as RecuperarSenhaRouteImport } from './routes/recuperar-senha'
 import { Route as RedefinirSenhaRouteImport } from './routes/redefinir-senha'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
 import { Route as AuthenticatedModuloRouteImport } from './routes/_authenticated/$modulo'
+import { Route as ApiPublicIntegracaoDiagnosticoRouteImport } from './routes/api/public/integracao/diagnostico'
 import { Route as ApiPublicIntegracaoSincronizacaoDiariaRouteImport } from './routes/api/public/integracao/sincronizacao-diaria'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
@@ -52,6 +53,12 @@ const AuthenticatedModuloRoute = AuthenticatedModuloRouteImport.update({
   path: '/$modulo',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicIntegracaoDiagnosticoRoute =
+  ApiPublicIntegracaoDiagnosticoRouteImport.update({
+    id: '/api/public/integracao/diagnostico',
+    path: '/api/public/integracao/diagnostico',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicIntegracaoSincronizacaoDiariaRoute =
   ApiPublicIntegracaoSincronizacaoDiariaRouteImport.update({
     id: '/api/public/integracao/sincronizacao-diaria',
@@ -66,6 +73,7 @@ export interface FileRoutesByFullPath {
   '/recuperar-senha': typeof RecuperarSenhaRoute
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/$modulo': typeof AuthenticatedModuloRoute
+  '/api/public/integracao/diagnostico': typeof ApiPublicIntegracaoDiagnosticoRoute
   '/api/public/integracao/sincronizacao-diaria': typeof ApiPublicIntegracaoSincronizacaoDiariaRoute
 }
 export interface FileRoutesByTo {
@@ -75,6 +83,7 @@ export interface FileRoutesByTo {
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/$modulo': typeof AuthenticatedModuloRoute
   '/': typeof AuthenticatedIndexRoute
+  '/api/public/integracao/diagnostico': typeof ApiPublicIntegracaoDiagnosticoRoute
   '/api/public/integracao/sincronizacao-diaria': typeof ApiPublicIntegracaoSincronizacaoDiariaRoute
 }
 export interface FileRoutesById {
@@ -86,6 +95,7 @@ export interface FileRoutesById {
   '/redefinir-senha': typeof RedefinirSenhaRoute
   '/_authenticated/$modulo': typeof AuthenticatedModuloRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/api/public/integracao/diagnostico': typeof ApiPublicIntegracaoDiagnosticoRoute
   '/api/public/integracao/sincronizacao-diaria': typeof ApiPublicIntegracaoSincronizacaoDiariaRoute
 }
 export interface FileRouteTypes {
@@ -97,6 +107,7 @@ export interface FileRouteTypes {
     | '/recuperar-senha'
     | '/redefinir-senha'
     | '/$modulo'
+    | '/api/public/integracao/diagnostico'
     | '/api/public/integracao/sincronizacao-diaria'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -106,6 +117,7 @@ export interface FileRouteTypes {
     | '/redefinir-senha'
     | '/$modulo'
     | '/'
+    | '/api/public/integracao/diagnostico'
     | '/api/public/integracao/sincronizacao-diaria'
   id:
     | '__root__'
@@ -116,6 +128,7 @@ export interface FileRouteTypes {
     | '/redefinir-senha'
     | '/_authenticated/$modulo'
     | '/_authenticated/'
+    | '/api/public/integracao/diagnostico'
     | '/api/public/integracao/sincronizacao-diaria'
   fileRoutesById: FileRoutesById
 }
@@ -125,6 +138,7 @@ export interface RootRouteChildren {
   DefinirSenhaRoute: typeof DefinirSenhaRoute
   RecuperarSenhaRoute: typeof RecuperarSenhaRoute
   RedefinirSenhaRoute: typeof RedefinirSenhaRoute
+  ApiPublicIntegracaoDiagnosticoRoute: typeof ApiPublicIntegracaoDiagnosticoRoute
   ApiPublicIntegracaoSincronizacaoDiariaRoute: typeof ApiPublicIntegracaoSincronizacaoDiariaRoute
 }
 
@@ -179,6 +193,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedModuloRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/integracao/diagnostico': {
+      id: '/api/public/integracao/diagnostico'
+      path: '/api/public/integracao/diagnostico'
+      fullPath: '/api/public/integracao/diagnostico'
+      preLoaderRoute: typeof ApiPublicIntegracaoDiagnosticoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/integracao/sincronizacao-diaria': {
       id: '/api/public/integracao/sincronizacao-diaria'
       path: '/api/public/integracao/sincronizacao-diaria'
@@ -208,6 +229,7 @@ const rootRouteChildren: RootRouteChildren = {
   DefinirSenhaRoute: DefinirSenhaRoute,
   RecuperarSenhaRoute: RecuperarSenhaRoute,
   RedefinirSenhaRoute: RedefinirSenhaRoute,
+  ApiPublicIntegracaoDiagnosticoRoute: ApiPublicIntegracaoDiagnosticoRoute,
   ApiPublicIntegracaoSincronizacaoDiariaRoute:
     ApiPublicIntegracaoSincronizacaoDiariaRoute,
 }
