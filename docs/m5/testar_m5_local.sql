@@ -2,6 +2,7 @@
 \set ON_ERROR_STOP 1
 SET client_min_messages = warning;
 TRUNCATE public.resultado;
+UPDATE financeiro_hml.integracao_sincronizacoes SET status='falha' WHERE status='em_andamento'; -- sobra da suíte M4
 CREATE FUNCTION public.como_servidor() RETURNS void LANGUAGE sql AS $$ SELECT set_config('request.jwt.claim.sub','',false), set_config('request.jwt.claim.role','service_role',false) $$;
 CREATE FUNCTION public.como_usuario(u int) RETURNS void LANGUAGE sql AS $$ SELECT set_config('request.jwt.claim.role','authenticated',false), public.como(u) $$;
 CREATE FUNCTION public.ultima() RETURNS financeiro_hml.integracao_sincronizacoes LANGUAGE sql SECURITY DEFINER AS $$ SELECT * FROM financeiro_hml.integracao_sincronizacoes ORDER BY iniciado_em DESC LIMIT 1 $$;
