@@ -35,8 +35,10 @@ describe("leitura HTTP compartilhada — somente respostas simuladas", () => {
     const fake = buscar(async () => new Response("conteudo-financeiro-simulado", { status: Number(status) }));
     await expect(lerFonteHttp(base, tokenSimulado, inicio, fim, { fetch: fake, registrar: e => logs.push(e) })).rejects.toMatchObject({ etapa });
     expect(logs).toHaveLength(1);
-    expect(logs[0]).toMatchObject({ etapa, status_http: status });
-    expect(Object.keys(logs[0]).sort()).toEqual(["duracao_ms","etapa","evento","recurso","status_http"]);
+    const evento = logs[0];
+    if (!evento) throw new Error("Diagnóstico ausente");
+    expect(evento).toMatchObject({ etapa, status_http: status });
+    expect(Object.keys(evento).sort()).toEqual(["duracao_ms","etapa","evento","recurso","status_http"]);
     expect(JSON.stringify(logs)).not.toContain(tokenSimulado);
     expect(JSON.stringify(logs)).not.toContain("conteudo-financeiro-simulado");
   });
@@ -51,9 +53,9 @@ describe("leitura HTTP compartilhada — somente respostas simuladas", () => {
     const fake = buscar(async input => {
       if (caso === "json") return new Response("não JSON", { status: 200 });
       const e: Record<string, unknown> = resposta(input);
-      if (caso === "sem_dados") delete e.dados;
-      if (caso === "tipo_dados") e.dados = {};
-      if (caso === "sem_id") e.dados = [{}];
+      if (caso === "sem_dados") delete e["dados"];
+      if (caso === "tipo_dados") e["dados"] = {};
+      if (caso === "sem_id") e["dados"] = [{}];
       return Response.json(e);
     });
     await expect(lerFonteHttp(base, tokenSimulado, inicio, fim, { fetch: fake, registrar: () => {} })).rejects.toMatchObject({ etapa: "resposta_invalida_origem" });

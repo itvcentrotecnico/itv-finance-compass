@@ -95,13 +95,16 @@ export async function lerFonteHttp(base: string, token: string, inicio: string, 
   }
 
   try {
-    const [formas, lancamentos, pagamentos, recebimentos, titulos] = await Promise.all(RECURSOS.map(lerRecurso));
+    const [formas, lancamentos, pagamentos, recebimentos, titulos] = await Promise.all([
+      lerRecurso("formas_pagamento"), lerRecurso("recebimentos"), lerRecurso("pagamentos"),
+      lerRecurso("recebimentos_titulos"), lerRecurso("titulos"),
+    ]);
     return {
       formas: formas as FonteGestao["formas"],
       lancamentos: lancamentos.map(l => ({ ...l, os: null, cliente: null, descricao: null })) as FonteGestao["lancamentos"],
       pagamentos: pagamentos as FonteGestao["pagamentos"],
       recebimentos: recebimentos.map(r => ({ ...r, referencia: null })) as FonteGestao["recebimentos"],
-      titulosAbertos: titulos.filter(t => Number(t.saldo) > 0).map(t => ({ ...t, os: null, cliente: null })) as FonteGestao["titulosAbertos"],
+      titulosAbertos: titulos.filter(t => Number(t["saldo"]) > 0).map(t => ({ ...t, os: null, cliente: null })) as FonteGestao["titulosAbertos"],
     };
   } finally { clearTimeout(total); }
 }
