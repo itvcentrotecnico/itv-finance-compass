@@ -12,8 +12,7 @@ GRANT EXECUTE ON FUNCTION public.como_servidor(), public.como_usuario(int), publ
 GRANT USAGE ON SCHEMA public TO service_role; GRANT ALL ON public.resultado, public.resultado_n_seq TO service_role;
 GRANT EXECUTE ON FUNCTION public.ok(text,boolean,text), public.falha(text,text), public.movs(), public.confs() TO service_role;
 
-\set hoje `TZ=America/Manaus date +%F`
-\set antes `TZ=America/Manaus date -d '-6 day' +%F`
+SELECT (now() AT TIME ZONE 'America/Manaus')::date AS hoje, (now() AT TIME ZONE 'America/Manaus')::date - 6 AS antes \gset
 
 -- A. Perfis de usuário não acionam a automática
 SET ROLE authenticated;
