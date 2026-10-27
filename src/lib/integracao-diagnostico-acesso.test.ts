@@ -29,7 +29,7 @@ it("retorna versão para administrador sem leitura financeira", async () => {
   expect(mocks.rpc).toHaveBeenCalledTimes(1); expect(mocks.rpc).toHaveBeenCalledWith("tem_papel", { p: ["admin_geral", "admin_financeiro"] });
 });
 it("bloqueia consulta real mesmo para administrador na publicação preparada", async () => {
-  configurar(); const r = await get({ request: req("?recurso=formas_pagamento") });
+  configurar(); const r = await get({ request: req("?recurso=formas_pagamento&autorizacao=00000000-0000-4000-8000-000000000001") });
   expect(await r.json()).toMatchObject({ categoria: "leitura_nao_autorizada" }); expect(mocks.fetch).not.toHaveBeenCalled();
 });
 it("recusa recurso ou parâmetros extras", async () => {
@@ -39,9 +39,9 @@ it("recusa recurso ou parâmetros extras", async () => {
 it("não libera origem por flag sem reserva durável do limite cinco", async () => {
   configurar(); vi.stubEnv("M5_DIAGNOSTICO_LEITURA_AUTORIZADA", "true");
   for (const recurso of ["formas_pagamento", "recebimentos", "pagamentos", "recebimentos_titulos", "titulos"]) {
-    const r = await get({ request: req(`?recurso=${recurso}`) });
-    expect(await r.json()).toMatchObject({ categoria: "leitura_nao_autorizada", limite_gets: 5 });
+    const r = await get({ request: req(`?recurso=${recurso}&autorizacao=00000000-0000-4000-8000-000000000001`) });
+    expect(await r.json()).toMatchObject({ categoria: "controle_indisponivel" });
   }
   expect(mocks.fetch).not.toHaveBeenCalled();
-  expect(mocks.rpc.mock.calls.every(([nome]) => nome === "tem_papel")).toBe(true);
+  expect(mocks.rpc.mock.calls.every(([nome]) => ["tem_papel", "diagnostico_reservar"].includes(nome))).toBe(true);
 });

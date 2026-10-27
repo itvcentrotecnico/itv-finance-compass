@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { z } from "zod";
 
 export const Route = createFileRoute("/api/public/integracao/diagnostico")({
   server: { handlers: { GET: async ({ request }) => {
@@ -18,9 +19,13 @@ export const Route = createFileRoute("/api/public/integracao/diagnostico")({
     const q = new URL(request.url).searchParams;
     if (q.size === 0) return responder(200, { versao: VERSAO_DIAGNOSTICO, leitura_preparada: false, limite_gets: 5 });
     const r = recursoDiagnostico.safeParse(q.get("recurso"));
-    if (q.size !== 1 || !r.success) return responder(400, { estado: "parametros_invalidos" });
-    // Não liberar apenas por flag: falta reserva durável para garantir cinco GETs
-    // únicos entre abas, usuários e instâncias do servidor.
-    return responder(200, { categoria: "leitura_nao_autorizada", status_http: null, limite_gets: 5 });
+    const a = z.uuid().safeParse(q.get("autorizacao"));
+    if (q.size !== 2 || !r.success || !a.success) return responder(400, { estado: "parametros_invalidos" });
+    const { executarDiagnosticoLimitado } = await import("@/lib/integracao-diagnostico-controle.server");
+    const resultado = await executarDiagnosticoLimitado(db.schema("financeiro_hml"), data.claims.sub, a.data, r.data, async args => {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      return supabaseAdmin.schema("financeiro_hml").rpc("diagnostico_finalizar", args);
+    });
+    return responder(resultado.status, resultado.corpo);
   } } },
 });
