@@ -38,6 +38,7 @@ export interface EstadoIntegracao {
   configurada: boolean;
   ultima: Sincronizacao | null;
   totais: Record<string, number>;
+  automatica: { preparada: boolean; ultima: Sincronizacao | null };
 }
 
 export type ResultadoSincronizacao =
@@ -56,7 +57,17 @@ export const carregarEstadoIntegracao = createServerFn({ method: "POST" }).middl
   if (erroItens) throw new Error("Falha ao consultar os itens da integração.");
   const totais: Record<string, number> = {};
   for (const i of itens ?? []) totais[i.situacao] = (totais[i.situacao] ?? 0) + 1;
-  return { configurada: Boolean(process.env["GESTAO_ITV_READ_TOKEN"]), ultima: (ultima as Sincronizacao | null) ?? null, totais };
+  // Coluna "modo" existe a partir da M5; antes dela a automática aparece como não preparada.
+  const auto = await db.from("integracao_sincronizacoes").select("id,iniciado_em,concluido_em,status,consultados,novos,existentes,divergentes,enviados_conferencia,erros").eq("modo", "automatica").order("iniciado_em", { ascending: false }).limit(1).maybeSingle();
+  return {
+    configurada: Boolean(process.env["GESTAO_ITV_READ_TOKEN"]),
+    ultima: (ultima as Sincronizacao | null) ?? null,
+    totais,
+    automatica: {
+      preparada: !auto.error && Boolean(process.env["INTEGRACAO_CRON_SECRET"]),
+      ultima: auto.error ? null : ((auto.data as Sincronizacao | null) ?? null),
+    },
+  };
 });
 
 export const carregarItensIntegracao = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
@@ -91,27 +102,11 @@ function janela(): { inicio: string; fim: string } {
   return { inicio: `${hoje.slice(0, 4)}-01-01`, fim: hoje };
 }
 
-const dia = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
-export const sincronizarGestaoItv = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
-  .inputValidator((v: unknown) => z.object({ dia: dia.optional() }).parse(v ?? {}))
-  .handler(async ({ data, context }): Promise<ResultadoSincronizacao> => {
-  const db = (context.supabase as Db).schema("financeiro_hml");
+/** Lê todas as fontes do GESTÃO ITV na janela; lança "autenticacao_origem" ou "leitura_origem". */
+export async function lerFonteGestao(inicio: string, fim: string): Promise<FonteGestao> {
   const token = process.env["GESTAO_ITV_READ_TOKEN"];
   const base = (process.env["GESTAO_ITV_URL"] || ORIGEM_URL_PADRAO).replace(/\/$/, "");
-  if (!token) return { estado: "desabilitada", motivo: "Token de leitura ainda não configurado. A integração permanece desabilitada." };
-
-  // Permissão decidida pelo banco (admin_geral/admin_financeiro).
-  const { data: syncId, error: erroInicio } = await db.rpc("integracao_iniciar");
-  if (erroInicio) throw new Error(String(erroInicio.message).includes("INT_PERMISSAO") ? "Seu perfil não pode sincronizar a integração." : "Falha ao iniciar a sincronização.");
-
-  const falhar = async (etapa: string): Promise<ResultadoSincronizacao> => {
-    await db.rpc("integracao_concluir", { p: { id: syncId, status: "falha", erros: [{ etapa }] } });
-    return { estado: "falha", etapa };
-  };
-
-  // Sincronização controlada: um único dia, quando informado.
-  const { inicio, fim } = data.dia ? { inicio: data.dia, fim: data.dia } : janela();
-  let fonte: FonteGestao;
+  if (!token) throw new Error("desabilitada");
   try {
     const [formas, lancamentos, pagamentos, recebimentos, titulos] = await Promise.all([
       lerRecurso(base, token, "formas_pagamento", inicio, fim),
@@ -120,7 +115,7 @@ export const sincronizarGestaoItv = createServerFn({ method: "POST" }).middlewar
       lerRecurso(base, token, "recebimentos_titulos", inicio, fim),
       lerRecurso(base, token, "titulos", inicio, fim),
     ]);
-    fonte = {
+    return {
       formas: formas as FonteGestao["formas"],
       // A origem não expõe OS/cliente/descrição (dados pessoais excluídos).
       lancamentos: lancamentos.map((l) => ({ ...l, os: null, cliente: null, descricao: null })) as FonteGestao["lancamentos"],
@@ -131,11 +126,44 @@ export const sincronizarGestaoItv = createServerFn({ method: "POST" }).middlewar
     };
   } catch (e) {
     const msg = e instanceof Error ? e.message : "";
-    return falhar(msg.endsWith(":401") ? "autenticacao_origem" : "leitura_origem");
+    throw new Error(msg.endsWith(":401") ? "autenticacao_origem" : "leitura_origem");
   }
+}
 
+/** Lê a origem e conclui a sincronização já iniciada (manual ou automática) pela RPC idempotente. */
+export async function executarSincronizacao(db: Db, syncId: string, inicio: string, fim: string): Promise<ResultadoSincronizacao> {
+  let fonte: FonteGestao;
+  try {
+    fonte = await lerFonteGestao(inicio, fim);
+  } catch (e) {
+    const etapa = e instanceof Error ? e.message : "leitura_origem";
+    await db.rpc("integracao_concluir", { p: { id: syncId, status: "falha", erros: [{ etapa }] } });
+    return { estado: "falha", etapa };
+  }
   const itens = montarItens(fonte);
-  const { data: resultado, error: erroConcluir } = await db.rpc("integracao_concluir", { p: { id: syncId, status: "concluida", itens } });
-  if (erroConcluir) throw new Error("Falha ao registrar a sincronização.");
+  const { data: resultado, error } = await db.rpc("integracao_concluir", { p: { id: syncId, status: "concluida", itens } });
+  if (error) {
+    await db.rpc("integracao_concluir", { p: { id: syncId, status: "falha", erros: [{ etapa: "registro" }] } });
+    return { estado: "falha", etapa: "registro" };
+  }
   return { estado: "concluida", ...(resultado as object) } as ResultadoSincronizacao;
+}
+
+const dia = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+export const sincronizarGestaoItv = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
+  .inputValidator((v: unknown) => z.object({ dia: dia.optional() }).parse(v ?? {}))
+  .handler(async ({ data, context }): Promise<ResultadoSincronizacao> => {
+  const db = (context.supabase as Db).schema("financeiro_hml");
+  if (!process.env["GESTAO_ITV_READ_TOKEN"]) return { estado: "desabilitada", motivo: "Token de leitura ainda não configurado. A integração permanece desabilitada." };
+
+  // Permissão e bloqueio de simultaneidade decididos pelo banco.
+  const { data: syncId, error: erroInicio } = await db.rpc("integracao_iniciar");
+  if (erroInicio) {
+    const m = String(erroInicio.message);
+    if (m.includes("INT_PERMISSAO")) throw new Error("Seu perfil não pode sincronizar a integração.");
+    if (m.includes("INT_EM_ANDAMENTO")) throw new Error("Já existe uma sincronização em andamento. Aguarde alguns minutos.");
+    throw new Error("Falha ao iniciar a sincronização.");
+  }
+  const { inicio, fim } = data.dia ? { inicio: data.dia, fim: data.dia } : janela();
+  return executarSincronizacao(db, syncId as string, inicio, fim);
 });
