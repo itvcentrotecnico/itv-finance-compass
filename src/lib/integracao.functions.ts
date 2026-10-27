@@ -1,17 +1,16 @@
 /**
  * Integração GESTÃO ITV → ITV FINANCEIRO HML (somente leitura na origem).
- * A identidade de leitura fica em segredos de servidor (GESTAO_ITV_USUARIO/SENHA);
- * sem ela a conexão permanece desabilitada. Nenhuma credencial vai ao navegador.
+ * Lê o endpoint protegido GET /api/public/integracao-financeiro do GESTÃO ITV com o
+ * token de servidor GESTAO_ITV_READ_TOKEN; sem ele a conexão permanece desabilitada.
+ * Nenhuma credencial vai ao navegador.
  */
 import { createServerFn } from "@tanstack/react-start";
-import { createClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { montarItens, type FonteGestao } from "./integracao";
 
-// URL e chave pública (publishable) da origem: seguras para código-fonte.
-const ORIGEM_URL = "https://lyfgkhryrhytggexvjvn.supabase.co";
-const ORIGEM_KEY = "sb_publishable_NUGiKn_kkYWC2bLzWrKTPg_q6qHprsq";
+// Endereço publicado do GESTÃO ITV; GESTAO_ITV_URL (opcional) substitui.
+const ORIGEM_URL_PADRAO = "https://itvcentrotecnico.lovable.app";
 
 export interface Sincronizacao {
   id: string;
@@ -70,11 +69,33 @@ export const carregarItensIntegracao = createServerFn({ method: "POST" }).middle
     return { itens: (itens ?? []) as ItemIntegracaoLinha[], pagina: data.pagina };
   });
 
+type Linha = Record<string, unknown>;
+
+/** Lê um recurso do endpoint protegido do GESTÃO ITV (somente GET, paginado). */
+async function lerRecurso(base: string, token: string, recurso: string, inicio: string, fim: string): Promise<Linha[]> {
+  const linhas: Linha[] = [];
+  for (let offset = 0; ; offset += 500) {
+    const q = new URLSearchParams({ recurso, inicio, fim, offset: String(offset), limite: "500" });
+    const r = await fetch(`${base}/api/public/integracao-financeiro?${q}`, { method: "GET", headers: { Authorization: `Bearer ${token}` } });
+    if (!r.ok) throw new Error(`${recurso}:${r.status}`);
+    const corpo = (await r.json()) as { dados?: Linha[] };
+    const dados = corpo.dados ?? [];
+    linhas.push(...dados);
+    if (dados.length < 500) return linhas;
+  }
+}
+
+/** Janela de leitura: do início do exercício até hoje (limite da origem: 366 dias). */
+function janela(): { inicio: string; fim: string } {
+  const hoje = new Date().toISOString().slice(0, 10);
+  return { inicio: `${hoje.slice(0, 4)}-01-01`, fim: hoje };
+}
+
 export const sincronizarGestaoItv = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).handler(async ({ context }): Promise<ResultadoSincronizacao> => {
   const db = (context.supabase as Db).schema("financeiro_hml");
-  const usuario = process.env["GESTAO_ITV_USUARIO"];
-  const senha = process.env["GESTAO_ITV_SENHA"];
-  if (!usuario || !senha) return { estado: "desabilitada", motivo: "Credencial de leitura ainda não configurada. A integração permanece desabilitada." };
+  const token = process.env["GESTAO_ITV_READ_TOKEN"];
+  const base = (process.env["GESTAO_ITV_URL"] || ORIGEM_URL_PADRAO).replace(/\/$/, "");
+  if (!token) return { estado: "desabilitada", motivo: "Token de leitura ainda não configurado. A integração permanece desabilitada." };
 
   // Permissão decidida pelo banco (admin_geral/admin_financeiro).
   const { data: syncId, error: erroInicio } = await db.rpc("integracao_iniciar");
@@ -85,51 +106,28 @@ export const sincronizarGestaoItv = createServerFn({ method: "POST" }).middlewar
     return { estado: "falha", etapa };
   };
 
-  const origem = createClient(ORIGEM_URL, ORIGEM_KEY, {
-    auth: { persistSession: false, autoRefreshToken: false },
-    global: {
-      fetch: (input, init) => {
-        const h = new Headers(init?.headers);
-        if (ORIGEM_KEY.startsWith("sb_") && h.get("Authorization") === `Bearer ${ORIGEM_KEY}`) h.delete("Authorization");
-        h.set("apikey", ORIGEM_KEY);
-        return fetch(input, { ...init, headers: h });
-      },
-    },
-  });
-
-  const { error: erroAuth } = await origem.auth.signInWithPassword({ email: usuario, password: senha });
-  if (erroAuth) return falhar("autenticacao_origem");
-
-  // Leitura paginada (limite padrão de 1000 linhas por consulta).
-  const lerTudo = async (tabela: string, colunas: string, ordenar: string) => {
-    const linhas: Record<string, unknown>[] = [];
-    for (let desde = 0; ; desde += 1000) {
-      const { data, error } = await origem.from(tabela).select(colunas).order(ordenar).range(desde, desde + 999);
-      if (error) throw new Error(tabela);
-      linhas.push(...((data ?? []) as unknown as Record<string, unknown>[]));
-      if (!data || data.length < 1000) return linhas;
-    }
-  };
-
+  const { inicio, fim } = janela();
   let fonte: FonteGestao;
   try {
     const [formas, lancamentos, pagamentos, recebimentos, titulos] = await Promise.all([
-      lerTudo("formas_pagamento", "id,nome", "id"),
-      lerTudo("caixa_lancamentos", "id,data_lancamento,os,cliente,descricao,grupo_receita,status", "data_lancamento"),
-      lerTudo("caixa_pagamentos", "id,lancamento_id,forma_pagamento_id,valor,parcelas,valor_liquido", "created_at"),
-      lerTudo("contas_receber_recebimentos", "id,conta_receber_id,data_recebimento,valor,forma_pagamento_id,referencia,estorno_de_id", "data_recebimento"),
-      lerTudo("contas_receber_saldos", "*", "vencimento"),
+      lerRecurso(base, token, "formas_pagamento", inicio, fim),
+      lerRecurso(base, token, "recebimentos", inicio, fim),
+      lerRecurso(base, token, "pagamentos", inicio, fim),
+      lerRecurso(base, token, "recebimentos_titulos", inicio, fim),
+      lerRecurso(base, token, "titulos", inicio, fim),
     ]);
     fonte = {
       formas: formas as FonteGestao["formas"],
-      lancamentos: lancamentos as FonteGestao["lancamentos"],
+      // A origem não expõe OS/cliente/descrição (dados pessoais excluídos).
+      lancamentos: lancamentos.map((l) => ({ ...l, os: null, cliente: null, descricao: null })) as FonteGestao["lancamentos"],
       pagamentos: pagamentos as FonteGestao["pagamentos"],
-      recebimentos: recebimentos as FonteGestao["recebimentos"],
+      recebimentos: recebimentos.map((r) => ({ ...r, referencia: null })) as FonteGestao["recebimentos"],
       // Títulos em aberto: informativos; exigem identificador e saldo positivo.
-      titulosAbertos: (titulos as { id?: string; saldo?: number | string }[]).filter((t) => t.id && Number(t.saldo) > 0) as FonteGestao["titulosAbertos"],
+      titulosAbertos: titulos.filter((t) => t.id && Number(t.saldo) > 0).map((t) => ({ ...t, os: null, cliente: null })) as FonteGestao["titulosAbertos"],
     };
-  } catch {
-    return falhar("leitura_origem");
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "";
+    return falhar(msg.endsWith(":401") ? "autenticacao_origem" : "leitura_origem");
   }
 
   const itens = montarItens(fonte);
