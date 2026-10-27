@@ -11,14 +11,14 @@ import { executarSincronizacao } from "./integracao.functions";
 import { lerFonteGestaoServidor } from "./integracao-leitura.server";
 
 describe("falhas do leitor compartilhado sem escrita financeira", () => {
-  it.each(["manual", "automatica"])("%s registra somente falha, sem itens ou conferências", async modo => {
-    vi.mocked(lerFonteGestaoServidor).mockRejectedValueOnce(new Error("autorizacao_origem"));
+  it.each(["manual", "automatica"].flatMap(modo => ["autorizacao_origem", "invocacao_origem", "conexao_origem", "timeout_origem", "resposta_invalida_origem"].map(etapa => ({ modo, etapa }))))("$modo preserva $etapa sem itens ou conferências", async ({ modo, etapa }) => {
+    vi.mocked(lerFonteGestaoServidor).mockRejectedValueOnce(new Error(etapa));
     const rpc = vi.fn().mockResolvedValue({ data: {}, error: null });
     const from = vi.fn();
     const r = await executarSincronizacao({ rpc, from }, `simulado-${modo}`, "2026-10-20", "2026-10-26");
-    expect(r).toEqual({ estado: "falha", etapa: "autorizacao_origem" });
+    expect(r).toEqual({ estado: "falha", etapa });
     expect(rpc).toHaveBeenCalledTimes(1);
-    expect(rpc).toHaveBeenCalledWith("integracao_concluir", { p: { id: `simulado-${modo}`, status: "falha", erros: [{ etapa: "autorizacao_origem" }] } });
+    expect(rpc).toHaveBeenCalledWith("integracao_concluir", { p: { id: `simulado-${modo}`, status: "falha", erros: [{ etapa }] } });
     expect(from).not.toHaveBeenCalled();
   });
 });
