@@ -18,7 +18,7 @@ export const Route = createFileRoute("/api/public/integracao/diagnostico")({
     const { autorizarDiagnostico, recursoDiagnostico, VERSAO_DIAGNOSTICO } = await import("@/lib/integracao-diagnostico.server");
     if (!await autorizarDiagnostico(db.schema("financeiro_hml"))) return responder(403, { estado: "acesso_negado" });
     const q = new URL(request.url).searchParams;
-    if (q.size === 0) return responder(200, { versao: VERSAO_DIAGNOSTICO, leitura_preparada: false, limite_gets: 5 });
+    if (q.size === 0) return responder(200, { versao: VERSAO_DIAGNOSTICO, leitura_preparada: process.env["M5_DIAGNOSTICO_LEITURA_AUTORIZADA"] === "true", limite_gets: 5 });
     const r = recursoDiagnostico.safeParse(q.get("recurso"));
     const a = z.string().uuid().safeParse(q.get("autorizacao"));
     if (q.size !== 2 || !r.success || !a.success) return responder(400, { estado: "parametros_invalidos" });
