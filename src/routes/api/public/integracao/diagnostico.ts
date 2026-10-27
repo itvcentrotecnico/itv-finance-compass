@@ -19,7 +19,7 @@ export const Route = createFileRoute("/api/public/integracao/diagnostico")({
     const q = new URL(request.url).searchParams;
     if (q.size === 0) return responder(200, { versao: VERSAO_DIAGNOSTICO, leitura_preparada: false, limite_gets: 5 });
     const r = recursoDiagnostico.safeParse(q.get("recurso"));
-    const a = z.uuid().safeParse(q.get("autorizacao"));
+    const a = z.string().uuid().safeParse(q.get("autorizacao"));
     if (q.size !== 2 || !r.success || !a.success) return responder(400, { estado: "parametros_invalidos" });
     const { executarDiagnosticoLimitado } = await import("@/lib/integracao-diagnostico-controle.server");
     const resultado = await executarDiagnosticoLimitado(db.schema("financeiro_hml"), data.claims.sub, a.data, r.data, async args => {

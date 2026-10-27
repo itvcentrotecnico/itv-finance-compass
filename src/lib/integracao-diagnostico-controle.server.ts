@@ -4,7 +4,7 @@ import { autorizarDiagnostico, diagnosticarRecurso, type RecursoDiagnostico } fr
 
 type Banco = { rpc: (nome: string, args: Record<string, unknown>) => PromiseLike<{ data: unknown; error: unknown }> };
 const reservaSchema = z.discriminatedUnion("permitida", [
-  z.object({ permitida: z.literal(true), tentativa_id: z.uuid(), ordinal: z.number().int().min(1).max(5) }),
+  z.object({ permitida: z.literal(true), tentativa_id: z.string().uuid(), ordinal: z.number().int().min(1).max(5) }),
   z.object({ permitida: z.literal(false), categoria: z.enum(["concorrencia", "repeticao", "limite", "autorizacao_inativa"]) }),
 ]);
 
