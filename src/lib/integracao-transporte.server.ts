@@ -16,10 +16,10 @@ function categoria(erro: unknown, abortado: boolean): string {
   if (["ECONNREFUSED", "ECONNRESET", "EPIPE", "UND_ERR_SOCKET"].includes(String(codigo))) return "conexao_origem";
   return "rede_origem";
 }
-/** Transporte comum: mantém contexto, GET, Bearer, redirect error e signal da M5. */
+/** Transporte comum: mantém contexto, GET, Bearer, redirect manual (o runtime publicado recusa "error"; 3xx não é seguido e falha como http_origem) e signal da M5. */
 export async function buscarPaginaM5(url: string, token: string, signal: AbortSignal, buscar: typeof fetch = (input, init) => globalThis.fetch(input, init)): Promise<Response> {
   let pendente: Promise<Response>;
-  try { pendente = buscar(url, { method: "GET", headers: { Authorization: `Bearer ${token}` }, redirect: "error", signal }); }
+  try { pendente = buscar(url, { method: "GET", headers: { Authorization: `Bearer ${token}` }, redirect: "manual", signal }); }
   catch (erro) { throw new FalhaTransporte({ categoria: "invocacao_origem", tipo_excecao: tipoSeguro(erro) }); }
   try { return await pendente; }
   catch (erro) { throw new FalhaTransporte({ categoria: categoria(erro, signal.aborted), tipo_excecao: tipoSeguro(erro) }); }

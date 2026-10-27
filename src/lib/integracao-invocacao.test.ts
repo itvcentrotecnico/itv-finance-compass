@@ -17,7 +17,7 @@ describe("invocação padrão do HTTP sem rede real", () => {
     vi.stubGlobal("fetch", function(this: unknown, input: string | URL | Request, init?: RequestInit) {
       if (this !== globalThis) throw new TypeError("Illegal invocation");
       expect(init?.method).toBe("GET");
-      expect(init?.redirect).toBe("error");
+      expect(init?.redirect).toBe("manual");
       expect(new Headers(init?.headers).get("Authorization")).toBe(`Bearer ${credencial}`);
       const url = new URL(String(input));
       expect(url.origin).toBe(base);
@@ -96,5 +96,19 @@ describe("invocação padrão do HTTP sem rede real", () => {
   it("reconhece timeout nativo pelo código fechado", async () => {
     vi.stubGlobal("fetch", () => Promise.reject(new TypeError(credencial, { cause: { code: "UND_ERR_CONNECT_TIMEOUT" } })));
     await expect(lerFonteHttp(base, credencial, inicio, fim, { registrar: () => {} })).rejects.toMatchObject({ etapa: "timeout_origem" });
+  });
+});
+describe("redirecionamento da origem", () => {
+  it("não segue 3xx e falha como http_origem com o código recebido", async () => {
+    const logs: DiagnosticoLeitura[] = [];
+    let chamadas = 0;
+    vi.stubGlobal("fetch", (_i: unknown, init?: RequestInit) => {
+      if (init?.redirect === "error") throw new TypeError("Invalid redirect value");
+      chamadas++;
+      return Promise.resolve(new Response(null, { status: 302, headers: { Location: "https://outro.example/" } }));
+    });
+    await expect(lerFonteHttp(base, credencial, inicio, fim, { registrar: e => logs.push(e) })).rejects.toBeTruthy();
+    expect(logs[0]).toMatchObject({ status_http: 302 });
+    expect(chamadas).toBeLessThanOrEqual(5);
   });
 });

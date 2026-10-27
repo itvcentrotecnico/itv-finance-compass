@@ -5,7 +5,7 @@ import { buscarPaginaM5, FalhaTransporte } from "./integracao-transporte.server"
 
 /** Identifica a revisão aprovada nos 63 testes, antes da adição deste marcador. */
 export const REVISAO_LEITOR_HTTP = Object.freeze({
-  versao: "m5-http-contexto-v1",
+  versao: "m5-http-redirect-manual-v2",
   revisao_leitor: "95cf17c3f13734bf55260c2f5802d615d679c907ebda792be400072d7cd76389",
 });
 

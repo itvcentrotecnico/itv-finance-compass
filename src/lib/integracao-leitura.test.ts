@@ -19,7 +19,7 @@ describe("leitura HTTP compartilhada — somente respostas simuladas", () => {
   it("consulta os cinco recursos com GET, janela correta e páginas vazias válidas", async () => {
     const fake = buscar(async (input, init) => {
       expect(init?.method).toBe("GET");
-      expect(init?.redirect).toBe("error");
+      expect(init?.redirect).toBe("manual");
       expect(new Headers(init?.headers).get("Authorization")).toBe(`Bearer ${tokenSimulado}`);
       expect(new URL(String(input)).searchParams.get("inicio")).toBe(inicio);
       expect(new URL(String(input)).searchParams.get("fim")).toBe(fim);

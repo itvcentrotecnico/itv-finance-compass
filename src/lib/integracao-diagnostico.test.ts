@@ -23,7 +23,7 @@ describe("diagnóstico sem efeitos financeiros", () => {
     vi.stubEnv("GESTAO_ITV_READ_TOKEN", "apenas-simulado");
     const fetch = vi.fn((input, init) => {
       const q = new URL(String(input)).searchParams;
-      expect(init.method).toBe("GET"); expect(init.redirect).toBe("error");
+      expect(init.method).toBe("GET"); expect(init.redirect).toBe("manual");
       return Promise.resolve(Response.json({ dados: [{ id: "simulado", privado: "nao-retornar" }], recurso: q.get("recurso"), inicio: q.get("inicio"), fim: q.get("fim"), offset: 0, limite: 500 }));
     }); vi.stubGlobal("fetch", fetch);
     const r = await diagnosticarRecurso("formas_pagamento");
