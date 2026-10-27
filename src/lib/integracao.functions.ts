@@ -127,7 +127,7 @@ export const sincronizarGestaoItv = createServerFn({ method: "POST" }).middlewar
       pagamentos: pagamentos as FonteGestao["pagamentos"],
       recebimentos: recebimentos.map((r) => ({ ...r, referencia: null })) as FonteGestao["recebimentos"],
       // Títulos em aberto: informativos; exigem identificador e saldo positivo.
-      titulosAbertos: titulos.filter((t) => t.id && Number(t.saldo) > 0).map((t) => ({ ...t, os: null, cliente: null })) as FonteGestao["titulosAbertos"],
+      titulosAbertos: titulos.filter((t) => t["id"] && Number(t["saldo"]) > 0).map((t) => ({ ...t, os: null, cliente: null })) as FonteGestao["titulosAbertos"],
     };
   } catch (e) {
     const msg = e instanceof Error ? e.message : "";
