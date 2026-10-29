@@ -4,7 +4,9 @@
 
 - [x] Verificar checklist por código/SELECTs: 177 testes aprovados, cadastro público bloqueado por settings HTTP 200, RLS nas 13 tabelas, gatilhos ativos, 49/49 sem duplicidades, zero movimentos/saldos; pg_cron/pg_net ausentes. Validação autenticada ponta a ponta indisponível no executor externo.
 - [x] Ajustar somente apresentação: operação manual sem falsa indicação de agenda ativa, resultados persistentes na tela e falhas compreensíveis; manter endpoints/credenciais/RPCs/leitor sequencial atual.
-- [ ] Confirmar desativação das três tarefas externas pelo administrador do cron-job.org (bloqueador externo).
+- [x] Direção confirmou duas tarefas externas (18h30 e 19h00) desativadas; não existe tarefa 19h30.
+- [ ] Confirmar no backend: integração manual após 18h30 Manaus, um sucesso diário e nova tentativa após falha.
+- [ ] Concluir verificação essencial de acesso autenticado sem alterações financeiras.
 - [ ] Publicar somente após checklist essencial aprovado; preservar dados e não executar sincronizações.
 
 Decisão atual substitui pendências históricas de automação/investigação M5 abaixo: operação exclusivamente manual, HTTP 503 não declarado corrigido. Novos módulos e homologações financeiras ficam fora deste encerramento.
