@@ -5,9 +5,9 @@
 - [x] Verificar checklist por código/SELECTs: 177 testes aprovados, cadastro público bloqueado por settings HTTP 200, RLS nas 13 tabelas, gatilhos ativos, 49/49 sem duplicidades, zero movimentos/saldos; pg_cron/pg_net ausentes. Validação autenticada ponta a ponta indisponível no executor externo.
 - [x] Ajustar somente apresentação: operação manual sem falsa indicação de agenda ativa, resultados persistentes na tela e falhas compreensíveis; manter endpoints/credenciais/RPCs/leitor sequencial atual.
 - [x] Direção confirmou duas tarefas externas (18h30 e 19h00) desativadas; não existe tarefa 19h30.
-- [ ] Correção final autorizada 29/10 23h16 UTC: implementar controles manuais 18h30–23h59 Manaus e um sucesso diário incluindo histórico/zero novos; testar isoladamente, apresentar SQL/arquivos/resultados e não publicar sem nova autorização.
+- [x] Correção final 29/10: controles manuais aplicados HML, interface preparada; 183 testes app + 31 PostgreSQL isolados aprovados, compilação OK; 49/49/hashes/19 sincronizações/271 auditorias/zero movimentos preservados. Relatório docs/m5/CONTROLES_MANUAIS_RESULTADO_2026_10_29.md.
 - [ ] Concluir verificação essencial de acesso autenticado: executor external_unmanaged sem sessão; aguarda confirmação no navegador do usuário, sem sincronizar.
-- [ ] Publicar somente após limites obrigatórios e acesso confirmados; preservar dados e não executar sincronizações. Revisão 29/10 23h13 UTC: 177 testes aprovados, 49/49, zero duplicidades/movimentos; scan sem críticos e aviso informativo sobre senhas vazadas.
+- [ ] Publicar somente com autorização final da direção e verificação de acesso possível; controles implementados, sem publicação automática ou sincronização. Aviso novo da consulta eliminado com SECURITY INVOKER; avisos preexistentes fora do escopo.
 
 Decisão atual substitui pendências históricas de automação/investigação M5 abaixo: operação exclusivamente manual, HTTP 503 não declarado corrigido. Novos módulos e homologações financeiras ficam fora deste encerramento.
 
