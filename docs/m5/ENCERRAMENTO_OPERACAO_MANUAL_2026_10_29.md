@@ -16,7 +16,7 @@ M5 CONCLUÍDA PARA OPERAÇÃO MANUAL — AUTOMAÇÃO DESATIVADA é o status oper
 
 | Item | Resultado |
 |---|---|
-| Testes existentes | 177 aprovados antes dos ajustes; repetir após ajustes |
+| Testes existentes | 177 aprovados antes e depois dos ajustes; compilação automática OK |
 | Cadastro público | Settings hospedados HTTP 200: disable_signup=true; usuários anônimos desativados |
 | Autenticação | Gate valida usuário e perfil ativo; testes locais aprovados. Sessão real indisponível no executor external_unmanaged |
 | Permissões | RLS ativo em todas as 13 tabelas; políticas de leitura por perfil e proteção contra autoalteração administrativa verificadas no HML |
@@ -27,6 +27,7 @@ M5 CONCLUÍDA PARA OPERAÇÃO MANUAL — AUTOMAÇÃO DESATIVADA é o status oper
 | Tesouraria/conferência | Conferência operacional na aba Tesouraria → Conferência; módulo separado Conciliação permanece em estruturação |
 | Auditoria | Gatilhos de integração, cadastros, conferências e Tesouraria ativos; leitura de auditoria restrita a administradores |
 | Dashboard | Estados vazios/estrutura visual, não indicadores financeiros reais; dashboard executivo efetivo é etapa posterior |
+| Navegação/telas públicas | / redireciona para /auth; recuperação acessível sem enviar e-mail; 1280×1800 e 603×745 sem overflow ou erros de execução. Telas privadas não verificadas visualmente com sessão real |
 | Agendas internas | Nenhum pg_cron/pg_net instalado; nenhum agendador interno encontrado no código. POST preservado e depende de acionamento externo |
 | Cron-job.org | Desativação das tarefas 18h30/19h00/19h30 depende do administrador; não comprovada nesta sessão |
 | Segurança | Resultados disponíveis desatualizados sem críticos: alerta informativo de proteção contra senhas vazadas desligada. Não é prova de ausência de outros riscos |
