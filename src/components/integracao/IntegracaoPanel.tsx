@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { can } from "@/lib/auth/permissions";
 import { carregarEstadoIntegracao, carregarItensIntegracao, sincronizarGestaoItv } from "@/lib/integracao.functions";
-import { proximaExecucao } from "@/lib/agendamento";
 import { DiagnosticoAcesso } from "./DiagnosticoAcesso";
 
 const SITUACOES: Record<string, { rotulo: string; variante: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -31,6 +30,11 @@ function dataHora(iso: string | null | undefined): string {
   return new Date(iso).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Manaus" });
 }
 
+function mensagemFalha(etapa: string): string {
+  if (etapa === "registro") return "Não foi possível confirmar o resultado. Consulte a última sincronização antes de tentar novamente.";
+  return "Não foi possível concluir a consulta ao GESTÃO ITV. Nenhuma nova tentativa será feita automaticamente. Consulte o histórico da execução.";
+}
+
 export function IntegracaoPanel() {
   const { role } = useRouteContext({ from: "/_authenticated" });
   const qc = useQueryClient();
@@ -47,7 +51,7 @@ export function IntegracaoPanel() {
       qc.invalidateQueries({ queryKey: ["integracao"] });
       if (r.estado === "concluida") toast.success(`Sincronização concluída: ${r.novos} novo(s), ${r.enviados_conferencia} enviado(s) à conferência.`);
       else if (r.estado === "desabilitada") toast.info(r.motivo);
-      else toast.error("Sincronização falhou na etapa: " + r.etapa);
+      else toast.error(mensagemFalha(r.etapa));
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -76,11 +80,14 @@ export function IntegracaoPanel() {
           {podeSincronizar && (
             <div className="mt-4 flex flex-col gap-2">
               <label className="text-xs text-muted-foreground" htmlFor="dia-sync">Dia a sincronizar (vazio = exercício até hoje)</label>
-              <input id="dia-sync" type="date" value={dia} onChange={(ev) => setDia(ev.target.value)} className="h-9 rounded-md border bg-background px-2 text-sm" />
+              <input id="dia-sync" type="date" value={dia} disabled={sync.isPending} onChange={(ev) => setDia(ev.target.value)} className="h-9 rounded-md border bg-background px-2 text-sm" />
               <Button size="sm" disabled={!e?.configurada || sync.isPending} onClick={() => sync.mutate()}>
                 <RefreshCw className={sync.isPending ? "size-4 animate-spin" : "size-4"} />
                 {sync.isPending ? "Sincronizando…" : dia ? "Sincronizar este dia" : "Sincronizar agora"}
               </Button>
+              {sync.isError && <p role="alert" className="text-xs text-destructive">{sync.error.message}</p>}
+              {sync.data?.estado === "falha" && <p role="alert" className="text-xs text-destructive">{mensagemFalha(sync.data.etapa)}</p>}
+              {sync.data?.estado === "concluida" && <p role="status" className="text-xs text-muted-foreground">Sincronização concluída: {sync.data.novos} registro(s) importado(s) e {sync.data.enviados_conferencia} conferência(s) criada(s).</p>}
             </div>
           )}
         </Panel>
@@ -90,12 +97,12 @@ export function IntegracaoPanel() {
             <dl className="grid grid-cols-2 gap-3 text-sm">
               <div><dt className="text-xs text-muted-foreground">Situação</dt><dd className="font-medium">{u.status === "concluida" ? "Concluída" : u.status === "falha" ? "Falha" : "Em andamento"}</dd></div>
               <div><dt className="text-xs text-muted-foreground">Consultados</dt><dd className="font-mono font-medium">{u.consultados}</dd></div>
-              <div><dt className="text-xs text-muted-foreground">Novos</dt><dd className="font-mono font-medium">{u.novos}</dd></div>
+              <div><dt className="text-xs text-muted-foreground">Importados</dt><dd className="font-mono font-medium">{u.novos}</dd></div>
               <div><dt className="text-xs text-muted-foreground">Já existentes</dt><dd className="font-mono font-medium">{u.existentes}</dd></div>
               <div><dt className="text-xs text-muted-foreground">Divergentes</dt><dd className="font-mono font-medium">{u.divergentes}</dd></div>
               <div><dt className="text-xs text-muted-foreground">Enviados à conferência</dt><dd className="font-mono font-medium">{u.enviados_conferencia}</dd></div>
               {u.erros?.length ? (
-                <div className="col-span-2"><dt className="text-xs text-muted-foreground">Erros</dt><dd className="text-xs text-destructive">{u.erros.map((x) => x.etapa).join(" · ")}</dd></div>
+                <div className="col-span-2"><dt className="text-xs text-muted-foreground">Erros</dt><dd className="text-xs text-destructive">{mensagemFalha(u.erros[0]?.etapa ?? "leitura_origem")}</dd></div>
               ) : null}
             </dl>
           ) : (
@@ -103,36 +110,10 @@ export function IntegracaoPanel() {
           )}
         </Panel>
 
-        <Panel title="Sincronização automática" subtitle="Todos os dias às 18h30 (horário de Manaus) · últimos 7 dias">
-          {(() => {
-            const a = e?.automatica;
-            const ua = a?.ultima ?? null;
-            return (
-              <dl className="grid grid-cols-2 gap-3 text-sm">
-                <div className="col-span-2">
-                  <dt className="text-xs text-muted-foreground">Situação</dt>
-                  <dd className="mt-1">
-                    {!a?.preparada ? (
-                      <Badge variant="secondary" className="gap-1.5"><CircleOff className="size-3.5" /> Aguardando ativação</Badge>
-                    ) : ua ? (
-                      <Badge className="gap-1.5"><CircleCheck className="size-3.5" /> Ativa</Badge>
-                    ) : (
-                      <Badge variant="outline" className="gap-1.5"><TriangleAlert className="size-3.5" /> Preparada — sem execução ainda</Badge>
-                    )}
-                  </dd>
-                </div>
-                <div><dt className="text-xs text-muted-foreground">Horário programado</dt><dd className="font-medium">18:30 · Manaus</dd></div>
-                <div><dt className="text-xs text-muted-foreground">Próxima execução</dt><dd className="font-medium">{a?.preparada ? dataHora(proximaExecucao(new Date()).toISOString()) : "—"}</dd></div>
-                <div className="col-span-2">
-                  <dt className="text-xs text-muted-foreground">Última execução automática</dt>
-                  <dd className="font-medium">
-                    {ua ? `${dataHora(ua.iniciado_em)} · ${ua.status === "concluida" ? `Concluída (${ua.consultados} consultados, ${ua.novos} novos)` : ua.status === "falha" ? `Falha (${ua.erros?.map((x) => x.etapa).join(", ") ?? "—"})` : "Em andamento"}` : "Nenhuma"}
-                  </dd>
-                </div>
-                <p className="col-span-2 text-xs text-muted-foreground">Envia registros apenas para a conferência; não gera lançamentos nem altera saldos. Em caso de falha, nova tentativa às 19h00 e 19h30.</p>
-              </dl>
-            );
-          })()}
+        <Panel title="Operação da integração" subtitle="M5 concluída para operação manual">
+          <Badge variant="outline">Somente sincronização manual</Badge>
+          <p className="mt-3 text-xs text-muted-foreground">Automação fora da operação atual. A desativação das tarefas do cron-job.org deve ser confirmada pelo administrador da plataforma.</p>
+          <p className="mt-2 text-xs text-muted-foreground">O histórico está preservado. A falha intermitente HTTP 503 não foi declarada corrigida.</p>
         </Panel>
       </div>
 
