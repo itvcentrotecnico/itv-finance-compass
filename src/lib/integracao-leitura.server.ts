@@ -117,10 +117,14 @@ export async function lerFonteHttp(base: string, token: string, inicio: string, 
   }
 
   try {
-    const [formas, lancamentos, pagamentos, recebimentos, titulos] = await Promise.all([
-      lerRecurso("formas_pagamento"), lerRecurso("recebimentos"), lerRecurso("pagamentos"),
-      lerRecurso("recebimentos_titulos"), lerRecurso("titulos"),
-    ]);
+    // Um recurso por vez: a origem não recebe rajada de requisições simultâneas
+    // (falhas 5xx observadas só na primeira execução após inatividade, com cinco GETs paralelos).
+    // Primeira falha interrompe a leitura; nenhuma retentativa.
+    const formas = await lerRecurso("formas_pagamento");
+    const lancamentos = await lerRecurso("recebimentos");
+    const pagamentos = await lerRecurso("pagamentos");
+    const recebimentos = await lerRecurso("recebimentos_titulos");
+    const titulos = await lerRecurso("titulos");
     return {
       formas: formas as FonteGestao["formas"],
       lancamentos: lancamentos.map(l => ({ ...l, os: null, cliente: null, descricao: null })) as FonteGestao["lancamentos"],
