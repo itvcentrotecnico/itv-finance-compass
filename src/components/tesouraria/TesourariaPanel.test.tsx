@@ -8,6 +8,7 @@ vi.mock("@/lib/tesouraria.functions", () => ({ carregarTesouraria: async () => [
 vi.mock("@/lib/cadastros", () => ({ listarContas: async () => [], listarCentros: async () => [], podeVerAuditoria: () => false }));
 vi.mock("@/lib/auth/session", () => ({ fin: () => { throw new Error("HML proibido nos testes locais"); } }));
 vi.mock("@/components/cadastros/Historico", () => ({ Historico: () => null }));
+vi.mock("@/lib/conferencia-operacional.functions", () => ({ consultarConferencia: vi.fn(), comandarConferencia: vi.fn(), historicoConferencia: vi.fn(), opcoesConferencia: vi.fn() }));
 import { TesourariaPanel } from "./TesourariaPanel";
 import { chavePendente } from "@/lib/tesouraria-recuperacao";
 afterEach(cleanup);
