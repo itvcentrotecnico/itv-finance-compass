@@ -3,10 +3,10 @@ import { z } from "zod";
 import type { FonteGestao } from "./integracao";
 import { buscarPaginaM5, FalhaTransporte } from "./integracao-transporte.server";
 
-/** SHA-256 deste arquivo sem as linhas do marcador (7–10): leitura sequencial dos cinco recursos. */
+/** SHA-256 deste arquivo sem as linhas 6–10 (este marcador): leitura sequencial dos cinco recursos. */
 export const REVISAO_LEITOR_HTTP = Object.freeze({
   versao: "m5-leitura-sequencial-v3",
-  revisao_leitor: "20a32003ce4f0c4ade40b502ecc9a3391e0545c95a981037d470eb2af957ede7",
+  revisao_leitor: "fb05275fd25c94048731c0719c5de28b44a9dbf8ccfac1e0c8a96fdde3d70a70",
 });
 
 const RECURSOS = ["formas_pagamento", "recebimentos", "pagamentos", "recebimentos_titulos", "titulos"] as const;
