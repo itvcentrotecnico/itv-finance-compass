@@ -37,6 +37,7 @@ CREATE FUNCTION financeiro_hml.tem_papel(text[]) RETURNS boolean LANGUAGE sql AS
 CREATE FUNCTION financeiro_hml.test_agora() RETURNS timestamptz LANGUAGE sql AS $$SELECT current_setting('test.agora')::timestamptz$$;
 CREATE TABLE financeiro_hml.integracao_sincronizacoes(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),responsavel_id uuid,modo text NOT NULL DEFAULT 'manual',status text NOT NULL DEFAULT 'em_andamento',iniciado_em timestamptz NOT NULL DEFAULT financeiro_hml.test_agora(),concluido_em timestamptz,novos integer NOT NULL DEFAULT 0,erros jsonb);
 CREATE UNIQUE INDEX integracao_sync_uma_em_andamento ON financeiro_hml.integracao_sincronizacoes((true)) WHERE status='em_andamento';
+GRANT SELECT ON financeiro_hml.integracao_sincronizacoes TO authenticated;
 CREATE FUNCTION financeiro_hml.integracao_expirar_travadas() RETURNS integer LANGUAGE plpgsql SECURITY DEFINER AS $$DECLARE n integer; BEGIN UPDATE financeiro_hml.integracao_sincronizacoes SET status='falha',concluido_em=financeiro_hml.test_agora(),erros='[{"etapa":"tempo_esgotado"}]' WHERE status='em_andamento' AND iniciado_em < financeiro_hml.test_agora()-interval '15 minutes';GET DIAGNOSTICS n=ROW_COUNT;RETURN n;END$$;
 REVOKE ALL ON FUNCTION financeiro_hml.integracao_expirar_travadas() FROM PUBLIC;
 CREATE TABLE financeiro_hml.auditoria(id bigserial,event jsonb);
@@ -49,6 +50,7 @@ CREATE TABLE financeiro_hml.movimentos_sentinela(id int);
 # Única substituição para testar fronteiras determinísticas: não há parâmetro de relógio no SQL de produção.
 proposal = (ROOT / 'docs/m5/M5_CONTROLES_MANUAIS_PROPOSTO.sql').read_text()
 sql(proposal.replace('clock_timestamp()', 'financeiro_hml.test_agora()'))
+sql((ROOT / 'docs/m5/M5_ESTADO_MANUAL_PERMISSOES.sql').read_text())
 blocked('bloqueio 18h29 por chamada direta', 'INT_HORARIO_MANUAL', at='2026-10-29T22:29:00Z')
 blocked('bloqueio 18h29min59s', 'INT_HORARIO_MANUAL', at='2026-10-29T22:29:59Z')
 check('estado bloqueia 18h29', state('2026-10-29T22:29:00Z')['permitida'] is False)
