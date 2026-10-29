@@ -2,8 +2,8 @@
 
 ## Encerramento operacional — 29/10/2026
 
-- [ ] Verificar checklist essencial, testes, segurança, integridade e ausência de agendas internas.
-- [ ] Ajustar somente apresentação necessária para operação manual e mensagens claras.
+- [x] Verificar checklist por código/SELECTs: 177 testes aprovados, cadastro público bloqueado por settings HTTP 200, RLS nas 13 tabelas, gatilhos ativos, 49/49 sem duplicidades, zero movimentos/saldos; pg_cron/pg_net ausentes. Validação autenticada ponta a ponta indisponível no executor externo.
+- [x] Ajustar somente apresentação: operação manual sem falsa indicação de agenda ativa, resultados persistentes na tela e falhas compreensíveis; manter endpoints/credenciais/RPCs/leitor sequencial atual.
 - [ ] Confirmar desativação das três tarefas externas pelo administrador do cron-job.org (bloqueador externo).
 - [ ] Publicar somente após checklist essencial aprovado; preservar dados e não executar sincronizações.
 
