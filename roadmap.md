@@ -3,7 +3,8 @@
 ## Fase de implantação operacional — 29/10/2026
 
 - [x] Etapa 1 — Contas oficiais: SICREDI — CONTA PRINCIPAL, MERCADO PAGO — RECEBIMENTOS e CAIXA FÍSICO ITV habilitadas pelo administrador em 29/10 às 19h40 Manaus; SELECTs confirmam três contas ativas, aberturas e saldos R$ 0,00, seis eventos de auditoria, zero movimentos e 49 registros/49 conferências preservados. Contas HML TESTE: direção decidiu tratar depois.
-- [ ] Etapa 2 — Rotina diária de conferência: despesas, recebimentos, divergências e lançamentos importados; sincronização M5 permanece manual com bloqueios atuais.
+- [x] Etapa 2 — Diagnóstico por código e SELECTs, fluxo, lacunas, permissões, riscos e POP entregues em Files; 49/49 pendentes, três contas oficiais habilitadas e zeradas, zero movimentos. Identificadas classificação apenas de teste, 41 ocorrências anteriores à abertura, 20 cartões sem liquidação e ausência de aprovação segregada/histórico na tela. Nenhuma implementação, publicação, sincronização ou operação financeira.
+- [ ] Etapa 2 — Eventuais melhorias e ações operacionais: bloqueadas até autorização específica da direção; corte histórico e cadastros reais exigem decisão administrativa.
 - [ ] Etapa 3 — Dashboard executivo: somente após validar estrutura financeira e regras de lançamento; distinguir faturamento, recebimentos e resultado.
 - Decisões fixas: domínio itv-financeiro.lovable.app mantido; acesso restrito; nenhum dado financeiro inventado.
 
