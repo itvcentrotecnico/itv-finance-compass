@@ -1,5 +1,12 @@
 # Autenticação segura — ITV FINANCEIRO HML
 
+## Fase de implantação operacional — 29/10/2026
+
+- [ ] Etapa 1 — Contas oficiais: habilitar SICREDI — CONTA PRINCIPAL, MERCADO PAGO — RECEBIMENTOS e CAIXA FÍSICO ITV com saldo inicial R$ 0,00 (direção confirmou saldos zerados em 29/10); habilitação pelo fluxo validado da Tesouraria, feita pelo administrador na tela. Contas HML TESTE: direção decidiu tratar depois.
+- [ ] Etapa 2 — Rotina diária de conferência: despesas, recebimentos, divergências e lançamentos importados; sincronização M5 permanece manual com bloqueios atuais.
+- [ ] Etapa 3 — Dashboard executivo: somente após validar estrutura financeira e regras de lançamento; distinguir faturamento, recebimentos e resultado.
+- Decisões fixas: domínio itv-financeiro.lovable.app mantido; acesso restrito; nenhum dado financeiro inventado.
+
 ## Encerramento operacional — 29/10/2026
 
 - [x] Verificar checklist por código/SELECTs: 177 testes aprovados, cadastro público bloqueado por settings HTTP 200, RLS nas 13 tabelas, gatilhos ativos, 49/49 sem duplicidades, zero movimentos/saldos; pg_cron/pg_net ausentes. Validação autenticada ponta a ponta indisponível no executor externo.
