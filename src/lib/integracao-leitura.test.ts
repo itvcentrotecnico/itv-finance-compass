@@ -99,5 +99,77 @@ describe("leitura HTTP compartilhada — somente respostas simuladas", () => {
     const fake = buscar(async input => Response.json(resposta(input)));
     await expect(lerFonteHttp("https://usuario:senha@origem.example", tokenSimulado, inicio, fim, { fetch: fake })).rejects.toMatchObject({ etapa: "configuracao_origem" });
     expect(fake).not.toHaveBeenCalled();
+});
+
+describe("primeira execução — leitura um recurso por vez (simulado)", () => {
+  const ordem = ["formas_pagamento", "recebimentos", "pagamentos", "recebimentos_titulos", "titulos"];
+
+  it("nunca mantém mais de uma requisição aberta e segue a ordem fixa", async () => {
+    let abertas = 0, maximo = 0;
+    const chamadas: string[] = [];
+    const fake = buscar(async input => {
+      abertas++; maximo = Math.max(maximo, abertas);
+      chamadas.push(new URL(String(input)).searchParams.get("recurso") ?? "");
+      await new Promise(r => setTimeout(r, 5));
+      abertas--;
+      return Response.json(resposta(input));
+    });
+    await lerFonteHttp(base, tokenSimulado, inicio, fim, { fetch: fake });
+    expect(maximo).toBe(1);
+    expect(chamadas).toEqual(ordem);
   });
+
+  it("origem lenta na primeira requisição (inatividade) conclui sem segunda execução", async () => {
+    let primeira = true;
+    const fake = buscar(async input => {
+      if (primeira) { primeira = false; await new Promise(r => setTimeout(r, 50)); }
+      return Response.json(resposta(input));
+    });
+    const r = await lerFonteHttp(base, tokenSimulado, inicio, fim, { fetch: fake });
+    expect(fake).toHaveBeenCalledTimes(5);
+    expect(r.formas).toEqual([]);
+  });
+
+  it("HTTP 503 em recebimentos: falha registrada uma vez, sem retentativa e sem consultar os recursos seguintes", async () => {
+    const logs: DiagnosticoLeitura[] = [];
+    const fake = buscar(async input => {
+      const recurso = new URL(String(input)).searchParams.get("recurso");
+      return recurso === "recebimentos" ? new Response("indisponivel", { status: 503 }) : Response.json(resposta(input));
+    });
+    await expect(lerFonteHttp(base, tokenSimulado, inicio, fim, { fetch: fake, registrar: e => logs.push(e) })).rejects.toMatchObject({ etapa: "erro_interno_origem" });
+    expect(fake).toHaveBeenCalledTimes(2);
+    expect(logs).toEqual([expect.objectContaining({ recurso: "recebimentos", status_http: 503, etapa: "erro_interno_origem" })]);
+  });
+
+  it.each(ordem)("falha parcial em %s rejeita a leitura inteira (nada parcial é devolvido)", async alvo => {
+    const fake = buscar(async input => new URL(String(input)).searchParams.get("recurso") === alvo ? new Response("", { status: 500 }) : Response.json(resposta(input)));
+    await expect(lerFonteHttp(base, tokenSimulado, inicio, fim, { fetch: fake, registrar: () => {} })).rejects.toMatchObject({ etapa: "erro_interno_origem" });
+    expect(fake).toHaveBeenCalledTimes(ordem.indexOf(alvo) + 1);
+  });
+
+  it("recuperação: após uma falha, a próxima execução independente lê os cinco recursos", async () => {
+    let falhar = true;
+    const fake = buscar(async input => {
+      if (falhar) { falhar = false; return new Response("", { status: 503 }); }
+      return Response.json(resposta(input));
+    });
+    await expect(lerFonteHttp(base, tokenSimulado, inicio, fim, { fetch: fake, registrar: () => {} })).rejects.toMatchObject({ etapa: "erro_interno_origem" });
+    expect(fake).toHaveBeenCalledTimes(1);
+    await expect(lerFonteHttp(base, tokenSimulado, inicio, fim, { fetch: fake })).resolves.toBeDefined();
+    expect(fake).toHaveBeenCalledTimes(6);
+  });
+
+  it("prazo total continua valendo para a soma sequencial", async () => {
+    vi.useFakeTimers();
+    const fake = buscar(async (input, init) => new Promise((resolve, reject) => {
+      init?.signal?.addEventListener("abort", () => reject(new DOMException("aborted", "AbortError")), { once: true });
+      setTimeout(() => resolve(Response.json(resposta(input))), 40);
+    }));
+    const r = lerFonteHttp(base, tokenSimulado, inicio, fim, { fetch: fake, registrar: () => {}, prazoPaginaMs: 1000, prazoTotalMs: 100 });
+    const assertion = expect(r).rejects.toMatchObject({ etapa: "timeout_origem" });
+    await vi.advanceTimersByTimeAsync(200);
+    await assertion;
+    expect(fake).toHaveBeenCalledTimes(3);
+  });
+});
 });

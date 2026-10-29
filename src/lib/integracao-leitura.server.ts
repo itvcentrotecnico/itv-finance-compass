@@ -3,10 +3,10 @@ import { z } from "zod";
 import type { FonteGestao } from "./integracao";
 import { buscarPaginaM5, FalhaTransporte } from "./integracao-transporte.server";
 
-/** Identifica a revisão aprovada nos 63 testes, antes da adição deste marcador. */
+/** SHA-256 deste arquivo sem as linhas 6–10 (este marcador): leitura sequencial dos cinco recursos. */
 export const REVISAO_LEITOR_HTTP = Object.freeze({
-  versao: "m5-http-redirect-manual-v2",
-  revisao_leitor: "95cf17c3f13734bf55260c2f5802d615d679c907ebda792be400072d7cd76389",
+  versao: "m5-leitura-sequencial-v3",
+  revisao_leitor: "fb05275fd25c94048731c0719c5de28b44a9dbf8ccfac1e0c8a96fdde3d70a70",
 });
 
 const RECURSOS = ["formas_pagamento", "recebimentos", "pagamentos", "recebimentos_titulos", "titulos"] as const;
@@ -117,10 +117,14 @@ export async function lerFonteHttp(base: string, token: string, inicio: string, 
   }
 
   try {
-    const [formas, lancamentos, pagamentos, recebimentos, titulos] = await Promise.all([
-      lerRecurso("formas_pagamento"), lerRecurso("recebimentos"), lerRecurso("pagamentos"),
-      lerRecurso("recebimentos_titulos"), lerRecurso("titulos"),
-    ]);
+    // Um recurso por vez: a origem não recebe rajada de requisições simultâneas
+    // (falhas 5xx observadas só na primeira execução após inatividade, com cinco GETs paralelos).
+    // Primeira falha interrompe a leitura; nenhuma retentativa.
+    const formas = await lerRecurso("formas_pagamento");
+    const lancamentos = await lerRecurso("recebimentos");
+    const pagamentos = await lerRecurso("pagamentos");
+    const recebimentos = await lerRecurso("recebimentos_titulos");
+    const titulos = await lerRecurso("titulos");
     return {
       formas: formas as FonteGestao["formas"],
       lancamentos: lancamentos.map(l => ({ ...l, os: null, cliente: null, descricao: null })) as FonteGestao["lancamentos"],
