@@ -1,5 +1,14 @@
 # Autenticação segura — ITV FINANCEIRO HML
 
+## Encerramento operacional — 29/10/2026
+
+- [x] Verificar checklist por código/SELECTs: 177 testes aprovados, cadastro público bloqueado por settings HTTP 200, RLS nas 13 tabelas, gatilhos ativos, 49/49 sem duplicidades, zero movimentos/saldos; pg_cron/pg_net ausentes. Validação autenticada ponta a ponta indisponível no executor externo.
+- [x] Ajustar somente apresentação: operação manual sem falsa indicação de agenda ativa, resultados persistentes na tela e falhas compreensíveis; manter endpoints/credenciais/RPCs/leitor sequencial atual.
+- [ ] Confirmar desativação das três tarefas externas pelo administrador do cron-job.org (bloqueador externo).
+- [ ] Publicar somente após checklist essencial aprovado; preservar dados e não executar sincronizações.
+
+Decisão atual substitui pendências históricas de automação/investigação M5 abaixo: operação exclusivamente manual, HTTP 503 não declarado corrigido. Novos módulos e homologações financeiras ficam fora deste encerramento.
+
 - [x] Diagnóstico/correção M5 27/10 02:34 UTC: erro SQLSTATE 42501 por ausência de USAGE ao service_role comprovado nos logs/HML e reproduzido localmente; GRANT USAGE aplicado oficialmente apenas HML, leitura service_role HTTP 200; testes de início/concorrência/idempotência/auditoria e integridade aprovados. Relatório docs/m5/DIAGNOSTICO_CORRECAO_M5.md.
 - [x] Novo teste real M5 autorizado 27/10 02:40 UTC e acionado pelo usuário: execução automática registrada às 02:41:48 UTC, falha leitura_origem às 02:41:49 UTC; inicialização e auditoria comprovadas. Zero novos registros/conferências/movimentos e saldos zero preservados.
 - [ ] Operação diária M5: bloqueada pelo teste real 27/10 13:53 UTC com falha rede_origem mesmo após correção publicada; próxima investigação/alteração exige autorização e agenda não deve ser habilitada.
