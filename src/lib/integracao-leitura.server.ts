@@ -3,10 +3,10 @@ import { z } from "zod";
 import type { FonteGestao } from "./integracao";
 import { buscarPaginaM5, FalhaTransporte } from "./integracao-transporte.server";
 
-/** Identifica a revisão aprovada nos 63 testes, antes da adição deste marcador. */
+/** SHA-256 deste arquivo sem as linhas do marcador (7–10): leitura sequencial dos cinco recursos. */
 export const REVISAO_LEITOR_HTTP = Object.freeze({
-  versao: "m5-http-redirect-manual-v2",
-  revisao_leitor: "95cf17c3f13734bf55260c2f5802d615d679c907ebda792be400072d7cd76389",
+  versao: "m5-leitura-sequencial-v3",
+  revisao_leitor: "20a32003ce4f0c4ade40b502ecc9a3391e0545c95a981037d470eb2af957ede7",
 });
 
 const RECURSOS = ["formas_pagamento", "recebimentos", "pagamentos", "recebimentos_titulos", "titulos"] as const;

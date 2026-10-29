@@ -35,7 +35,7 @@ describe("consulta de versão protegida sem efeitos", () => {
     const fetch = vi.fn(); vi.stubGlobal("fetch", fetch);
     const r = await handlers.GET({ request: request(`Bearer ${segredo}`) });
     expect(r.status).toBe(200);
-    expect(await r.json()).toEqual({ versao: "m5-http-redirect-manual-v2", revisao_leitor: "95cf17c3f13734bf55260c2f5802d615d679c907ebda792be400072d7cd76389" });
+    expect(await r.json()).toEqual({ versao: "m5-leitura-sequencial-v3", revisao_leitor: "20a32003ce4f0c4ade40b502ecc9a3391e0545c95a981037d470eb2af957ede7" });
     expect(r.headers.get("Cache-Control")).toBe("no-store");
     expect(fetch).not.toHaveBeenCalled();
     expect(mocks.rpc).not.toHaveBeenCalled();
