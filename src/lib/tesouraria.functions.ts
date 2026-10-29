@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { erroTesouraria, resultadoErro, type ContaFinanceira, type Extrato, type HistoricoOperacoes, type ResultadoEnvio } from "./tesouraria";
+import { erroConferencia } from "./conferencia-operacional";
 
 const pedidoSchema = z.object({ tipo: z.enum(["abertura", "entrada", "saida", "transferencia", "estorno"]), chave: z.string().uuid(), data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), descricao: z.string().trim().min(2).max(500), valor: z.string().optional(), nome: z.string().trim().max(160).optional(), conta_tipo: z.enum(["banco", "caixa"]).optional(), banco: z.string().trim().max(120).optional(), agencia: z.string().trim().max(32).optional(), numero_conta: z.string().trim().max(64).optional(), origem: z.string().uuid().optional(), destino: z.string().uuid().optional(), plano: z.string().uuid().optional(), centro: z.string().uuid().optional(), original: z.string().uuid().optional(), justificativa: z.string().trim().max(500).optional() });
 const filtroSchema = z.object({ conta: z.string().optional(), inicio: z.string().optional(), fim: z.string().optional(), tipo: z.string().optional(), plano: z.string().optional(), pagina: z.number().int().min(0).max(100000) });
@@ -52,11 +53,11 @@ export const carregarHistoricoTesouraria = createServerFn({ method: "POST" }).mi
   return { ...historico, operacoes: historico.operacoes.map((o) => ({ ...o, estornada: estornadas.has(o.id) })) };
 });const idSchema = z.object({ id: z.string().uuid() });
 /** Conciliated review record → one treasury operation; retry-safe (DB row lock + link). */
-export const lancarConferencia = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).inputValidator((v: unknown) => idSchema.parse(v)).handler(async ({ data, context }) => {
+export const lancarConferencia = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).inputValidator((v: unknown) => idSchema.extend({ versao: z.string().regex(/^\d+$/) }).parse(v)).handler(async ({ data, context }) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = (context.supabase as any).schema("financeiro_hml");
   const { data: result, error } = await db.rpc("tesouraria_lancar_conferencia", { p: data });
-  if (error) return resultadoErro(error);
+  if (error) return { ...resultadoErro(error), mensagem: erroConferencia(error) } as ResultadoEnvio;
   return { estado: "confirmada", id: result.id } as ResultadoEnvio;
 });
 export const habilitarConta = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).inputValidator((v: unknown) => idSchema.extend({ chave: z.string().uuid(), data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), valor: z.string().regex(/^-?\d{1,16}\.\d{2}$/), responsavel: z.string().trim().min(2).max(160) }).parse(v)).handler(async ({ data, context }) => {
