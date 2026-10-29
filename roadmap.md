@@ -5,7 +5,7 @@
 - [x] Verificar checklist por código/SELECTs: 177 testes aprovados, cadastro público bloqueado por settings HTTP 200, RLS nas 13 tabelas, gatilhos ativos, 49/49 sem duplicidades, zero movimentos/saldos; pg_cron/pg_net ausentes. Validação autenticada ponta a ponta indisponível no executor externo.
 - [x] Ajustar somente apresentação: operação manual sem falsa indicação de agenda ativa, resultados persistentes na tela e falhas compreensíveis; manter endpoints/credenciais/RPCs/leitor sequencial atual.
 - [x] Direção confirmou duas tarefas externas (18h30 e 19h00) desativadas; não existe tarefa 19h30.
-- [ ] Corrigir controles manuais após aprovação do SQL: função real integracao_iniciar não verifica horário 18h30 nem um sucesso por dia; publicação bloqueada por essas ausências.
+- [ ] Correção final autorizada 29/10 23h16 UTC: implementar controles manuais 18h30–23h59 Manaus e um sucesso diário incluindo histórico/zero novos; testar isoladamente, apresentar SQL/arquivos/resultados e não publicar sem nova autorização.
 - [ ] Concluir verificação essencial de acesso autenticado: executor external_unmanaged sem sessão; aguarda confirmação no navegador do usuário, sem sincronizar.
 - [ ] Publicar somente após limites obrigatórios e acesso confirmados; preservar dados e não executar sincronizações. Revisão 29/10 23h13 UTC: 177 testes aprovados, 49/49, zero duplicidades/movimentos; scan sem críticos e aviso informativo sobre senhas vazadas.
 
