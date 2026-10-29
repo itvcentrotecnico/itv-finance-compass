@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { can } from "@/lib/auth/permissions";
 import { carregarEstadoIntegracao, carregarItensIntegracao, sincronizarGestaoItv } from "@/lib/integracao.functions";
+import { mensagemControleManual } from "@/lib/integracao-manual";
 import { DiagnosticoAcesso } from "./DiagnosticoAcesso";
 
 const SITUACOES: Record<string, { rotulo: string; variante: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -42,7 +43,7 @@ export function IntegracaoPanel() {
   const [dia, setDia] = useState("");
   const sincronizar = useServerFn(sincronizarGestaoItv);
 
-  const estado = useQuery({ queryKey: ["integracao", "estado"], queryFn: () => carregarEstadoIntegracao() });
+  const estado = useQuery({ queryKey: ["integracao", "estado"], queryFn: () => carregarEstadoIntegracao(), refetchInterval: 15_000 });
   const itens = useQuery({ queryKey: ["integracao", "itens", pagina], queryFn: () => carregarItensIntegracao({ data: { pagina } }) });
 
   const sync = useMutation({
@@ -53,7 +54,7 @@ export function IntegracaoPanel() {
       else if (r.estado === "desabilitada") toast.info(r.motivo);
       else toast.error(mensagemFalha(r.etapa));
     },
-    onError: (e: Error) => toast.error(e.message),
+    onError: (e: Error) => { qc.invalidateQueries({ queryKey: ["integracao", "estado"] }); toast.error(e.message); },
   });
 
   const e = estado.data;
@@ -81,10 +82,12 @@ export function IntegracaoPanel() {
             <div className="mt-4 flex flex-col gap-2">
               <label className="text-xs text-muted-foreground" htmlFor="dia-sync">Dia a sincronizar (vazio = exercício até hoje)</label>
               <input id="dia-sync" type="date" value={dia} disabled={sync.isPending} onChange={(ev) => setDia(ev.target.value)} className="h-9 rounded-md border bg-background px-2 text-sm" />
-              <Button size="sm" disabled={!e?.configurada || sync.isPending} onClick={() => sync.mutate()}>
+              <Button size="sm" disabled={!e?.configurada || !e.manual?.permitida || estado.isError || sync.isPending} onClick={() => sync.mutate()}>
                 <RefreshCw className={sync.isPending ? "size-4 animate-spin" : "size-4"} />
                 {sync.isPending ? "Sincronizando…" : dia ? "Sincronizar este dia" : "Sincronizar agora"}
               </Button>
+              <p role="status" className="text-xs text-muted-foreground">{e?.manual ? mensagemControleManual(e.manual) : "Aguardando confirmação dos limites pelo servidor. Sincronização bloqueada."}</p>
+              {estado.isError && <p role="alert" className="text-xs text-destructive">Não foi possível confirmar a disponibilidade. A sincronização permanece bloqueada.</p>}
               {sync.isError && <p role="alert" className="text-xs text-destructive">{sync.error.message}</p>}
               {sync.data?.estado === "falha" && <p role="alert" className="text-xs text-destructive">{mensagemFalha(sync.data.etapa)}</p>}
               {sync.data?.estado === "concluida" && <p role="status" className="text-xs text-muted-foreground">Sincronização concluída: {sync.data.novos} registro(s) importado(s) e {sync.data.enviados_conferencia} conferência(s) criada(s).</p>}

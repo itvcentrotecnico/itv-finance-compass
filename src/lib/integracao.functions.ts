@@ -8,6 +8,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { montarItens, type FonteGestao } from "./integracao";
+import type { ControleManual } from "./integracao-manual";
 
 export interface Sincronizacao {
   id: string;
@@ -33,6 +34,7 @@ export interface ItemIntegracaoLinha {
 
 export interface EstadoIntegracao {
   configurada: boolean;
+  manual: ControleManual;
   ultima: Sincronizacao | null;
   totais: Record<string, number>;
   automatica: { preparada: boolean; ultima: Sincronizacao | null };
@@ -48,6 +50,8 @@ type Db = any;
 
 export const carregarEstadoIntegracao = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).handler(async ({ context }): Promise<EstadoIntegracao> => {
   const db = (context.supabase as Db).schema("financeiro_hml");
+  const { data: manual, error: erroManual } = await db.rpc("integracao_estado_manual");
+  if (erroManual || !manual) throw new Error("Não foi possível confirmar os limites da sincronização manual. A execução permanece bloqueada.");
   const { data: ultima, error } = await db.from("integracao_sincronizacoes").select("id,iniciado_em,concluido_em,status,consultados,novos,existentes,divergentes,enviados_conferencia,erros").order("iniciado_em", { ascending: false }).limit(1).maybeSingle();
   if (error) throw new Error("Falha ao consultar o estado da integração.");
   const { data: itens, error: erroItens } = await db.from("integracao_itens").select("situacao");
@@ -57,6 +61,7 @@ export const carregarEstadoIntegracao = createServerFn({ method: "POST" }).middl
   // Coluna "modo" existe a partir da M5; antes dela a automática aparece como não preparada.
   const auto = await db.from("integracao_sincronizacoes").select("id,iniciado_em,concluido_em,status,consultados,novos,existentes,divergentes,enviados_conferencia,erros").eq("modo", "automatica").order("iniciado_em", { ascending: false }).limit(1).maybeSingle();
   return {
+    manual: manual as ControleManual,
     configurada: Boolean(process.env["GESTAO_ITV_READ_TOKEN"]),
     ultima: (ultima as Sincronizacao | null) ?? null,
     totais,
@@ -120,6 +125,8 @@ export const sincronizarGestaoItv = createServerFn({ method: "POST" }).middlewar
   if (erroInicio) {
     const m = String(erroInicio.message);
     if (m.includes("INT_PERMISSAO")) throw new Error("Seu perfil não pode sincronizar a integração.");
+    if (m.includes("INT_HORARIO_MANUAL")) throw new Error("Sincronização manual disponível somente das 18h30 às 23h59, horário de Manaus.");
+    if (m.includes("INT_SUCESSO_DIARIO")) throw new Error("Já houve uma sincronização manual bem-sucedida hoje. Consulte a última execução. Nova sincronização disponível às 18h30 de amanhã, horário de Manaus.");
     if (m.includes("INT_EM_ANDAMENTO")) throw new Error("Já existe uma sincronização em andamento. Aguarde alguns minutos.");
     throw new Error("Falha ao iniciar a sincronização.");
   }
