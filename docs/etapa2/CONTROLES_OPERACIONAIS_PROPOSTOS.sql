@@ -170,7 +170,7 @@ BEGIN
   PERFORM financeiro_hml.conf_validar_grupo(c.dados,c.componentes,fonte.natureza);
   c.estado:='autorizado'; c.autorizado_por:=auth.uid(); c.autorizado_em:=clock_timestamp(); c.versao_aprovada:=c.versao+1;
  END IF;
- UPDATE financeiro_hml.conferencia_controles SET dados=c.dados,componentes=c.componentes,estado=c.estado,versao=c.versao+1,preparado_por=c.preparado_por,aprovado_por=c.aprovado_por,aprovado_em=c.aprovado_em,versao_aprovada=c.versao_aprovada,autorizado_por=c.autorizado_por,autorizado_em=c.autorizado_em,justificativa=nullif(motivo,''),atualizado_por=auth.uid(),atualizado_em=clock_timestamp(),acao=acao WHERE id=c.id;
+ UPDATE financeiro_hml.conferencia_controles SET dados=c.dados,componentes=c.componentes,estado=c.estado,versao=c.versao+1,preparado_por=c.preparado_por,aprovado_por=c.aprovado_por,aprovado_em=c.aprovado_em,versao_aprovada=c.versao_aprovada,autorizado_por=c.autorizado_por,autorizado_em=c.autorizado_em,justificativa=nullif(motivo,''),atualizado_por=auth.uid(),atualizado_em=clock_timestamp(),acao=p->>'acao' WHERE id=c.id;
  RETURN financeiro_hml.conferencia_consultar(jsonb_build_object('id',c.id));
 END $$;
 
