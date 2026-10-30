@@ -23,6 +23,15 @@ CREATE POLICY tes_solicitacoes_ler ON financeiro_hml.tesouraria_solicitacoes FOR
 CREATE TRIGGER tes_solicitacoes_auditar AFTER INSERT OR UPDATE ON financeiro_hml.tesouraria_solicitacoes
  FOR EACH ROW EXECUTE FUNCTION financeiro_hml.tes_conf_auditar();
 
+CREATE FUNCTION financeiro_hml.tesouraria_listar_solicitacoes(p jsonb) RETURNS jsonb
+LANGUAGE sql STABLE SECURITY INVOKER SET search_path=pg_catalog,financeiro_hml AS $$
+ WITH filtrado AS (SELECT s.* FROM financeiro_hml.tesouraria_solicitacoes s WHERE p->>'estado' IS NULL OR s.estado=p->>'estado'),
+ pagina AS (SELECT * FROM filtrado ORDER BY criado_em DESC,id DESC LIMIT 50 OFFSET least(greatest(coalesce((p->>'pagina')::bigint,0),0),100000)*50)
+ SELECT jsonb_build_object('total',(SELECT count(*) FROM filtrado),'solicitacoes',coalesce((SELECT jsonb_agg(to_jsonb(s)||jsonb_build_object('versao',s.versao::text) ORDER BY criado_em DESC,id DESC) FROM pagina s),'[]'::jsonb));
+$$;
+REVOKE ALL ON FUNCTION financeiro_hml.tesouraria_listar_solicitacoes(jsonb) FROM PUBLIC,anon,service_role;
+GRANT EXECUTE ON FUNCTION financeiro_hml.tesouraria_listar_solicitacoes(jsonb) TO authenticated;
+
 CREATE FUNCTION financeiro_hml.tes_validar_solicitacao(p jsonb) RETURNS void
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,financeiro_hml,pg_temp AS $$
 DECLARE original financeiro_hml.tesouraria_operacoes; dt date; conta record; k text; ref text;

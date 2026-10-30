@@ -9,10 +9,8 @@ export const listarSolicitacoes = createServerFn({method:'POST'}).middleware([re
  .handler(async({data,context})=>{
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db=(context.supabase as any).schema('financeiro_hml');
-  let q=db.from('tesouraria_solicitacoes').select('*',{count:'exact'}).order('criado_em',{ascending:false}).order('id',{ascending:false}).range(data.pagina*50,data.pagina*50+49);
-  if(data.estado) q=q.eq('estado',data.estado);
-  const r=await q; if(r.error) throw new Error(erroTesouraria(r.error));
-  return {total:r.count ?? 0,solicitacoes:(r.data ?? []).map((s:SolicitacaoTesouraria)=>({...s,versao:String(s.versao)})) as SolicitacaoTesouraria[]};
+  const r=await db.rpc('tesouraria_listar_solicitacoes',{p:data}); if(r.error) throw new Error(erroTesouraria(r.error));
+  return r.data as {total:number;solicitacoes:SolicitacaoTesouraria[]};
  });
 export const decidirSolicitacao = createServerFn({method:'POST'}).middleware([requireSupabaseAuth])
  .inputValidator((v:unknown)=>z.object({id:z.string().uuid(),versao:z.string().regex(/^\d+$/),acao:z.enum(['executar','devolver']),justificativa:z.string().max(500)}).parse(v))

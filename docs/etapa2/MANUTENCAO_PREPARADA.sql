@@ -19,8 +19,8 @@ CREATE TEMP TABLE etapa2_manifesto(tipo text NOT NULL, objeto text NOT NULL, com
 CREATE TEMP TABLE etapa2_janela(inicio timestamptz NOT NULL DEFAULT clock_timestamp(), backend integer NOT NULL DEFAULT pg_backend_pid(), encerrada boolean NOT NULL DEFAULT false) ON COMMIT PRESERVE ROWS;
 DO $$
 DECLARE c record; a record; f record; col record; papel text; comando text; nome text;
- leituras text[] := ARRAY['tem_papel','papel_atual','tesouraria_saldos','tesouraria_extrato','tesouraria_historico_operacoes','integracao_estado_manual','conferencia_consultar','conferencia_historico','conferencia_opcoes'];
- mutadoras text[] := ARRAY['tesouraria_criar_conta','tesouraria_habilitar_conta','tesouraria_lancar','tesouraria_lancar_conferencia','tesouraria_transferir','tesouraria_estornar','integracao_iniciar','integracao_iniciar_automatica','integracao_concluir','diagnostico_reservar','diagnostico_finalizar','conferencia_comandar'];
+ leituras text[] := ARRAY['tem_papel','papel_atual','tesouraria_saldos','tesouraria_extrato','tesouraria_historico_operacoes','integracao_estado_manual','conferencia_consultar','conferencia_historico','conferencia_opcoes','tesouraria_listar_solicitacoes'];
+ mutadoras text[] := ARRAY['tesouraria_criar_conta','tesouraria_habilitar_conta','tesouraria_lancar','tesouraria_lancar_conferencia','tesouraria_transferir','tesouraria_estornar','integracao_iniciar','integracao_iniciar_automatica','integracao_concluir','diagnostico_reservar','diagnostico_finalizar','conferencia_comandar','tesouraria_solicitar','tesouraria_decidir'];
 BEGIN
  -- Defaults de função podem conceder PUBLIC. Capturar ACL efetiva, não apenas proacl não nulo.
  FOR f IN SELECT p.*,format('%I.%I(%s)',n.nspname,p.proname,pg_get_function_identity_arguments(p.oid)) assinatura
@@ -33,7 +33,7 @@ BEGIN
    IF a.grantor<>f.proowner OR a.is_grantable THEN RAISE EXCEPTION 'ETAPA2_CONCESSAO_NAO_SUPORTADA'; END IF;
    papel:=CASE a.grantee WHEN 0 THEN 'PUBLIC' ELSE quote_ident(pg_get_userbyid(a.grantee)) END;
    comando:=format('GRANT EXECUTE ON FUNCTION %s TO %s;',f.assinatura,papel);
-   INSERT INTO etapa2_manifesto VALUES('funcao',f.proname,comando,f.proname=ANY(ARRAY['tesouraria_criar_conta','tesouraria_habilitar_conta','tesouraria_lancar','tesouraria_lancar_conferencia','tesouraria_transferir','tesouraria_estornar','conferencia_comandar']));
+   INSERT INTO etapa2_manifesto VALUES('funcao',f.proname,comando,f.proname=ANY(ARRAY['tesouraria_criar_conta','tesouraria_habilitar_conta','tesouraria_lancar','tesouraria_lancar_conferencia','tesouraria_transferir','tesouraria_estornar','conferencia_comandar','tesouraria_solicitar','tesouraria_decidir']));
   END LOOP;
   EXECUTE format('REVOKE EXECUTE ON FUNCTION %s FROM PUBLIC,anon,authenticated,service_role;',f.assinatura);
  END LOOP;
