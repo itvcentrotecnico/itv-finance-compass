@@ -42,6 +42,7 @@ try:
     audit_before = scalar('(SELECT count(*) FROM financeiro_hml.auditoria)')
     gate = (ROOT / 'docs/etapa2/MANUTENCAO_PREPARADA.sql').read_text()
     resume = (ROOT / 'docs/etapa2/RETOMADA_SELETIVA_PREPARADA.sql').read_text()
+    seal = (ROOT / 'docs/etapa2/SELAR_CONTROLES_PREPARADO.sql').read_text()
     with tempfile.TemporaryDirectory(prefix='etapa2-manifesto-') as folder:
         file = Path(folder) / 'acl.csv'
         header = f"\\set banco_esperado {DB}\n\\set manifesto {file}\n"
@@ -89,6 +90,21 @@ try:
         for index, value in enumerate(result.splitlines()[-len(post):]):
             check(f'retomada seletiva {index+1}', value == 't')
         check('movimentos continuam zero', scalar('(SELECT count(*) FROM financeiro_hml.tesouraria_movimentos)') == '0')
+        # Baseline local reconstruído para validar banco->selagem->retomada
+        # na mesma conexão, sem nenhum INSERT de dados financeiros.
+        sql('\n'.join(row['comando'] for row in captured))
+        migration = (ROOT / 'docs/etapa2/CONTROLES_OPERACIONAIS_PROPOSTOS.sql').read_text()
+        final = [
+            "NOT has_function_privilege('authenticated','financeiro_hml.conferencia_comandar(jsonb)','EXECUTE')",
+            "has_function_privilege('authenticated','financeiro_hml.conferencia_consultar(jsonb)','EXECUTE')",
+            "has_function_privilege('authenticated','financeiro_hml.conferencia_historico(jsonb)','EXECUTE')",
+            "NOT has_column_privilege('authenticated','financeiro_hml.tesouraria_conferencias','status','UPDATE')",
+            "(SELECT count(*) FROM financeiro_hml.conferencia_operacao_autorizada)=0",
+            f"(SELECT count(*) FROM financeiro_hml.auditoria)={audit_before}",
+        ]
+        result = sql(activate + '\n' + migration + '\n' + seal + "\nSET itv.etapa2.retomada='RETOMADA_EXPLICITAMENTE_AUTORIZADA';\n" + resume + '\n' + '\n'.join('SELECT '+s+';' for s in final))
+        for index, value in enumerate(result.splitlines()[-len(final):]):
+            check(f'compatibilidade migração-selagem-retomada {index+1}', value == 't')
     output = {'escopo': 'PostgreSQL local descartável sem HML/GET/financeiro', 'aprovados': len(checks), 'checks': checks}
     (ROOT / 'docs/etapa2/RESULTADOS_MANUTENCAO_LOCAL.json').write_text(json.dumps(output, ensure_ascii=False, indent=2) + '\n')
     print(json.dumps(output, ensure_ascii=False))
