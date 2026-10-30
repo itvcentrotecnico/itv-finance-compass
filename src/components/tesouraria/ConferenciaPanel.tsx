@@ -16,6 +16,7 @@ import type { Conta, Centro } from "@/lib/cadastros";
 import { dinheiro, decimal, erroTesouraria, type ContaFinanceira } from "@/lib/tesouraria";
 import { habilitarConta } from "@/lib/tesouraria.functions";
 import { ConferenciaOperacionalEditor } from "./ConferenciaOperacionalEditor";
+import { ESTADOS_CONFERENCIA } from "@/lib/conferencia-operacional";
 
 export interface Conferencia { id: string; referencia_origem: string; natureza: "entrada" | "saida"; forma: string; data_ocorrencia: string; descricao: string; valor_bruto: string; valor_liquido: string | null; taxa: string | null; data_liquidacao: string | null; boleto_vencimento: string | null; boleto_pagamento: string | null; boleto_status: string | null; grupo_id: string; conta_financeira_id: string | null; plano_conta_id: string | null; centro_custo_id: string | null; status: string; observacao: string | null; operacao_id: string | null }
 export interface ContaPreparada { id: string; nome: string; tipo: string; finalidade: string | null; situacao: string; conta_financeira_id: string | null; data_abertura: string | null; saldo_validado: string | null; responsavel_conferencia: string | null }
@@ -58,13 +59,21 @@ export function ConferenciaPanel({ role, contas, planos, centros }: { role: Role
   const [status, setStatus] = useState("");
   const [busca, setBusca] = useState("");
   const [edit, setEdit] = useState<Conferencia | null>(null);
-  const q = useQuery({ queryKey: ["tesouraria", "conferencias"], queryFn: async () => { const { data, error } = await fin().from("tesouraria_conferencias").select("*").order("data_ocorrencia").order("referencia_origem").limit(5000); if (error) throw new Error(erroTesouraria(error)); return data as Conferencia[]; } });
+  const q = useQuery({ queryKey: ["tesouraria", "conferencias"], queryFn: async () => {
+    const { data, error } = await fin().from("tesouraria_conferencias").select("*").order("data_ocorrencia").order("referencia_origem").limit(5000);
+    if (error) throw new Error(erroTesouraria(error));
+    const { data: controles, error: falha } = await fin().from("conferencia_controles").select("id,estado,dados");
+    // SQL pending: source consultation remains possible, but editor fails closed.
+    if (falha && !["42P01", "PGRST205"].includes(falha.code)) throw new Error(erroTesouraria(falha));
+    const porId = new Map((controles ?? []).map((c: { id: string; estado: string; dados: Partial<Conferencia> }) => [c.id, c]));
+    return (data ?? []).map((c: Conferencia) => { const r = porId.get(c.id); return r ? { ...c, ...r.dados, status: r.estado, operacao_id: r.estado === "lancado" ? "vinculo-auxiliar" : c.operacao_id } : c; }) as Conferencia[];
+  } });
   const lista = (q.data ?? []).filter((c) => (!status || (status === "lancado" ? !!c.operacao_id : c.status === status && !c.operacao_id)) && (!busca || `${c.descricao} ${c.referencia_origem}`.toLowerCase().includes(busca.toLowerCase())));
   const nome = (id: string | null) => contas.find((c) => c.id === id)?.nome ?? "Conta pendente";
   if (q.isLoading) return <Carregando />;
   if (q.isError) return <ErroCarga erro={q.error} onRetry={() => q.refetch()} />;
   return <>
-    <div className="mb-5 flex flex-wrap items-center gap-3"><div className="w-48"><Opcao label="Situação" value={status} onChange={setStatus} empty="Todas as situações" items={[...Object.entries(STATUS).map(([id, nome]) => ({ id, nome })), { id: "lancado", nome: "Lançado" }]} /></div><Input className="max-w-64" aria-label="Buscar conferência" placeholder="Buscar descrição ou origem" value={busca} onChange={(e) => setBusca(e.target.value)} /><span className="text-xs text-muted-foreground">{lista.length} registro(s)</span>
+    <div className="mb-5 flex flex-wrap items-center gap-3"><div className="w-48"><Opcao label="Situação" value={status} onChange={setStatus} empty="Todas as situações" items={Object.entries(ESTADOS_CONFERENCIA).map(([id, nome]) => ({ id, nome }))} /></div><Input className="max-w-64" aria-label="Buscar conferência" placeholder="Buscar descrição ou origem" value={busca} onChange={(e) => setBusca(e.target.value)} /><span className="text-xs text-muted-foreground">{lista.length} registro(s)</span>
 </div>
     {!lista.length ? <EmptyState icon={ClipboardCheck} title="Nenhum registro em conferência" description="Registros da planilha aguardando conferência aparecem aqui" /> :
     <div className="overflow-x-auto"><table className="w-full min-w-[760px] text-sm"><thead className="border-b text-left text-xs text-muted-foreground"><tr>{["Data", "Descrição", "Forma", "Conta", "Bruto", "Líquido", "Situação"].map((s) => <th key={s} className="px-2 py-3">{s}</th>)}</tr></thead>
