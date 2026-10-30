@@ -2,9 +2,9 @@
 
 ## Finalização executiva — 30/10/2026
 
-- [ ] Conclusão técnica autorizada 17h56: finalizar solicitações segregadas para lançamentos/transferências/estornos, compatibilidade e duplicidade, reutilizando motor/recuperação existentes; sem alterações remotas.
-- [ ] Consolidar SQL definitivo, liberação e reversão funcional fail-closed; testar apenas PostgreSQL descartável e testes app existentes.
-- [ ] Entregar pacote final com seis itens pedidos; aplicação/publicação/financeiro real continuam proibidos.
+- [x] Conclusão técnica 17h56: solicitações imutáveis para entradas/saídas/transferências/estornos, aprovação por pessoa diferente, referência externa única, histórico/efeitos do estorno, recuperação por mesma chave, wrappers sem execução direta. Abre/habilita contas continuam bloqueados. Sem alterações remotas.
+- [x] SQL definitivo consolidado em transação única, instalação selada/liberação separada e reversão funcional limitada para consulta; reinstalação de definições definitivas testada, sem apagar histórico ou reabrir caminhos antigos. 206 testes app, 47 SQL existentes, 48 conclusão SQL e 34 manutenção aprovados isoladamente.
+- [ ] Entregar pacote final com seis itens pedidos; aplicação/publicação/financeiro real continuam proibidos. Recuperação do backup e validação autenticada publicada não comprovadas.
 
 - [x] Auditoria final: 201/201 testes existentes aprovados; SELECTs confirmam 49/49 pendentes, 19 sincronizações, 280 auditorias, 6 aberturas zero e 0 movimentos; hashes JSONB idênticos aos anteriores. RLS nas 13 tabelas, cadastro público desativado por settings HTTP 200, acesso sem sessão redireciona /, /tesouraria e /integracoes ao login no preview, sem erros. Validação autenticada indisponível (external_unmanaged).
 - [x] Ajuste seguro não publicado: Dashboard sem desenhos de séries fictícias nem afirmação de ausência de alertas não verificados; indicadores explicitamente não consolidados. Nenhum cálculo, contrato ou alteração financeira.
