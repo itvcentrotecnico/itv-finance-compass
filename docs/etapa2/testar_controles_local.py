@@ -33,7 +33,9 @@ try:
   sql(f"INSERT INTO auth.users VALUES('{u}'); INSERT INTO financeiro_hml.perfis(usuario_id,papel,nome) VALUES('{u}','{role}','TESTE LOCAL {role}');")
  # Todas as fixtures financeiras só neste banco descartável.
  account='10000000-0000-4000-8000-000000000001';plan='20000000-0000-4000-8000-000000000001';center='30000000-0000-4000-8000-000000000001'
- sql(f"INSERT INTO financeiro_hml.contas_financeiras(id,nome,tipo,data_saldo_inicial) VALUES('{account}','TESTE LOCAL OFICIAL','banco','2026-10-29'); UPDATE financeiro_hml.contas_preparadas SET situacao='habilitada',conta_financeira_id='{account}',data_abertura='2026-10-29',saldo_validado=0,responsavel_conferencia='TESTE LOCAL' WHERE nome='SICREDI — CONTA PRINCIPAL'; INSERT INTO financeiro_hml.plano_contas(id,codigo,descricao,natureza) VALUES('{plan}','LOCAL','TESTE LOCAL RECEITA','receita'); INSERT INTO financeiro_hml.centros_custo(id,codigo,descricao) VALUES('{center}','LOCAL','TESTE LOCAL CENTRO');")
+ prepared=sql("SELECT id FROM financeiro_hml.contas_preparadas WHERE nome='SICREDI — CONTA PRINCIPAL';")
+ account=read('tesouraria_habilitar_conta',{'id':prepared,'chave':str(uuid.uuid4()),'data':'2026-10-29','valor':'0.00','responsavel':'TESTE LOCAL'},A)['id']
+ sql(f"INSERT INTO financeiro_hml.plano_contas(id,codigo,descricao,natureza) VALUES('{plan}','LOCAL','TESTE LOCAL RECEITA','receita'); INSERT INTO financeiro_hml.centros_custo(id,codigo,descricao) VALUES('{center}','LOCAL','TESTE LOCAL CENTRO');")
  sql("INSERT INTO financeiro_hml.tesouraria_conferencias(referencia_origem,natureza,forma,data_ocorrencia,descricao,valor_bruto) SELECT 'TESTE_LOCAL_'||n,'entrada','pix','2026-11-01','TESTE LOCAL',100 FROM generate_series(1,49) n;")
  baseline=sql("SELECT md5(string_agg(to_jsonb(c)::text,'|' ORDER BY id)) FROM financeiro_hml.tesouraria_conferencias c;")
  audit_before=sql('SELECT count(*) FROM financeiro_hml.auditoria;')
