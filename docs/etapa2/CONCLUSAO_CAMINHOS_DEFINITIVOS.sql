@@ -16,7 +16,7 @@ CREATE TABLE financeiro_hml.tesouraria_solicitacoes (
  acao text NOT NULL DEFAULT 'solicitar', UNIQUE(criado_por,chave)
 );
 GRANT SELECT ON financeiro_hml.tesouraria_solicitacoes TO authenticated;
-GRANT ALL ON financeiro_hml.tesouraria_solicitacoes TO service_role;
+GRANT SELECT ON financeiro_hml.tesouraria_solicitacoes TO service_role;
 ALTER TABLE financeiro_hml.tesouraria_solicitacoes ENABLE ROW LEVEL SECURITY;
 CREATE POLICY tes_solicitacoes_ler ON financeiro_hml.tesouraria_solicitacoes FOR SELECT TO authenticated
  USING (financeiro_hml.tem_papel(ARRAY['admin_geral','admin_financeiro','analista_financeiro','consulta_gerencial']));
@@ -36,6 +36,8 @@ CREATE FUNCTION financeiro_hml.tes_validar_solicitacao(p jsonb) RETURNS void
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,financeiro_hml,pg_temp AS $$
 DECLARE original financeiro_hml.tesouraria_operacoes; dt date; conta record; k text; ref text;
 BEGIN
+ -- Ordem única entre preparação/validação e motor; evita upgrades SHARE concorrentes.
+ PERFORM pg_advisory_xact_lock(hashtextextended('etapa2_execucao_financeira',0));
  IF p IS NULL OR jsonb_typeof(p) IS DISTINCT FROM 'object' OR coalesce(p->>'tipo','') NOT IN ('entrada','saida','transferencia','estorno') THEN RAISE EXCEPTION 'SOL_DADOS'; END IF;
  FOR k IN SELECT jsonb_object_keys(p) LOOP
   IF k<>ALL(ARRAY['tipo','data','descricao','valor','origem','destino','plano','centro','original','justificativa','referencia']) THEN RAISE EXCEPTION 'SOL_DADOS'; END IF;

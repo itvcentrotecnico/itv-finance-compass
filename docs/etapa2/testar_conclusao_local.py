@@ -96,7 +96,7 @@ try:
  check('falha não grava aprovação',sql(f"SELECT estado||':'||versao::text FROM financeiro_hml.tesouraria_solicitacoes WHERE id='{broken['id']}';")=='pendente:0')
  sql('DROP TRIGGER local_falha ON financeiro_hml.tesouraria_movimentos; DROP FUNCTION financeiro_hml.local_falha_commit();')
  # Captura verificável das definições definitivas para reativação sem DDL destrutivo.
- definitions=sql("SELECT string_agg(pg_get_functiondef(p.oid),E'\\n' ORDER BY proname) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='financeiro_hml' AND proname IN ('conferencia_comandar','tesouraria_lancar_conferencia','tesouraria_solicitar','tesouraria_decidir');")
+ definitions=sql("SELECT string_agg(pg_get_functiondef(p.oid),E';\\n' ORDER BY proname) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='financeiro_hml' AND proname IN ('conferencia_comandar','tesouraria_lancar_conferencia','tesouraria_solicitar','tesouraria_decidir');")+';'
  # Reversão não destrói nem reescreve dados e bloqueia também o corpo das funções.
  snapshots={table:sql(f"SELECT md5(coalesce(string_agg(to_jsonb(t)::text,'|' ORDER BY id),'')) FROM financeiro_hml.{table} t;") for table in ['tesouraria_conferencias','tesouraria_solicitacoes','tesouraria_operacoes','tesouraria_movimentos','auditoria']}
  r=run((ROOT/'docs/etapa2/REVERSAO_FUNCIONAL_DEFINITIVA.sql').read_text());check('reversão sem autorização falha',r.returncode!=0 and 'ETAPA2_REVERSAO_NAO_AUTORIZADA' in r.stderr)
@@ -113,5 +113,6 @@ try:
  check('reativação das definições definitivas executa pedido preservado',sql(f"SELECT valor::text FROM financeiro_hml.tesouraria_operacoes WHERE id='{restored['id']}';")=='2.00')
  check('lista devolve versão como string',isinstance(read('tesouraria_listar_solicitacoes',{'pagina':0},A)['solicitacoes'][0]['versao'],str))
  check('49 fontes sempre intactas',baseline==sql("SELECT md5(string_agg(to_jsonb(c)::text,'|' ORDER BY id)) FROM financeiro_hml.tesouraria_conferencias c;"))
+ check('service role sem escrita em solicitações',sql("SELECT has_table_privilege('service_role','financeiro_hml.tesouraria_solicitacoes','UPDATE');")=='f')
  print(f'{len(checks)} testes de conclusão SQL aprovados.')
 finally:sql(f'DROP DATABASE IF EXISTS {DB} WITH (FORCE);','postgres')
