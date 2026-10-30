@@ -4,7 +4,7 @@
 
 - [x] Auditoria final: 201/201 testes existentes aprovados; SELECTs confirmam 49/49 pendentes, 19 sincronizações, 280 auditorias, 6 aberturas zero e 0 movimentos; hashes JSONB idênticos aos anteriores. RLS nas 13 tabelas, cadastro público desativado por settings HTTP 200, acesso sem sessão redireciona /, /tesouraria e /integracoes ao login no preview, sem erros. Validação autenticada indisponível (external_unmanaged).
 - [x] Ajuste seguro não publicado: Dashboard sem desenhos de séries fictícias nem afirmação de ausência de alertas não verificados; indicadores explicitamente não consolidados. Nenhum cálculo, contrato ou alteração financeira.
-- [ ] Entregar relatório único A–G e pedido consolidado: pacote preparado ainda bloqueia estornos/transferências/avulsos e retomada não libera comandos novos; reversão ACL não recompõe funções. Não implantar como operação completa.
+- [x] Relatório executivo único A–G preparado para entrega com pedido consolidado, escopo/riscos/reversão/critérios: pacote ainda bloqueia estornos/transferências/avulsos e retomada não libera comandos novos; reversão ACL não recompõe funções. Status BLOQUEADO POR PENDÊNCIA CRÍTICA; não implantar como operação completa.
 - [ ] Recuperação: administrador informa dump de 29/10 às 21:16:57, inventário legível/13 entradas financeiras; falta evidência de restauração integral e integridade. Não solicitar arquivo sensível/senha pelo chat.
 - [ ] Implantação crítica: aguarda recuperação comprovada e autorização consolidada para janela, alterações críticas e publicação compatível. Sem operações financeiras ou alterações no GESTÃO ITV.
 - [ ] Prontidão administrativa: definir início oficial, aprovar categorias/centros e validar saldos reais; zeros atuais não são confirmação financeira.
