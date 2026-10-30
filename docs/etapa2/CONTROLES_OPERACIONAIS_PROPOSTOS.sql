@@ -39,7 +39,7 @@ CREATE TRIGGER conf_controles_auditar AFTER INSERT OR UPDATE ON financeiro_hml.c
  FOR EACH ROW EXECUTE FUNCTION financeiro_hml.tes_conf_auditar();
 CREATE TABLE financeiro_hml.conferencia_vinculos (
  conferencia_id uuid NOT NULL REFERENCES financeiro_hml.conferencia_controles(id),
- componente_id uuid NOT NULL, referencia_origem text NOT NULL UNIQUE,
+ componente_id uuid NOT NULL UNIQUE, referencia_origem text NOT NULL UNIQUE,
  operacao_id uuid NOT NULL UNIQUE REFERENCES financeiro_hml.tesouraria_operacoes(id),
  PRIMARY KEY(conferencia_id,componente_id)
 );
@@ -88,6 +88,7 @@ CREATE FUNCTION financeiro_hml.conf_validar_grupo(d jsonb, componentes jsonb, na
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,financeiro_hml,pg_temp AS $$
 DECLARE parte jsonb; soma numeric:=0; ids uuid[]:='{}'; ident uuid;
 BEGIN
+ IF d IS NULL OR jsonb_typeof(d) IS DISTINCT FROM 'object' OR d->>'forma' IS NULL OR componentes IS NULL OR jsonb_typeof(componentes) IS DISTINCT FROM 'array' THEN RAISE EXCEPTION 'CONF_DADOS'; END IF;
  IF d->>'forma'<>'misto' THEN
   IF componentes<>'[]'::jsonb THEN RAISE EXCEPTION 'CONF_RATEIO'; END IF;
   PERFORM financeiro_hml.conf_validar(d,natureza); RETURN;
@@ -136,17 +137,19 @@ BEGIN
  IF acao IN ('divergir','devolver') AND length(motivo) NOT BETWEEN 5 AND 500 THEN RAISE EXCEPTION 'CONF_JUSTIFICATIVA'; END IF;
  IF acao IN ('salvar','divergir') THEN
   d:=p->'dados'; partes:=coalesce(p->'componentes','[]');
-  IF d IS NULL OR jsonb_typeof(d)<>'object' OR jsonb_typeof(partes)<>'array' OR jsonb_array_length(partes)>50 THEN RAISE EXCEPTION 'CONF_DADOS'; END IF;
+  IF d IS NULL OR jsonb_typeof(d) IS DISTINCT FROM 'object' OR jsonb_typeof(partes) IS DISTINCT FROM 'array' OR jsonb_array_length(partes)>50 THEN RAISE EXCEPTION 'CONF_DADOS'; END IF;
   FOR k IN SELECT jsonb_object_keys(d) LOOP
    IF k<>ALL(ARRAY['forma','descricao','data_ocorrencia','valor_bruto','valor_liquido','data_liquidacao','boleto_vencimento','boleto_pagamento','boleto_status','conta_financeira_id','plano_conta_id','centro_custo_id','observacao']) THEN RAISE EXCEPTION 'CONF_DADOS'; END IF;
   END LOOP;
   -- Fonte financeira permanece imutável: total e data histórica não podem ser reescritos.
-  IF financeiro_hml.conf_dinheiro(d->>'valor_bruto')<>fonte.valor_bruto OR (d->>'data_ocorrencia')::date<>fonte.data_ocorrencia THEN RAISE EXCEPTION 'CONF_FONTE_IMUTAVEL'; END IF;
+  IF coalesce(d->>'data_ocorrencia','') !~ '^\d{4}-\d{2}-\d{2}$' THEN RAISE EXCEPTION 'CONF_DADOS'; END IF;
+  IF financeiro_hml.conf_dinheiro(d->>'valor_bruto')<>fonte.valor_bruto OR (d->>'data_ocorrencia')::date IS DISTINCT FROM fonte.data_ocorrencia THEN RAISE EXCEPTION 'CONF_FONTE_IMUTAVEL'; END IF;
   IF d->>'forma' IS NULL OR d->>'forma' NOT IN ('dinheiro','pix','credito','debito','parcelado','boleto','misto','indefinida') OR length(btrim(coalesce(d->>'descricao',''))) NOT BETWEEN 2 AND 500 THEN RAISE EXCEPTION 'CONF_DADOS'; END IF;
   IF d->>'forma'<>'misto' AND partes<>'[]'::jsonb THEN RAISE EXCEPTION 'CONF_RATEIO'; END IF;
   FOR parte IN SELECT value FROM jsonb_array_elements(partes) LOOP
    ident:=(parte->>'id')::uuid;
-   IF ident IS NULL OR ident=ANY(ids) THEN RAISE EXCEPTION 'CONF_DUPLICIDADE'; END IF;
+   IF ident IS NULL OR ident=ANY(ids) OR EXISTS(SELECT 1 FROM financeiro_hml.tesouraria_conferencias s WHERE s.identificador_origem=ident) THEN RAISE EXCEPTION 'CONF_DUPLICIDADE'; END IF;
+   IF (parte->>'data_ocorrencia')::date IS DISTINCT FROM fonte.data_ocorrencia THEN RAISE EXCEPTION 'CONF_FONTE_IMUTAVEL'; END IF;
    ids:=array_append(ids,ident);
    -- Só persistir componentes completos com valores realmente informados.
    PERFORM financeiro_hml.conf_validar(parte,fonte.natureza);
@@ -179,8 +182,8 @@ LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,financeiro_hml,pg_t
 BEGIN
  IF auth.uid() IS NULL OR NOT financeiro_hml.tem_papel(ARRAY['admin_geral','admin_financeiro','analista_financeiro','consulta_gerencial']) THEN RAISE EXCEPTION 'CONF_PERMISSAO' USING ERRCODE='42501'; END IF;
  IF NOT EXISTS(SELECT 1 FROM financeiro_hml.tesouraria_conferencias WHERE id=(p->>'id')::uuid) THEN RAISE EXCEPTION 'CONF_INEXISTENTE'; END IF;
- RETURN coalesce((SELECT jsonb_agg(ev ORDER BY numero DESC) FROM (
-  SELECT a.id::text numero,a.acao, a.depois->>'acao' acao_fluxo,a.antes->>'estado' estado_anterior,coalesce(a.depois->>'estado',a.depois->>'status') estado_posterior,a.usuario_id,
+ RETURN coalesce((SELECT jsonb_agg(ev ORDER BY numero::bigint DESC) FROM (
+  SELECT a.id::text numero,a.acao, a.depois->>'acao' acao_fluxo,coalesce(a.antes->>'estado',a.antes->>'status') estado_anterior,coalesce(a.depois->>'estado',a.depois->>'status') estado_posterior,a.usuario_id,
    pr.nome responsavel,a.ocorrido_em,a.depois->>'justificativa' justificativa
   FROM financeiro_hml.auditoria a LEFT JOIN financeiro_hml.perfis pr ON pr.usuario_id=a.usuario_id
   WHERE a.registro_id=(p->>'id')::uuid AND a.tabela IN ('tesouraria_conferencias','conferencia_controles') AND (p->>'antes' IS NULL OR a.id<(p->>'antes')::bigint)
