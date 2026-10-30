@@ -4,7 +4,7 @@ import {
   BellRing, Clock, PiggyBank, Layers, Target, GitCompareArrows,
 } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
-import { ChartPlaceholder, EmptyState, KpiCard, PageHeader, Panel } from "@/components/shared/finance";
+import { EmptyState, KpiCard, PageHeader, Panel } from "@/components/shared/finance";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -54,7 +54,7 @@ function Dashboard() {
       <PageHeader
         eyebrow="Visão executiva"
         title="Dashboard"
-        description="Os indicadores serão preenchidos assim que os módulos financeiros e a integração com o GESTÃO ITV forem autorizados."
+        description="Indicadores ainda não consolidados. Os valores de abertura registrados não comprovam os saldos reais da empresa."
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -64,16 +64,16 @@ function Dashboard() {
       <div className="mt-6 grid gap-4 lg:grid-cols-3">
         {CHARTS.map((c) => (
           <Panel key={c.title} title={c.title} subtitle={c.subtitle} className={c.span}>
-            <ChartPlaceholder variant={c.variant} />
+            <EmptyState icon={LineChart} compact title="Indicador não consolidado" description="Nenhum resultado financeiro apresentado neste painel." />
           </Panel>
         ))}
       </div>
 
-      <Panel title="Central de alertas" subtitle="Monitoramento automático — disponível nas próximas etapas" className="mt-6"
+      <Panel title="Central de alertas" subtitle="Monitoramento ainda não validado" className="mt-6"
         action={<BellRing className="size-4 text-muted-foreground" />}>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
           {ALERTS.map((a) => (
-            <EmptyState key={a.title} compact icon={a.icon} title={a.title} description="Nenhum alerta" />
+            <EmptyState key={a.title} compact icon={a.icon} title={a.title} description="Situação ainda não verificada" />
           ))}
         </div>
       </Panel>
