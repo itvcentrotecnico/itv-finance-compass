@@ -18,14 +18,14 @@ function Escolher({label,value,onChange,items}:{label:string;value:string|null;o
 }
 export function ConferenciaOperacionalEditor({id,role,contas,planos,centros,onDone}:{id:string;role:Role|null;contas:ContaFinanceira[];planos:Conta[];centros:Centro[];onDone:()=>void}){
  const consultar=useServerFn(consultarConferencia); const opcoes=useServerFn(opcoesConferencia);
- const q=useQuery({queryKey:['conferencia-operacional',id],queryFn:()=>consultar({data:{id}})});
+ const q=useQuery({queryKey:['conferencia-operacional',id],queryFn:()=>consultar({data:{id}}),refetchOnWindowFocus:false,refetchOnReconnect:false,staleTime:Infinity});
  const o=useQuery({queryKey:['conferencia-operacional','opcoes'],queryFn:()=>opcoes()});
  if(q.isLoading||o.isLoading) return <p className="mt-6 flex gap-2"><Loader2 className="size-4 animate-spin"/>Carregando conferência…</p>;
  if(q.isError||o.isError) return <div className="mt-6 space-y-3"><p role="alert" className="text-sm text-destructive">{q.error?.message||o.error?.message}</p><Button variant="outline" onClick={()=>{q.refetch();o.refetch();}}>Atualizar</Button></div>;
  if(!q.data||!o.data) return null;
- return <Editor key={`${id}:${q.data.versao}`} revisao={q.data} opcoes={o.data} role={role} contas={contas} planos={planos} centros={centros} onDone={onDone}/>;
+ return <Editor key={id} revisao={q.data} opcoes={o.data} role={role} contas={contas} planos={planos} centros={centros} onDone={onDone}/>;
 }
-function Campos({d,onChange,contas,planos,centros,opcoes,parte=false}:{d:DadosConferencia;onChange:(d:DadosConferencia)=>void;contas:ContaFinanceira[];planos:Conta[];centros:Centro[];opcoes:OpcoesConferencia;parte?:boolean}){
+function Campos({d,onChange,contas,planos,centros,opcoes,parte=false,natureza}:{natureza: string;d:DadosConferencia;onChange:(d:DadosConferencia)=>void;contas:ContaFinanceira[];planos:Conta[];centros:Centro[];opcoes:OpcoesConferencia;parte?:boolean}){
  const set=(k:keyof DadosConferencia,v:string|null)=>onChange({...d,[k]:v});
  const regra=opcoes.regras.find(r=>r.plano_conta_id===d.plano_conta_id);
  const campo=(label:string,k:keyof DadosConferencia,type='text',disabled=false)=><div className="space-y-2"><Label>{label}</Label><Input aria-label={label} type={type} disabled={disabled} value={d[k]||''} onChange={e=>set(k,e.target.value||null)}/></div>;
@@ -35,7 +35,7 @@ function Campos({d,onChange,contas,planos,centros,opcoes,parte=false}:{d:DadosCo
  {['credito','debito','parcelado'].includes(d.forma)&&<>{campo('Valor líquido recebido (R$)','valor_liquido')}{campo('Data de liquidação comprovada','data_liquidacao','date')}</>}
  {d.forma==='boleto'&&<>{campo('Vencimento','boleto_vencimento','date')}{campo('Data de pagamento','boleto_pagamento','date')}<Escolher label="Situação do boleto" value={d.boleto_status} onChange={v=>set('boleto_status',v)} items={[{id:'pendente',nome:'Pendente'},{id:'pago',nome:'Pago'},{id:'vencido',nome:'Vencido'}]}/></>}
  <Escolher label="Conta oficial" value={d.conta_financeira_id} onChange={v=>set('conta_financeira_id',v)} items={contas.filter(c=>opcoes.contas.includes(c.id)&&c.ativo)}/>
- <Escolher label="Categoria autorizada" value={d.plano_conta_id} onChange={v=>onChange({...d,plano_conta_id:v,centro_custo_id:null})} items={planos.filter(p=>p.ativo&&p.aceita_lancamentos&&opcoes.regras.some(r=>r.plano_conta_id===p.id)).map(p=>({id:p.id,nome:`${p.codigo} · ${p.descricao}`}))}/>
+ <Escolher label="Categoria autorizada" value={d.plano_conta_id} onChange={v=>onChange({...d,plano_conta_id:v,centro_custo_id:null})} items={planos.filter(p=>p.ativo&&p.aceita_lancamentos&&p.natureza===(natureza==='entrada'?'receita':'despesa')&&opcoes.regras.some(r=>r.plano_conta_id===p.id)).map(p=>({id:p.id,nome:`${p.codigo} · ${p.descricao}`}))}/>
  <Escolher label={regra?.centro_obrigatorio?'Centro de custo obrigatório':'Centro de custo'} value={d.centro_custo_id} onChange={v=>set('centro_custo_id',v)} items={centros.filter(c=>c.ativo&&regra?.centros_permitidos.includes(c.id)).map(c=>({id:c.id,nome:`${c.codigo} · ${c.descricao}`}))}/>
  {campo('Observação','observacao')}
  </>;
@@ -57,8 +57,8 @@ function Editor({revisao,opcoes,role,contas,planos,centros,onDone}:{revisao:Revi
  return <div className="mt-6 space-y-5">
  <p className="text-sm font-medium">{ESTADOS_CONFERENCIA[revisao.estado]||revisao.estado} · Revisão {revisao.versao}</p>
  {!opcoes.operacao_liberada&&<p className="text-sm text-muted-foreground">Operação financeira real não liberada pela direção.</p>}
- <fieldset disabled={bloqueado} className="space-y-4"><Campos d={dados} onChange={d=>{setDados(d);if(d.forma!=='misto')setPartes([]);}} contas={contas} planos={planos} centros={centros} opcoes={opcoes}/>
- {dados.forma==='misto'&&<section className="space-y-4 border-y py-4"><h3 className="font-medium">Componentes do pagamento</h3>{partes.map((p,i)=><div key={p.id} className="space-y-3 border-b pb-4"><div className="flex justify-between"><h4>Componente {i+1}</h4><Button variant="ghost" size="icon" aria-label={`Remover componente ${i+1}`} onClick={()=>setPartes(ps=>ps.filter(x=>x.id!==p.id))}><Trash2 className="size-4"/></Button></div><Campos d={p} parte onChange={d=>setPartes(ps=>ps.map(x=>x.id===p.id?{...d,id:p.id}:x))} contas={contas} planos={planos} centros={centros} opcoes={opcoes}/></div>)}<Button variant="outline" disabled={partes.length>=50} onClick={adicionar}><Plus className="size-4"/>Adicionar componente</Button></section>}
+ <fieldset disabled={bloqueado} className="space-y-4"><Campos natureza={revisao.natureza} d={dados} onChange={d=>{setDados(d);if(d.forma!=='misto')setPartes([]);}} contas={contas} planos={planos} centros={centros} opcoes={opcoes}/>
+ {dados.forma==='misto'&&<section className="space-y-4 border-y py-4"><h3 className="font-medium">Componentes do pagamento</h3>{partes.map((p,i)=><div key={p.id} className="space-y-3 border-b pb-4"><div className="flex justify-between"><h4>Componente {i+1}</h4><Button variant="ghost" size="icon" aria-label={`Remover componente ${i+1}`} onClick={()=>setPartes(ps=>ps.filter(x=>x.id!==p.id))}><Trash2 className="size-4"/></Button></div><Campos natureza={revisao.natureza} d={p} parte onChange={d=>setPartes(ps=>ps.map(x=>x.id===p.id?{...d,id:p.id}:x))} contas={contas} planos={planos} centros={centros} opcoes={opcoes}/></div>)}<Button variant="outline" disabled={partes.length>=50} onClick={adicionar}><Plus className="size-4"/>Adicionar componente</Button></section>}
  </fieldset>
  <div className="space-y-2"><Label>Justificativa da ação</Label><Input aria-label="Justificativa da ação" maxLength={500} disabled={ocupado||revisao.estado==='lancado'} value={justificativa} onChange={e=>setJustificativa(e.target.value)}/></div>
  {erro&&<p role="alert" className="text-sm text-destructive">{erro}</p>}

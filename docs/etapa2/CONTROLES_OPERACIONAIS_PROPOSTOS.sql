@@ -37,6 +37,13 @@ CREATE POLICY conf_controles_ler ON financeiro_hml.conferencia_controles FOR SEL
  USING (financeiro_hml.tem_papel(ARRAY['admin_geral','admin_financeiro','analista_financeiro','consulta_gerencial']));
 CREATE TRIGGER conf_controles_auditar AFTER INSERT OR UPDATE ON financeiro_hml.conferencia_controles
  FOR EACH ROW EXECUTE FUNCTION financeiro_hml.tes_conf_auditar();
+CREATE TABLE financeiro_hml.conferencia_componentes_identidade (
+ id uuid PRIMARY KEY, conferencia_id uuid NOT NULL REFERENCES financeiro_hml.conferencia_controles(id)
+);
+GRANT SELECT ON financeiro_hml.conferencia_componentes_identidade TO authenticated;
+ALTER TABLE financeiro_hml.conferencia_componentes_identidade ENABLE ROW LEVEL SECURITY;
+CREATE POLICY conf_identidade_ler ON financeiro_hml.conferencia_componentes_identidade FOR SELECT TO authenticated
+ USING (financeiro_hml.tem_papel(ARRAY['admin_geral','admin_financeiro','analista_financeiro','consulta_gerencial']));
 CREATE TABLE financeiro_hml.conferencia_vinculos (
  conferencia_id uuid NOT NULL REFERENCES financeiro_hml.conferencia_controles(id),
  componente_id uuid NOT NULL UNIQUE, referencia_origem text NOT NULL UNIQUE,
@@ -113,7 +120,7 @@ BEGIN
  IF NOT FOUND THEN RAISE EXCEPTION 'CONF_INEXISTENTE'; END IF;
  SELECT * INTO controle FROM financeiro_hml.conferencia_controles WHERE id=fonte.id;
  d:=to_jsonb(fonte)||jsonb_build_object('valor_bruto',fonte.valor_bruto::text,'valor_liquido',fonte.valor_liquido::text,'taxa',fonte.taxa::text);
- RETURN jsonb_build_object('id',fonte.id,'versao',coalesce(controle.versao,0)::text,'estado',coalesce(controle.estado,fonte.status),'fonte_hash',md5(to_jsonb(fonte)::text),'dados',d||coalesce(controle.dados,'{}'),'componentes',coalesce(controle.componentes,'[]'),'controle',to_jsonb(controle));
+ RETURN jsonb_build_object('id',fonte.id,'natureza',fonte.natureza,'versao',coalesce(controle.versao,0)::text,'estado',coalesce(controle.estado,fonte.status),'fonte_hash',md5(to_jsonb(fonte)::text),'dados',d||coalesce(controle.dados,'{}'),'componentes',coalesce(controle.componentes,'[]'),'controle',to_jsonb(controle));
 END $$;
 CREATE FUNCTION financeiro_hml.conferencia_comandar(p jsonb) RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,financeiro_hml,pg_temp AS $$
@@ -150,6 +157,8 @@ BEGIN
    ident:=(parte->>'id')::uuid;
    IF ident IS NULL OR ident=ANY(ids) OR EXISTS(SELECT 1 FROM financeiro_hml.tesouraria_conferencias s WHERE s.identificador_origem=ident) THEN RAISE EXCEPTION 'CONF_DUPLICIDADE'; END IF;
    IF (parte->>'data_ocorrencia')::date IS DISTINCT FROM fonte.data_ocorrencia THEN RAISE EXCEPTION 'CONF_FONTE_IMUTAVEL'; END IF;
+   INSERT INTO financeiro_hml.conferencia_componentes_identidade(id,conferencia_id) VALUES(ident,c.id) ON CONFLICT(id) DO NOTHING;
+   IF NOT EXISTS(SELECT 1 FROM financeiro_hml.conferencia_componentes_identidade WHERE id=ident AND conferencia_id=c.id) THEN RAISE EXCEPTION 'CONF_DUPLICIDADE'; END IF;
    ids:=array_append(ids,ident);
    -- Só persistir componentes completos com valores realmente informados.
    PERFORM financeiro_hml.conf_validar(parte,fonte.natureza);
@@ -246,4 +255,15 @@ REVOKE INSERT (referencia_origem,grupo_id,valor_total_grupo,natureza,forma,data_
 REVOKE UPDATE (grupo_id,valor_total_grupo,forma,data_ocorrencia,descricao,valor_bruto,valor_liquido,data_liquidacao,boleto_vencimento,boleto_pagamento,boleto_status,conta_financeira_id,plano_conta_id,centro_custo_id,status,observacao) ON financeiro_hml.tesouraria_conferencias FROM authenticated;
 REVOKE ALL ON FUNCTION financeiro_hml.conf_dinheiro(text),financeiro_hml.conf_validar(jsonb,text),financeiro_hml.conf_validar_grupo(jsonb,jsonb,text),financeiro_hml.conferencia_consultar(jsonb),financeiro_hml.conferencia_comandar(jsonb),financeiro_hml.conferencia_historico(jsonb),financeiro_hml.conferencia_opcoes() FROM PUBLIC,anon,service_role;
 GRANT EXECUTE ON FUNCTION financeiro_hml.conferencia_consultar(jsonb),financeiro_hml.conferencia_comandar(jsonb),financeiro_hml.conferencia_historico(jsonb),financeiro_hml.conferencia_opcoes() TO authenticated;
+-- Os caminhos financeiros legados seguem indisponíveis nesta preparação.
+-- Não muda conta/abertura existente; apenas recusa novas ações por wrappers.
+CREATE OR REPLACE FUNCTION financeiro_hml.tesouraria_criar_conta(p jsonb) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,financeiro_hml AS $$
+BEGIN RAISE EXCEPTION 'CONF_OPERACAO_BLOQUEADA'; END $$;
+CREATE OR REPLACE FUNCTION financeiro_hml.tesouraria_habilitar_conta(p jsonb) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,financeiro_hml AS $$
+BEGIN RAISE EXCEPTION 'CONF_OPERACAO_BLOQUEADA'; END $$;
+CREATE OR REPLACE FUNCTION financeiro_hml.tesouraria_estornar(p jsonb) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,financeiro_hml AS $$
+BEGIN RAISE EXCEPTION 'CONF_OPERACAO_BLOQUEADA'; END $$;
 COMMIT;
