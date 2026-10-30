@@ -46,7 +46,6 @@ BEGIN
    papel:=CASE a.grantee WHEN 0 THEN 'PUBLIC' ELSE quote_ident(pg_get_userbyid(a.grantee)) END;
    INSERT INTO etapa2_manifesto VALUES('tabela',c.relname,format('GRANT %s ON TABLE %s TO %s;',a.privilege_type,nome,papel),c.relname='tesouraria_conferencias' AND a.grantee=(SELECT oid FROM pg_roles WHERE rolname='authenticated'));
   END LOOP;
-  EXECUTE format('REVOKE INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER ON TABLE %s FROM PUBLIC,anon,authenticated,service_role;',nome);
   FOR col IN SELECT * FROM pg_attribute WHERE attrelid=c.oid AND attnum>0 AND NOT attisdropped AND attacl IS NOT NULL LOOP
    FOR a IN SELECT * FROM aclexplode(col.attacl) WHERE grantee<>c.relowner AND privilege_type<>'SELECT' LOOP
     IF a.grantee<>0 AND NOT EXISTS(SELECT 1 FROM pg_roles WHERE oid=a.grantee AND rolname IN ('anon','authenticated','service_role')) THEN RAISE EXCEPTION 'ETAPA2_PAPEL_NAO_MAPEADO'; END IF;
@@ -56,6 +55,8 @@ BEGIN
    END LOOP;
    EXECUTE format('REVOKE INSERT (%I),UPDATE (%I),REFERENCES (%I) ON TABLE %s FROM PUBLIC,anon,authenticated,service_role;',col.attname,col.attname,col.attname,nome);
   END LOOP;
+  -- Capturar colunas ANTES do REVOKE de tabela, que também pode removê-las.
+  EXECUTE format('REVOKE INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER ON TABLE %s FROM PUBLIC,anon,authenticated,service_role;',nome);
  END LOOP;
 END $$;
 -- Manifesto exportado ANTES do COMMIT, para recuperação se a conexão cair.
