@@ -27,7 +27,7 @@ CREATE FUNCTION financeiro_hml.tesouraria_listar_solicitacoes(p jsonb) RETURNS j
 LANGUAGE sql STABLE SECURITY INVOKER SET search_path=pg_catalog,financeiro_hml AS $$
  WITH filtrado AS (SELECT s.* FROM financeiro_hml.tesouraria_solicitacoes s WHERE p->>'estado' IS NULL OR s.estado=p->>'estado'),
  pagina AS (SELECT * FROM filtrado ORDER BY criado_em DESC,id DESC LIMIT 50 OFFSET least(greatest(coalesce((p->>'pagina')::bigint,0),0),100000)*50)
- SELECT jsonb_build_object('total',(SELECT count(*) FROM filtrado),'solicitacoes',coalesce((SELECT jsonb_agg(to_jsonb(s)||jsonb_build_object('versao',s.versao::text) ORDER BY criado_em DESC,id DESC) FROM pagina s),'[]'::jsonb));
+ SELECT jsonb_build_object('total',(SELECT count(*) FROM filtrado),'solicitacoes',coalesce((SELECT jsonb_agg(to_jsonb(s)||jsonb_build_object('versao',s.versao::text,'original_detalhes',(SELECT jsonb_build_object('valor',o.valor::text,'origem',o.conta_origem_id,'destino',o.conta_destino_id,'classificacao',o.classificacao_snapshot,'centro',o.centro_custo_id,'descricao',o.descricao) FROM financeiro_hml.tesouraria_operacoes o WHERE o.id=(s.pedido->>'original')::uuid)) ORDER BY criado_em DESC,id DESC) FROM pagina s),'[]'::jsonb));
 $$;
 REVOKE ALL ON FUNCTION financeiro_hml.tesouraria_listar_solicitacoes(jsonb) FROM PUBLIC,anon,service_role;
 GRANT EXECUTE ON FUNCTION financeiro_hml.tesouraria_listar_solicitacoes(jsonb) TO authenticated;

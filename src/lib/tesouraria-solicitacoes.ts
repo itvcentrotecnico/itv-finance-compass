@@ -5,6 +5,7 @@ export interface SolicitacaoTesouraria {
  id: string; pedido: Pedido & { referencia?: string }; criado_por: string; criado_em: string;
  estado: 'pendente' | 'executada' | 'devolvida'; versao: string; operacao_id: string | null;
  aprovado_por: string | null; justificativa: string | null;
+ original_detalhes?: {valor:string;origem:string|null;destino:string|null;classificacao:{descricao:string}|null;centro:string|null;descricao:string}|null;
 }
 export function podeDecidirSolicitacao(role: Role | null, usuario: string, s: SolicitacaoTesouraria) {
  return (role === 'admin_geral' || role === 'admin_financeiro') && s.criado_por !== usuario && s.estado === 'pendente';
