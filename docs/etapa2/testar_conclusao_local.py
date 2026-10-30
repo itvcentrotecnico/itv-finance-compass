@@ -92,7 +92,7 @@ try:
  r=run((ROOT/'docs/etapa2/REVERSAO_FUNCIONAL_DEFINITIVA.sql').read_text());check('reversão sem autorização falha',r.returncode!=0 and 'ETAPA2_REVERSAO_NAO_AUTORIZADA' in r.stderr)
  sql("SET itv.etapa2.reversao='REVERSAO_FUNCIONAL_AUTORIZADA';"+(ROOT/'docs/etapa2/REVERSAO_FUNCIONAL_DEFINITIVA.sql').read_text())
  for table,digest in snapshots.items():check('reversão preserva '+table,digest==sql(f"SELECT md5(coalesce(string_agg(to_jsonb(t)::text,'|' ORDER BY id),'')) FROM financeiro_hml.{table} t;"))
- check('consulta de saldos após reversão',len(read('tesouraria_saldos',{},A))==2)
+ check('consulta de saldos após reversão',len(json.loads(sql(actor(A)+'SELECT financeiro_hml.tesouraria_saldos();')))==2)
  block('reversão recusa comando','tesouraria_decidir',{'id':s['id'],'versao':'0','acao':'executar'},'permission denied',A)
  sql('GRANT EXECUTE ON FUNCTION financeiro_hml.tesouraria_decidir(jsonb) TO authenticated;')
  block('corpo revertido também falha fechado','tesouraria_decidir',{'id':s['id'],'versao':'0','acao':'executar'},'CONF_OPERACAO_BLOQUEADA',A)

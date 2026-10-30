@@ -15,6 +15,7 @@ import { chavePendente } from "@/lib/tesouraria-recuperacao";
 afterEach(cleanup);
 beforeEach(() => {
   vi.clearAllMocks(); localStorage.clear();
+  Element.prototype.scrollIntoView = vi.fn();
   Object.defineProperty(navigator, "locks", { configurable: true, value: { request: (_: string, fn: () => unknown) => fn() } });
   mocks.consultar.mockResolvedValue(null); mocks.historico.mockResolvedValue({ operacoes: [], total: 0 });
 });
