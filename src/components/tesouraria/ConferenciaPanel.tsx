@@ -65,7 +65,7 @@ export function ConferenciaPanel({ role, contas, planos, centros }: { role: Role
     const { data: controles, error: falha } = await fin().from("conferencia_controles").select("id,estado,dados");
     // SQL pending: source consultation remains possible, but editor fails closed.
     if (falha && !["42P01", "PGRST205"].includes(falha.code)) throw new Error(erroTesouraria(falha));
-    const porId = new Map((controles ?? []).map((c: { id: string; estado: string; dados: Partial<Conferencia> }) => [c.id, c]));
+    const porId = new Map<string, { id: string; estado: string; dados: Partial<Conferencia> }>((controles ?? []).map((c: { id: string; estado: string; dados: Partial<Conferencia> }) => [c.id, c] as const));
     return (data ?? []).map((c: Conferencia) => { const r = porId.get(c.id); return r ? { ...c, ...r.dados, status: r.estado, operacao_id: r.estado === "lancado" ? "vinculo-auxiliar" : c.operacao_id } : c; }) as Conferencia[];
   } });
   const lista = (q.data ?? []).filter((c) => (!status || (status === "lancado" ? !!c.operacao_id : c.status === status && !c.operacao_id)) && (!busca || `${c.descricao} ${c.referencia_origem}`.toLowerCase().includes(busca.toLowerCase())));
