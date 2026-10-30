@@ -39,6 +39,7 @@ try:
     # Nenhum seed financeiro; estrutura e funções reais em banco sem dados.
     empty = scalar('(SELECT count(*) FROM financeiro_hml.tesouraria_movimentos)')
     check('banco local sem movimentos', empty == '0')
+    audit_before = scalar('(SELECT count(*) FROM financeiro_hml.auditoria)')
     gate = (ROOT / 'docs/etapa2/MANUTENCAO_PREPARADA.sql').read_text()
     resume = (ROOT / 'docs/etapa2/RETOMADA_SELETIVA_PREPARADA.sql').read_text()
     with tempfile.TemporaryDirectory(prefix='etapa2-manifesto-') as folder:
@@ -82,7 +83,7 @@ try:
             "NOT has_column_privilege('authenticated','financeiro_hml.tesouraria_conferencias','descricao','UPDATE')",
             "has_column_privilege('authenticated','financeiro_hml.contas_financeiras','nome','UPDATE')",
             "has_table_privilege('authenticated','financeiro_hml.plano_contas','INSERT')",
-            "(SELECT count(*) FROM financeiro_hml.auditoria)=0",
+            f"(SELECT count(*) FROM financeiro_hml.auditoria)={audit_before}",
         ]
         result = sql(activate + "\nSET itv.etapa2.retomada='RETOMADA_EXPLICITAMENTE_AUTORIZADA';\n" + resume + '\n' + '\n'.join('SELECT '+s+';' for s in post))
         for index, value in enumerate(result.splitlines()[-len(post):]):
