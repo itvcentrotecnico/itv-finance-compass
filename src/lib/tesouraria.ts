@@ -15,7 +15,7 @@ export function resultadoErro(err: { code?: string; message?: string }): Resulta
   return { estado: definitivo && !err.message?.includes("TES_IDEMPOTENCIA") ? "rejeitada" : "incerta", mensagem: erroTesouraria(err) };
 }
 export interface Filtros { conta?: string; inicio?: string; fim?: string; tipo?: string; plano?: string; pagina: number }
-export interface Pedido { tipo: TipoOperacao; chave: string; data: string; descricao: string; valor?: string; nome?: string; conta_tipo?: string; banco?: string; agencia?: string; numero_conta?: string; origem?: string; destino?: string; plano?: string; centro?: string; original?: string; justificativa?: string }
+export interface Pedido { tipo: TipoOperacao; chave: string; data: string; descricao: string; valor?: string; nome?: string; conta_tipo?: string; banco?: string; agencia?: string; numero_conta?: string; origem?: string; destino?: string; plano?: string; centro?: string; original?: string; justificativa?: string; referencia?: string }
 export const podeOperar = (role: Role | null) => role === "admin_geral" || role === "admin_financeiro" || role === "analista_financeiro";
 export const podeEstornar = (role: Role | null) => role === "admin_geral" || role === "admin_financeiro";
 
