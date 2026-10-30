@@ -37,7 +37,7 @@ BEGIN
   END LOOP;
   EXECUTE format('REVOKE EXECUTE ON FUNCTION %s FROM PUBLIC,anon,authenticated,service_role;',f.assinatura);
  END LOOP;
- FOR c IN SELECT c.* FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='financeiro_hml' AND c.relkind='r' LOOP
+ FOR c IN SELECT tab.* FROM pg_class tab JOIN pg_namespace n ON n.oid=tab.relnamespace WHERE n.nspname='financeiro_hml' AND tab.relkind='r' LOOP
   IF c.relowner<>(SELECT oid FROM pg_roles WHERE rolname=current_user) THEN RAISE EXCEPTION 'ETAPA2_PROPRIETARIO_INESPERADO'; END IF;
   nome:=format('financeiro_hml.%I',c.relname);
   FOR a IN SELECT * FROM aclexplode(coalesce(c.relacl,acldefault('r',c.relowner))) WHERE grantee<>c.relowner AND privilege_type<>'SELECT' LOOP
