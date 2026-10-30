@@ -1,6 +1,6 @@
 {
   "escopo": "PostgreSQL local descartável sem HML/GET/financeiro",
-  "aprovados": 28,
+  "aprovados": 34,
   "checks": [
     "banco local sem movimentos",
     "sem autorização não ativa",
@@ -29,6 +29,12 @@
     "retomada seletiva 5",
     "retomada seletiva 6",
     "retomada seletiva 7",
-    "movimentos continuam zero"
+    "movimentos continuam zero",
+    "compatibilidade migração-selagem-retomada 1",
+    "compatibilidade migração-selagem-retomada 2",
+    "compatibilidade migração-selagem-retomada 3",
+    "compatibilidade migração-selagem-retomada 4",
+    "compatibilidade migração-selagem-retomada 5",
+    "compatibilidade migração-selagem-retomada 6"
   ]
 }
