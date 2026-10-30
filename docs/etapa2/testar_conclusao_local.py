@@ -87,6 +87,16 @@ try:
  results=[proc.communicate(timeout=15) for proc in procs]
  check('dois revisores concorrentes retornam mesmo resultado',all(proc.returncode==0 for proc in procs) and json.loads(results[0][0])['id']==json.loads(results[1][0])['id'])
  check('concorrência só cria uma operação',sql(f"SELECT count(*) FROM financeiro_hml.tesouraria_operacoes WHERE chave_idempotencia='{concurrent['id']}';")=='1')
+ # Trigger diferida força falha no commit: nenhum efeito ou decisão parcial.
+ broken=read('tesouraria_transferir',{**transfer,'chave':str(uuid.uuid4()),'valor':'2.00'})
+ before=sql('SELECT count(*) FROM financeiro_hml.tesouraria_operacoes;')
+ sql("CREATE FUNCTION financeiro_hml.local_falha_commit() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'TESTE_COMMIT'; END $$; CREATE CONSTRAINT TRIGGER local_falha AFTER INSERT ON financeiro_hml.tesouraria_movimentos DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION financeiro_hml.local_falha_commit();")
+ block('falha no commit transacional','tesouraria_decidir',{'id':broken['id'],'versao':'0','acao':'executar'},'TESTE_COMMIT',A)
+ check('falha não cria operação parcial',before==sql('SELECT count(*) FROM financeiro_hml.tesouraria_operacoes;'))
+ check('falha não grava aprovação',sql(f"SELECT estado||':'||versao::text FROM financeiro_hml.tesouraria_solicitacoes WHERE id='{broken['id']}';")=='pendente:0')
+ sql('DROP TRIGGER local_falha ON financeiro_hml.tesouraria_movimentos; DROP FUNCTION financeiro_hml.local_falha_commit();')
+ # Captura verificável das definições definitivas para reativação sem DDL destrutivo.
+ definitions=sql("SELECT string_agg(pg_get_functiondef(p.oid),E'\\n' ORDER BY proname) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='financeiro_hml' AND proname IN ('conferencia_comandar','tesouraria_lancar_conferencia','tesouraria_solicitar','tesouraria_decidir');")
  # Reversão não destrói nem reescreve dados e bloqueia também o corpo das funções.
  snapshots={table:sql(f"SELECT md5(coalesce(string_agg(to_jsonb(t)::text,'|' ORDER BY id),'')) FROM financeiro_hml.{table} t;") for table in ['tesouraria_conferencias','tesouraria_solicitacoes','tesouraria_operacoes','tesouraria_movimentos','auditoria']}
  r=run((ROOT/'docs/etapa2/REVERSAO_FUNCIONAL_DEFINITIVA.sql').read_text());check('reversão sem autorização falha',r.returncode!=0 and 'ETAPA2_REVERSAO_NAO_AUTORIZADA' in r.stderr)
@@ -96,6 +106,12 @@ try:
  block('reversão recusa comando','tesouraria_decidir',{'id':s['id'],'versao':'0','acao':'executar'},'permission denied',A)
  sql('GRANT EXECUTE ON FUNCTION financeiro_hml.tesouraria_decidir(jsonb) TO authenticated;')
  block('corpo revertido também falha fechado','tesouraria_decidir',{'id':s['id'],'versao':'0','acao':'executar'},'CONF_OPERACAO_BLOQUEADA',A)
+ sql('BEGIN;'+definitions+'REVOKE EXECUTE ON FUNCTION financeiro_hml.tesouraria_decidir(jsonb) FROM authenticated;COMMIT;')
+ check('reinstalação continua selada',sql("SELECT has_function_privilege('authenticated','financeiro_hml.tesouraria_decidir(jsonb)','EXECUTE');")=='f')
+ sql("SET itv.etapa2.liberacao='COMPATIBILIDADE_E_RECUPERACAO_VALIDADAS';"+(ROOT/'docs/etapa2/LIBERACAO_DEFINITIVA.sql').read_text())
+ restored=decidir(broken)
+ check('reativação das definições definitivas executa pedido preservado',sql(f"SELECT valor::text FROM financeiro_hml.tesouraria_operacoes WHERE id='{restored['id']}';")=='2.00')
+ check('lista devolve versão como string',isinstance(read('tesouraria_listar_solicitacoes',{'pagina':0},A)['solicitacoes'][0]['versao'],str))
  check('49 fontes sempre intactas',baseline==sql("SELECT md5(string_agg(to_jsonb(c)::text,'|' ORDER BY id)) FROM financeiro_hml.tesouraria_conferencias c;"))
  print(f'{len(checks)} testes de conclusão SQL aprovados.')
 finally:sql(f'DROP DATABASE IF EXISTS {DB} WITH (FORCE);','postgres')

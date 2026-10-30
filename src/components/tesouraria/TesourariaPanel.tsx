@@ -2,7 +2,7 @@ import { Suspense, useState, type FormEvent, type ReactNode } from "react";
 import { queryOptions, useSuspenseQuery, useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useRouteContext } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Wallet, Plus, Pencil, Power, RotateCcw, Loader2, History, ChevronLeft, ChevronRight, Landmark } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, ArrowLeftRight, Wallet, Pencil, Power, RotateCcw, Loader2, History, ChevronLeft, ChevronRight, Landmark } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
