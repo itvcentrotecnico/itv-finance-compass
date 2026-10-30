@@ -2,6 +2,10 @@
 
 ## Finalização executiva — 30/10/2026
 
+- [ ] Conclusão técnica autorizada 17h56: finalizar solicitações segregadas para lançamentos/transferências/estornos, compatibilidade e duplicidade, reutilizando motor/recuperação existentes; sem alterações remotas.
+- [ ] Consolidar SQL definitivo, liberação e reversão funcional fail-closed; testar apenas PostgreSQL descartável e testes app existentes.
+- [ ] Entregar pacote final com seis itens pedidos; aplicação/publicação/financeiro real continuam proibidos.
+
 - [x] Auditoria final: 201/201 testes existentes aprovados; SELECTs confirmam 49/49 pendentes, 19 sincronizações, 280 auditorias, 6 aberturas zero e 0 movimentos; hashes JSONB idênticos aos anteriores. RLS nas 13 tabelas, cadastro público desativado por settings HTTP 200, acesso sem sessão redireciona /, /tesouraria e /integracoes ao login no preview, sem erros. Validação autenticada indisponível (external_unmanaged).
 - [x] Ajuste seguro não publicado: Dashboard sem desenhos de séries fictícias nem afirmação de ausência de alertas não verificados; indicadores explicitamente não consolidados. Nenhum cálculo, contrato ou alteração financeira.
 - [x] Relatório executivo único A–G preparado para entrega com pedido consolidado, escopo/riscos/reversão/critérios: pacote ainda bloqueia estornos/transferências/avulsos e retomada não libera comandos novos; reversão ACL não recompõe funções. Status BLOQUEADO POR PENDÊNCIA CRÍTICA; não implantar como operação completa.
