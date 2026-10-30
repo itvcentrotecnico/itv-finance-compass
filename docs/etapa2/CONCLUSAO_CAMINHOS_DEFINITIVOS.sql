@@ -67,15 +67,15 @@ END $$;
 
 CREATE FUNCTION financeiro_hml.tesouraria_solicitar(p jsonb) RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,financeiro_hml,pg_temp AS $$
-DECLARE req jsonb; anterior financeiro_hml.tesouraria_solicitacoes; ident uuid; chave uuid; ref text;
+DECLARE req jsonb; anterior financeiro_hml.tesouraria_solicitacoes; ident uuid; chave_pedido uuid; ref text;
 BEGIN
  IF auth.uid() IS NULL OR NOT financeiro_hml.tem_papel(ARRAY['admin_geral','admin_financeiro','analista_financeiro']) THEN RAISE EXCEPTION 'TES_PERMISSAO' USING ERRCODE='42501'; END IF;
- chave:=(p->>'chave')::uuid;
- IF chave IS NULL THEN RAISE EXCEPTION 'SOL_DADOS'; END IF;
+ chave_pedido:=(p->>'chave')::uuid;
+ IF chave_pedido IS NULL THEN RAISE EXCEPTION 'SOL_DADOS'; END IF;
  req:=jsonb_strip_nulls(p-'chave');
  IF req ? 'referencia' THEN req:=jsonb_set(req,'{referencia}',to_jsonb(lower(btrim(req->>'referencia')))); END IF;
- PERFORM pg_advisory_xact_lock(hashtextextended('sol_chave:'||auth.uid()::text||chave::text,0));
- SELECT * INTO anterior FROM financeiro_hml.tesouraria_solicitacoes WHERE criado_por=auth.uid() AND tesouraria_solicitacoes.chave=chave;
+ PERFORM pg_advisory_xact_lock(hashtextextended('sol_chave:'||auth.uid()::text||chave_pedido::text,0));
+ SELECT * INTO anterior FROM financeiro_hml.tesouraria_solicitacoes WHERE criado_por=auth.uid() AND tesouraria_solicitacoes.chave=chave_pedido;
  IF FOUND THEN
   IF anterior.pedido<>req THEN RAISE EXCEPTION 'TES_IDEMPOTENCIA'; END IF;
   RETURN jsonb_build_object('id',anterior.id,'repetida',true);
@@ -87,7 +87,7 @@ BEGIN
   IF EXISTS(SELECT 1 FROM financeiro_hml.tesouraria_solicitacoes WHERE referencia=ref) THEN RAISE EXCEPTION 'CONF_DUPLICIDADE'; END IF;
  END IF;
  INSERT INTO financeiro_hml.tesouraria_solicitacoes(chave,criado_por,pedido,referencia,atualizado_por)
- VALUES(chave,auth.uid(),req,ref,auth.uid()) RETURNING id INTO ident;
+ VALUES(chave_pedido,auth.uid(),req,ref,auth.uid()) RETURNING id INTO ident;
  RETURN jsonb_build_object('id',ident,'repetida',false);
 END $$;
 
