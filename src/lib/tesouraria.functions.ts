@@ -3,8 +3,9 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { erroTesouraria, resultadoErro, type ContaFinanceira, type Extrato, type HistoricoOperacoes, type ResultadoEnvio } from "./tesouraria";
 import { erroConferencia } from "./conferencia-operacional";
+import { erroSolicitacao } from "./tesouraria-solicitacoes";
 
-const pedidoSchema = z.object({ tipo: z.enum(["abertura", "entrada", "saida", "transferencia", "estorno"]), chave: z.string().uuid(), data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), descricao: z.string().trim().min(2).max(500), valor: z.string().optional(), nome: z.string().trim().max(160).optional(), conta_tipo: z.enum(["banco", "caixa"]).optional(), banco: z.string().trim().max(120).optional(), agencia: z.string().trim().max(32).optional(), numero_conta: z.string().trim().max(64).optional(), origem: z.string().uuid().optional(), destino: z.string().uuid().optional(), plano: z.string().uuid().optional(), centro: z.string().uuid().optional(), original: z.string().uuid().optional(), justificativa: z.string().trim().max(500).optional() });
+const pedidoSchema = z.object({ tipo: z.enum(["abertura", "entrada", "saida", "transferencia", "estorno"]), chave: z.string().uuid(), data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), descricao: z.string().trim().min(2).max(500), valor: z.string().optional(), nome: z.string().trim().max(160).optional(), conta_tipo: z.enum(["banco", "caixa"]).optional(), banco: z.string().trim().max(120).optional(), agencia: z.string().trim().max(32).optional(), numero_conta: z.string().trim().max(64).optional(), origem: z.string().uuid().optional(), destino: z.string().uuid().optional(), plano: z.string().uuid().optional(), centro: z.string().uuid().optional(), original: z.string().uuid().optional(), justificativa: z.string().trim().max(500).optional(), referencia: z.string().trim().max(200).optional() });
 const filtroSchema = z.object({ conta: z.string().optional(), inicio: z.string().optional(), fim: z.string().optional(), tipo: z.string().optional(), plano: z.string().optional(), pagina: z.number().int().min(0).max(100000) });
 
 export const carregarTesouraria = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
@@ -27,7 +28,7 @@ export const registrarTesouraria = createServerFn({ method: "POST" }).middleware
   const db = (context.supabase as any).schema("financeiro_hml");
   const rpc = data.tipo === "abertura" ? "tesouraria_criar_conta" : data.tipo === "transferencia" ? "tesouraria_transferir" : data.tipo === "estorno" ? "tesouraria_estornar" : "tesouraria_lancar";
   const { data: result, error } = await db.rpc(rpc, { p: data });
-  if (error) return resultadoErro(error);
+  if (error) return { ...resultadoErro(error), mensagem: erroSolicitacao(error) ?? erroTesouraria(error) } as ResultadoEnvio;
   return { estado: "confirmada", id: result.id } as ResultadoEnvio;
 });
 export const consultarEnvioTesouraria = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).inputValidator((v: unknown) => z.object({ chave: z.string().uuid() }).parse(v)).handler(async ({ data, context }) => {
@@ -35,7 +36,10 @@ export const consultarEnvioTesouraria = createServerFn({ method: "POST" }).middl
   const db = (context.supabase as any).schema("financeiro_hml");
   const { data: result, error } = await db.from("tesouraria_operacoes").select("id").eq("criado_por", context.userId).eq("chave_idempotencia", data.chave).maybeSingle();
   if (error) throw new Error(erroTesouraria(error));
-  return result as { id: string } | null;
+  if (result) return result as { id: string };
+  const { data: solicitacao, error: falha } = await db.from("tesouraria_solicitacoes").select("id").eq("criado_por", context.userId).eq("chave", data.chave).maybeSingle();
+  if (falha) throw new Error(erroTesouraria(falha));
+  return solicitacao as { id: string } | null;
 });
 export const carregarHistoricoTesouraria = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).inputValidator((v: unknown) => filtroSchema.parse(v)).handler(async ({ data, context }) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

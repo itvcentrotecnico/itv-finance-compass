@@ -1,0 +1,419 @@
+-- ETAPA 2 DEFINITIVA: PREPARAÇÃO SOMENTE. NÃO APLICADA NO HML.
+BEGIN;
+SET LOCAL lock_timeout='5s';
+LOCK TABLE financeiro_hml.tesouraria_conferencias,financeiro_hml.contas_financeiras,financeiro_hml.tesouraria_operacoes,financeiro_hml.tesouraria_movimentos IN ACCESS EXCLUSIVE MODE NOWAIT;
+-- PROPOSTA ETAPA 2. NÃO APLICADA. Aplicação exige aprovação específica.
+-- Sem backfill, sem UPDATE de fonte, sem corte definitivo, sem dados financeiros.
+CREATE TABLE financeiro_hml.conferencia_regras_oficiais (
+  plano_conta_id uuid PRIMARY KEY REFERENCES financeiro_hml.plano_contas(id),
+  centro_obrigatorio boolean NOT NULL,
+  centros_permitidos uuid[] NOT NULL DEFAULT '{}',
+  aprovado_por uuid NOT NULL,
+  aprovado_em timestamptz NOT NULL
+);
+GRANT SELECT ON financeiro_hml.conferencia_regras_oficiais TO authenticated;
+ALTER TABLE financeiro_hml.conferencia_regras_oficiais ENABLE ROW LEVEL SECURITY;
+CREATE POLICY conf_regras_ler ON financeiro_hml.conferencia_regras_oficiais FOR SELECT TO authenticated
+ USING (financeiro_hml.tem_papel(ARRAY['admin_geral','admin_financeiro','analista_financeiro','consulta_gerencial']));
+-- Sem regra aprovada: falha fechada. Nada é liberado por nome ou pelo simples ativo.
+CREATE TABLE financeiro_hml.conferencia_operacao_autorizada (
+ id boolean PRIMARY KEY DEFAULT true CHECK(id), corte date NOT NULL, autorizado_por uuid NOT NULL, autorizado_em timestamptz NOT NULL
+);
+GRANT SELECT ON financeiro_hml.conferencia_operacao_autorizada TO authenticated;
+ALTER TABLE financeiro_hml.conferencia_operacao_autorizada ENABLE ROW LEVEL SECURITY;
+CREATE POLICY conf_operacao_ler ON financeiro_hml.conferencia_operacao_autorizada FOR SELECT TO authenticated
+ USING (financeiro_hml.tem_papel(ARRAY['admin_geral','admin_financeiro','analista_financeiro','consulta_gerencial']));
+-- Esta tabela fica VAZIA. Corte 01/11 é proposta documental, não default nem autorização.
+CREATE TABLE financeiro_hml.conferencia_controles (
+ id uuid PRIMARY KEY REFERENCES financeiro_hml.tesouraria_conferencias(id),
+ fonte_hash text NOT NULL,
+ versao bigint NOT NULL DEFAULT 0,
+ estado text NOT NULL DEFAULT 'pendente' CHECK(estado IN ('pendente','em_conferencia','encaminhado','conciliado','divergente','devolvido','autorizado','lancado')),
+ dados jsonb NOT NULL DEFAULT '{}', componentes jsonb NOT NULL DEFAULT '[]',
+ preparado_por uuid, aprovado_por uuid, aprovado_em timestamptz, versao_aprovada bigint,
+ autorizado_por uuid, autorizado_em timestamptz, justificativa text,
+ atualizado_por uuid, atualizado_em timestamptz NOT NULL DEFAULT clock_timestamp(), acao text NOT NULL DEFAULT 'preparar'
+);
+GRANT SELECT ON financeiro_hml.conferencia_controles TO authenticated;
+ALTER TABLE financeiro_hml.conferencia_controles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY conf_controles_ler ON financeiro_hml.conferencia_controles FOR SELECT TO authenticated
+ USING (financeiro_hml.tem_papel(ARRAY['admin_geral','admin_financeiro','analista_financeiro','consulta_gerencial']));
+CREATE TRIGGER conf_controles_auditar AFTER INSERT OR UPDATE ON financeiro_hml.conferencia_controles
+ FOR EACH ROW EXECUTE FUNCTION financeiro_hml.tes_conf_auditar();
+CREATE TABLE financeiro_hml.conferencia_componentes_identidade (
+ id uuid PRIMARY KEY, conferencia_id uuid NOT NULL REFERENCES financeiro_hml.conferencia_controles(id)
+);
+GRANT SELECT ON financeiro_hml.conferencia_componentes_identidade TO authenticated;
+ALTER TABLE financeiro_hml.conferencia_componentes_identidade ENABLE ROW LEVEL SECURITY;
+CREATE POLICY conf_identidade_ler ON financeiro_hml.conferencia_componentes_identidade FOR SELECT TO authenticated
+ USING (financeiro_hml.tem_papel(ARRAY['admin_geral','admin_financeiro','analista_financeiro','consulta_gerencial']));
+CREATE TABLE financeiro_hml.conferencia_vinculos (
+ conferencia_id uuid NOT NULL REFERENCES financeiro_hml.conferencia_controles(id),
+ componente_id uuid NOT NULL UNIQUE, referencia_origem text NOT NULL UNIQUE,
+ operacao_id uuid NOT NULL UNIQUE REFERENCES financeiro_hml.tesouraria_operacoes(id),
+ PRIMARY KEY(conferencia_id,componente_id)
+);
+GRANT SELECT ON financeiro_hml.conferencia_vinculos TO authenticated;
+ALTER TABLE financeiro_hml.conferencia_vinculos ENABLE ROW LEVEL SECURITY;
+CREATE POLICY conf_vinculos_ler ON financeiro_hml.conferencia_vinculos FOR SELECT TO authenticated
+ USING (financeiro_hml.tem_papel(ARRAY['admin_geral','admin_financeiro','analista_financeiro','consulta_gerencial']));
+
+CREATE FUNCTION financeiro_hml.conf_dinheiro(v text) RETURNS numeric
+LANGUAGE plpgsql IMMUTABLE SET search_path=pg_catalog AS $$
+BEGIN
+ IF v IS NULL OR v !~ '^\d{1,16}(\.\d{1,2})?$' OR v::numeric<=0 THEN RAISE EXCEPTION 'CONF_VALOR'; END IF;
+ RETURN v::numeric;
+END $$;
+CREATE FUNCTION financeiro_hml.conf_validar(d jsonb, natureza text) RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,financeiro_hml,pg_temp AS $$
+DECLARE conta financeiro_hml.contas_financeiras; plano financeiro_hml.plano_contas; regra financeiro_hml.conferencia_regras_oficiais; bruto numeric; liquido numeric; dt date;
+BEGIN
+ PERFORM pg_advisory_xact_lock(hashtextextended('etapa2_execucao_financeira',0));
+ IF d IS NULL OR jsonb_typeof(d)<>'object' THEN RAISE EXCEPTION 'CONF_DADOS'; END IF;
+ bruto:=financeiro_hml.conf_dinheiro(d->>'valor_bruto');
+ IF coalesce(d->>'forma','') NOT IN ('dinheiro','pix','credito','debito','parcelado','boleto') THEN RAISE EXCEPTION 'CONF_FORMA'; END IF;
+ IF coalesce(d->>'data_ocorrencia','') !~ '^\d{4}-\d{2}-\d{2}$' OR length(btrim(coalesce(d->>'descricao',''))) NOT BETWEEN 2 AND 500 THEN RAISE EXCEPTION 'CONF_DADOS'; END IF;
+ dt:=(d->>'data_ocorrencia')::date;
+ SELECT c.* INTO conta FROM financeiro_hml.contas_financeiras c JOIN financeiro_hml.contas_preparadas p ON p.conta_financeira_id=c.id AND p.situacao='habilitada' WHERE c.id=(d->>'conta_financeira_id')::uuid AND c.ativo FOR SHARE OF c,p;
+ IF NOT FOUND THEN RAISE EXCEPTION 'CONF_CONTA_OFICIAL'; END IF;
+ SELECT * INTO plano FROM financeiro_hml.plano_contas WHERE id=(d->>'plano_conta_id')::uuid AND ativo AND aceita_lancamentos FOR SHARE;
+ IF NOT FOUND OR plano.natureza<>(CASE natureza WHEN 'entrada' THEN 'receita' WHEN 'saida' THEN 'despesa' ELSE '' END) THEN RAISE EXCEPTION 'CONF_CATEGORIA'; END IF;
+ SELECT * INTO regra FROM financeiro_hml.conferencia_regras_oficiais WHERE plano_conta_id=plano.id FOR SHARE;
+ IF NOT FOUND THEN RAISE EXCEPTION 'CONF_CATEGORIA_OFICIAL'; END IF;
+ IF regra.centro_obrigatorio AND nullif(d->>'centro_custo_id','') IS NULL THEN RAISE EXCEPTION 'CONF_CENTRO'; END IF;
+ IF nullif(d->>'centro_custo_id','') IS NOT NULL THEN
+  IF NOT ((d->>'centro_custo_id')::uuid=ANY(regra.centros_permitidos)) OR NOT EXISTS(SELECT 1 FROM financeiro_hml.centros_custo WHERE id=(d->>'centro_custo_id')::uuid AND ativo) THEN RAISE EXCEPTION 'CONF_CENTRO'; END IF;
+  PERFORM 1 FROM financeiro_hml.centros_custo WHERE id=(d->>'centro_custo_id')::uuid FOR SHARE;
+ END IF;
+ IF d->>'forma' IN ('credito','debito','parcelado') THEN
+  liquido:=financeiro_hml.conf_dinheiro(d->>'valor_liquido');
+  IF liquido>bruto OR coalesce(d->>'data_liquidacao','') !~ '^\d{4}-\d{2}-\d{2}$' THEN RAISE EXCEPTION 'CONF_CARTAO'; END IF;
+  dt:=(d->>'data_liquidacao')::date;
+ ELSIF d->>'forma'='boleto' THEN
+  IF d->>'boleto_status' IS DISTINCT FROM 'pago' OR coalesce(d->>'boleto_pagamento','') !~ '^\d{4}-\d{2}-\d{2}$' THEN RAISE EXCEPTION 'CONF_BOLETO'; END IF;
+  dt:=(d->>'boleto_pagamento')::date;
+ END IF;
+ IF dt<conta.data_saldo_inicial THEN RAISE EXCEPTION 'CONF_DATA_ABERTURA'; END IF;
+END $$;
+CREATE FUNCTION financeiro_hml.conf_validar_grupo(d jsonb, componentes jsonb, natureza text) RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,financeiro_hml,pg_temp AS $$
+DECLARE parte jsonb; soma numeric:=0; ids uuid[]:='{}'; ident uuid;
+BEGIN
+ IF d IS NULL OR jsonb_typeof(d) IS DISTINCT FROM 'object' OR d->>'forma' IS NULL OR componentes IS NULL OR jsonb_typeof(componentes) IS DISTINCT FROM 'array' THEN RAISE EXCEPTION 'CONF_DADOS'; END IF;
+ IF d->>'forma'<>'misto' THEN
+  IF componentes<>'[]'::jsonb THEN RAISE EXCEPTION 'CONF_RATEIO'; END IF;
+  PERFORM financeiro_hml.conf_validar(d,natureza); RETURN;
+ END IF;
+ IF jsonb_typeof(componentes)<>'array' OR jsonb_array_length(componentes)<2 OR jsonb_array_length(componentes)>50 THEN RAISE EXCEPTION 'CONF_RATEIO'; END IF;
+ FOR parte IN SELECT value FROM jsonb_array_elements(componentes) LOOP
+  ident:=(parte->>'id')::uuid;
+  IF ident IS NULL OR ident=ANY(ids) THEN RAISE EXCEPTION 'CONF_DUPLICIDADE'; END IF;
+  ids:=array_append(ids,ident);
+  PERFORM financeiro_hml.conf_validar(parte,natureza);
+  soma:=soma+financeiro_hml.conf_dinheiro(parte->>'valor_bruto');
+ END LOOP;
+ IF soma<>financeiro_hml.conf_dinheiro(d->>'valor_bruto') THEN RAISE EXCEPTION 'CONF_RATEIO'; END IF;
+END $$;
+
+CREATE FUNCTION financeiro_hml.conferencia_consultar(p jsonb) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,financeiro_hml,pg_temp AS $$
+DECLARE fonte financeiro_hml.tesouraria_conferencias; controle financeiro_hml.conferencia_controles; d jsonb;
+BEGIN
+ IF auth.uid() IS NULL OR NOT financeiro_hml.tem_papel(ARRAY['admin_geral','admin_financeiro','analista_financeiro','consulta_gerencial']) THEN RAISE EXCEPTION 'CONF_PERMISSAO' USING ERRCODE='42501'; END IF;
+ SELECT * INTO fonte FROM financeiro_hml.tesouraria_conferencias WHERE id=(p->>'id')::uuid;
+ IF NOT FOUND THEN RAISE EXCEPTION 'CONF_INEXISTENTE'; END IF;
+ SELECT * INTO controle FROM financeiro_hml.conferencia_controles WHERE id=fonte.id;
+ d:=to_jsonb(fonte)||jsonb_build_object('valor_bruto',fonte.valor_bruto::text,'valor_liquido',fonte.valor_liquido::text,'taxa',fonte.taxa::text);
+ RETURN jsonb_build_object('id',fonte.id,'natureza',fonte.natureza,'versao',coalesce(controle.versao,0)::text,'estado',coalesce(controle.estado,fonte.status),'fonte_hash',md5(to_jsonb(fonte)::text),'dados',d||coalesce(controle.dados,'{}'),'componentes',coalesce(controle.componentes,'[]'),'controle',to_jsonb(controle));
+END $$;
+CREATE FUNCTION financeiro_hml.conferencia_comandar(p jsonb) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,financeiro_hml,pg_temp AS $$
+DECLARE fonte financeiro_hml.tesouraria_conferencias; c financeiro_hml.conferencia_controles; esperado bigint; acao text:=p->>'acao'; motivo text:=btrim(coalesce(p->>'justificativa','')); d jsonb; partes jsonb; parte jsonb; ident uuid; ids uuid[]:='{}'; k text;
+BEGIN
+ IF auth.uid() IS NULL OR NOT financeiro_hml.tem_papel(ARRAY['admin_geral','admin_financeiro','analista_financeiro']) THEN RAISE EXCEPTION 'CONF_PERMISSAO' USING ERRCODE='42501'; END IF;
+ IF acao NOT IN ('salvar','divergir','encaminhar','aprovar','devolver','autorizar') OR acao IS NULL OR coalesce(p->>'versao','') !~ '^\d+$' THEN RAISE EXCEPTION 'CONF_DADOS'; END IF;
+ IF acao IN ('aprovar','devolver','autorizar') AND NOT financeiro_hml.tem_papel(ARRAY['admin_geral','admin_financeiro']) THEN RAISE EXCEPTION 'CONF_PERMISSAO' USING ERRCODE='42501'; END IF;
+ esperado:=(p->>'versao')::bigint;
+ SELECT * INTO fonte FROM financeiro_hml.tesouraria_conferencias WHERE id=(p->>'id')::uuid;
+ IF NOT FOUND THEN RAISE EXCEPTION 'CONF_INEXISTENTE'; END IF;
+ -- Mesma trava para toda mutação e lançamento do grupo; não trava somente um filho.
+ PERFORM pg_advisory_xact_lock(hashtextextended('conf_grupo:'||fonte.grupo_id::text,0));
+ SELECT * INTO fonte FROM financeiro_hml.tesouraria_conferencias WHERE id=fonte.id FOR SHARE;
+ IF fonte.operacao_id IS NOT NULL THEN RAISE EXCEPTION 'CONF_IMUTAVEL'; END IF;
+ IF p->>'fonte_hash' IS DISTINCT FROM md5(to_jsonb(fonte)::text) THEN RAISE EXCEPTION 'CONF_CONFLITO'; END IF;
+ INSERT INTO financeiro_hml.conferencia_controles(id,fonte_hash) VALUES(fonte.id,md5(to_jsonb(fonte)::text)) ON CONFLICT(id) DO NOTHING;
+ SELECT * INTO c FROM financeiro_hml.conferencia_controles WHERE id=fonte.id FOR UPDATE;
+ IF c.versao<>esperado OR c.fonte_hash<>md5(to_jsonb(fonte)::text) THEN RAISE EXCEPTION 'CONF_CONFLITO'; END IF;
+ IF c.estado='lancado' THEN RAISE EXCEPTION 'CONF_IMUTAVEL'; END IF;
+ IF acao IN ('divergir','devolver') AND length(motivo) NOT BETWEEN 5 AND 500 THEN RAISE EXCEPTION 'CONF_JUSTIFICATIVA'; END IF;
+ IF acao IN ('salvar','divergir') THEN
+  d:=p->'dados'; partes:=coalesce(p->'componentes','[]');
+  IF d IS NULL OR jsonb_typeof(d) IS DISTINCT FROM 'object' OR jsonb_typeof(partes) IS DISTINCT FROM 'array' OR jsonb_array_length(partes)>50 THEN RAISE EXCEPTION 'CONF_DADOS'; END IF;
+  FOR k IN SELECT jsonb_object_keys(d) LOOP
+   IF k<>ALL(ARRAY['forma','descricao','data_ocorrencia','valor_bruto','valor_liquido','data_liquidacao','boleto_vencimento','boleto_pagamento','boleto_status','conta_financeira_id','plano_conta_id','centro_custo_id','observacao']) THEN RAISE EXCEPTION 'CONF_DADOS'; END IF;
+  END LOOP;
+  -- Fonte financeira permanece imutável: total e data histórica não podem ser reescritos.
+  IF coalesce(d->>'data_ocorrencia','') !~ '^\d{4}-\d{2}-\d{2}$' THEN RAISE EXCEPTION 'CONF_DADOS'; END IF;
+  IF financeiro_hml.conf_dinheiro(d->>'valor_bruto')<>fonte.valor_bruto OR (d->>'data_ocorrencia')::date IS DISTINCT FROM fonte.data_ocorrencia THEN RAISE EXCEPTION 'CONF_FONTE_IMUTAVEL'; END IF;
+  IF d->>'forma' IS NULL OR d->>'forma' NOT IN ('dinheiro','pix','credito','debito','parcelado','boleto','misto','indefinida') OR length(btrim(coalesce(d->>'descricao',''))) NOT BETWEEN 2 AND 500 THEN RAISE EXCEPTION 'CONF_DADOS'; END IF;
+  IF d->>'forma'<>'misto' AND partes<>'[]'::jsonb THEN RAISE EXCEPTION 'CONF_RATEIO'; END IF;
+  FOR parte IN SELECT value FROM jsonb_array_elements(partes) LOOP
+   ident:=(parte->>'id')::uuid;
+   IF ident IS NULL OR ident=ANY(ids) OR EXISTS(SELECT 1 FROM financeiro_hml.tesouraria_conferencias s WHERE s.identificador_origem=ident) THEN RAISE EXCEPTION 'CONF_DUPLICIDADE'; END IF;
+   IF (parte->>'data_ocorrencia')::date IS DISTINCT FROM fonte.data_ocorrencia THEN RAISE EXCEPTION 'CONF_FONTE_IMUTAVEL'; END IF;
+   INSERT INTO financeiro_hml.conferencia_componentes_identidade(id,conferencia_id) VALUES(ident,c.id) ON CONFLICT(id) DO NOTHING;
+   IF NOT EXISTS(SELECT 1 FROM financeiro_hml.conferencia_componentes_identidade WHERE id=ident AND conferencia_id=c.id) THEN RAISE EXCEPTION 'CONF_DUPLICIDADE'; END IF;
+   ids:=array_append(ids,ident);
+   -- Só persistir componentes completos com valores realmente informados.
+   PERFORM financeiro_hml.conf_validar(parte,fonte.natureza);
+  END LOOP;
+  c.dados:=d; c.componentes:=partes; c.preparado_por:=auth.uid();
+  c.estado:=CASE acao WHEN 'divergir' THEN 'divergente' ELSE 'em_conferencia' END;
+  c.aprovado_por:=NULL; c.aprovado_em:=NULL; c.versao_aprovada:=NULL; c.autorizado_por:=NULL; c.autorizado_em:=NULL;
+ ELSIF acao='encaminhar' THEN
+  IF c.estado NOT IN ('em_conferencia','divergente','devolvido') THEN RAISE EXCEPTION 'CONF_ESTADO'; END IF;
+  PERFORM financeiro_hml.conf_validar_grupo(c.dados,c.componentes,fonte.natureza); c.estado:='encaminhado';
+ ELSIF acao='aprovar' THEN
+  IF c.estado<>'encaminhado' THEN RAISE EXCEPTION 'CONF_ESTADO'; END IF;
+  IF c.preparado_por=auth.uid() THEN RAISE EXCEPTION 'CONF_REVISOR_DISTINTO'; END IF;
+  PERFORM financeiro_hml.conf_validar_grupo(c.dados,c.componentes,fonte.natureza);
+  c.estado:='conciliado'; c.aprovado_por:=auth.uid(); c.aprovado_em:=clock_timestamp(); c.versao_aprovada:=c.versao+1;
+ ELSIF acao='devolver' THEN
+  IF c.estado NOT IN ('encaminhado','conciliado','autorizado') THEN RAISE EXCEPTION 'CONF_ESTADO'; END IF;
+  c.estado:='devolvido'; c.aprovado_por:=NULL; c.aprovado_em:=NULL; c.versao_aprovada:=NULL; c.autorizado_por:=NULL; c.autorizado_em:=NULL;
+ ELSIF acao='autorizar' THEN
+  IF c.preparado_por=auth.uid() THEN RAISE EXCEPTION 'CONF_REVISOR_DISTINTO'; END IF;
+  IF c.estado<>'conciliado' OR c.versao_aprovada<>c.versao OR c.aprovado_por IS NULL THEN RAISE EXCEPTION 'CONF_ESTADO'; END IF;
+  PERFORM financeiro_hml.conf_validar_grupo(c.dados,c.componentes,fonte.natureza);
+  c.estado:='autorizado'; c.autorizado_por:=auth.uid(); c.autorizado_em:=clock_timestamp(); c.versao_aprovada:=c.versao+1;
+ END IF;
+ UPDATE financeiro_hml.conferencia_controles SET dados=c.dados,componentes=c.componentes,estado=c.estado,versao=c.versao+1,preparado_por=c.preparado_por,aprovado_por=c.aprovado_por,aprovado_em=c.aprovado_em,versao_aprovada=c.versao_aprovada,autorizado_por=c.autorizado_por,autorizado_em=c.autorizado_em,justificativa=nullif(motivo,''),atualizado_por=auth.uid(),atualizado_em=clock_timestamp(),acao=p->>'acao' WHERE id=c.id;
+ RETURN financeiro_hml.conferencia_consultar(jsonb_build_object('id',c.id));
+END $$;
+
+CREATE FUNCTION financeiro_hml.conferencia_historico(p jsonb) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,financeiro_hml,pg_temp AS $$
+BEGIN
+ IF auth.uid() IS NULL OR NOT financeiro_hml.tem_papel(ARRAY['admin_geral','admin_financeiro','analista_financeiro','consulta_gerencial']) THEN RAISE EXCEPTION 'CONF_PERMISSAO' USING ERRCODE='42501'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM financeiro_hml.tesouraria_conferencias WHERE id=(p->>'id')::uuid) THEN RAISE EXCEPTION 'CONF_INEXISTENTE'; END IF;
+ RETURN coalesce((SELECT jsonb_agg(ev ORDER BY numero::bigint DESC) FROM (
+  SELECT a.id::text numero,a.acao, a.depois->>'acao' acao_fluxo,coalesce(a.antes->>'estado',a.antes->>'status') estado_anterior,coalesce(a.depois->>'estado',a.depois->>'status') estado_posterior,a.usuario_id,
+   pr.nome responsavel,a.ocorrido_em,a.depois->>'justificativa' justificativa
+  FROM financeiro_hml.auditoria a LEFT JOIN financeiro_hml.perfis pr ON pr.usuario_id=a.usuario_id
+  WHERE a.registro_id=(p->>'id')::uuid AND a.tabela IN ('tesouraria_conferencias','conferencia_controles') AND (p->>'antes' IS NULL OR a.id<(p->>'antes')::bigint)
+  ORDER BY a.id DESC LIMIT 50
+ ) ev),'[]'::jsonb);
+END $$;
+CREATE FUNCTION financeiro_hml.conferencia_opcoes() RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,financeiro_hml,pg_temp AS $$
+BEGIN
+ IF auth.uid() IS NULL OR NOT financeiro_hml.tem_papel(ARRAY['admin_geral','admin_financeiro','analista_financeiro','consulta_gerencial']) THEN RAISE EXCEPTION 'CONF_PERMISSAO' USING ERRCODE='42501'; END IF;
+ RETURN jsonb_build_object('contas',coalesce((SELECT jsonb_agg(c.id) FROM financeiro_hml.contas_preparadas p JOIN financeiro_hml.contas_financeiras c ON c.id=p.conta_financeira_id WHERE p.situacao='habilitada' AND c.ativo),'[]'),'regras',coalesce((SELECT jsonb_agg(to_jsonb(r)) FROM financeiro_hml.conferencia_regras_oficiais r),'[]'),'operacao_liberada',EXISTS(SELECT 1 FROM financeiro_hml.conferencia_operacao_autorizada),'corte',(SELECT corte FROM financeiro_hml.conferencia_operacao_autorizada));
+END $$;
+-- Lançamento revisado: nunca altera a fonte, usa vínculo auxiliar e grupo atômico.
+CREATE OR REPLACE FUNCTION financeiro_hml.tesouraria_lancar_conferencia(p jsonb) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,financeiro_hml,pg_temp AS $$
+DECLARE fonte financeiro_hml.tesouraria_conferencias; c financeiro_hml.conferencia_controles; parte jsonb; partes jsonb; ident uuid; v text; dt text; r jsonb; ids jsonb:='[]'; corte date;
+BEGIN
+ IF auth.uid() IS NULL OR NOT financeiro_hml.tem_papel(ARRAY['admin_geral','admin_financeiro']) THEN RAISE EXCEPTION 'CONF_PERMISSAO' USING ERRCODE='42501'; END IF;
+ SELECT * INTO fonte FROM financeiro_hml.tesouraria_conferencias WHERE id=(p->>'id')::uuid;
+ IF NOT FOUND THEN RAISE EXCEPTION 'CONF_INEXISTENTE'; END IF;
+ PERFORM pg_advisory_xact_lock(hashtextextended('conf_grupo:'||fonte.grupo_id::text,0));
+ SELECT * INTO fonte FROM financeiro_hml.tesouraria_conferencias WHERE id=fonte.id FOR SHARE;
+ SELECT * INTO c FROM financeiro_hml.conferencia_controles WHERE id=fonte.id FOR UPDATE;
+ IF NOT FOUND OR p->>'versao' IS NULL THEN RAISE EXCEPTION 'CONF_APROVACAO'; END IF;
+ IF c.estado='lancado' THEN RETURN jsonb_build_object('id',(SELECT operacao_id FROM financeiro_hml.conferencia_vinculos WHERE conferencia_id=c.id ORDER BY componente_id LIMIT 1),'repetida',true); END IF;
+ IF c.estado<>'autorizado' OR c.versao<>(p->>'versao')::bigint OR c.versao_aprovada<>c.versao OR c.fonte_hash<>md5(to_jsonb(fonte)::text) THEN RAISE EXCEPTION 'CONF_APROVACAO'; END IF;
+ SELECT a.corte INTO corte FROM financeiro_hml.conferencia_operacao_autorizada a WHERE a.id FOR SHARE;
+ IF NOT FOUND THEN RAISE EXCEPTION 'CONF_OPERACAO_BLOQUEADA'; END IF;
+ IF fonte.data_ocorrencia<corte THEN RAISE EXCEPTION 'CONF_HISTORICO'; END IF;
+ IF fonte.operacao_id IS NOT NULL OR EXISTS(SELECT 1 FROM financeiro_hml.tesouraria_conferencias s WHERE s.grupo_id=fonte.grupo_id AND s.id<>fonte.id) THEN RAISE EXCEPTION 'CONF_DUPLICIDADE'; END IF;
+ IF EXISTS(SELECT 1 FROM financeiro_hml.integracao_itens i WHERE i.conferencia_id=fonte.id AND (i.duplicidade_candidata_id IS NOT NULL OR i.situacao IN ('alterado','possivel_duplicidade'))) THEN RAISE EXCEPTION 'CONF_DUPLICIDADE'; END IF;
+ PERFORM financeiro_hml.conf_validar_grupo(c.dados,c.componentes,fonte.natureza);
+ partes:=CASE c.dados->>'forma' WHEN 'misto' THEN c.componentes ELSE jsonb_build_array(c.dados||jsonb_build_object('id',fonte.identificador_origem)) END;
+ -- Ordem global das contas evita inversões entre grupos independentes.
+ PERFORM 1 FROM financeiro_hml.contas_financeiras WHERE id IN(SELECT (value->>'conta_financeira_id')::uuid FROM jsonb_array_elements(partes)) ORDER BY id FOR UPDATE;
+ FOR parte IN SELECT value FROM jsonb_array_elements(partes) ORDER BY value->>'id' LOOP
+  ident:=(parte->>'id')::uuid;
+  v:=CASE WHEN parte->>'forma' IN ('credito','debito','parcelado') THEN parte->>'valor_liquido' ELSE parte->>'valor_bruto' END;
+  dt:=CASE WHEN parte->>'forma' IN ('credito','debito','parcelado') THEN parte->>'data_liquidacao' WHEN parte->>'forma'='boleto' THEN parte->>'boleto_pagamento' ELSE parte->>'data_ocorrencia' END;
+  r:=financeiro_hml.tes_executar(jsonb_build_object('tipo',fonte.natureza,'chave',ident,'data',dt,'descricao',parte->>'descricao','valor',v,CASE fonte.natureza WHEN 'entrada' THEN 'destino' ELSE 'origem' END,parte->>'conta_financeira_id','plano',parte->>'plano_conta_id','centro',parte->>'centro_custo_id'));
+  INSERT INTO financeiro_hml.conferencia_vinculos(conferencia_id,componente_id,referencia_origem,operacao_id) VALUES(c.id,ident,fonte.referencia_origem||CASE c.dados->>'forma' WHEN 'misto' THEN ':'||ident::text ELSE '' END,(r->>'id')::uuid);
+  ids:=ids||jsonb_build_array(r->>'id');
+ END LOOP;
+ UPDATE financeiro_hml.conferencia_controles SET estado='lancado',versao=versao+1,atualizado_por=auth.uid(),atualizado_em=clock_timestamp(),acao='lancar' WHERE id=c.id;
+ RETURN jsonb_build_object('id',ids->>0,'operacoes',ids,'repetida',false);
+END $$;
+-- Caminho avulso não prova origem/approval: fechado, não tenta deduzir duplicidade por valor.
+CREATE OR REPLACE FUNCTION financeiro_hml.tesouraria_lancar(p jsonb) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,financeiro_hml AS $$
+BEGIN RAISE EXCEPTION 'CONF_FLUXO_OBRIGATORIO'; END $$;
+CREATE OR REPLACE FUNCTION financeiro_hml.tesouraria_transferir(p jsonb) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,financeiro_hml AS $$
+BEGIN
+ IF auth.uid() IS NULL OR NOT financeiro_hml.tem_papel(ARRAY['admin_geral','admin_financeiro']) THEN RAISE EXCEPTION 'CONF_PERMISSAO' USING ERRCODE='42501'; END IF;
+ -- Não liberar movimentação real implicitamente na instalação da Etapa 2.
+ RAISE EXCEPTION 'CONF_OPERACAO_BLOQUEADA';
+END $$;
+-- Fechar DML legado sem alterar políticas/identidade/RPCs internos da M5.
+REVOKE INSERT (referencia_origem,grupo_id,valor_total_grupo,natureza,forma,data_ocorrencia,descricao,valor_bruto,valor_liquido,data_liquidacao,boleto_vencimento,boleto_pagamento,boleto_status,conta_financeira_id,plano_conta_id,centro_custo_id,status,observacao) ON financeiro_hml.tesouraria_conferencias FROM authenticated;
+REVOKE UPDATE (grupo_id,valor_total_grupo,forma,data_ocorrencia,descricao,valor_bruto,valor_liquido,data_liquidacao,boleto_vencimento,boleto_pagamento,boleto_status,conta_financeira_id,plano_conta_id,centro_custo_id,status,observacao) ON financeiro_hml.tesouraria_conferencias FROM authenticated;
+REVOKE ALL ON FUNCTION financeiro_hml.conf_dinheiro(text),financeiro_hml.conf_validar(jsonb,text),financeiro_hml.conf_validar_grupo(jsonb,jsonb,text),financeiro_hml.conferencia_consultar(jsonb),financeiro_hml.conferencia_comandar(jsonb),financeiro_hml.conferencia_historico(jsonb),financeiro_hml.conferencia_opcoes() FROM PUBLIC,anon,service_role;
+GRANT EXECUTE ON FUNCTION financeiro_hml.conferencia_consultar(jsonb),financeiro_hml.conferencia_comandar(jsonb),financeiro_hml.conferencia_historico(jsonb),financeiro_hml.conferencia_opcoes() TO authenticated;
+-- Os caminhos financeiros legados seguem indisponíveis nesta preparação.
+-- Não muda conta/abertura existente; apenas recusa novas ações por wrappers.
+CREATE OR REPLACE FUNCTION financeiro_hml.tesouraria_criar_conta(p jsonb) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,financeiro_hml AS $$
+BEGIN RAISE EXCEPTION 'CONF_OPERACAO_BLOQUEADA'; END $$;
+CREATE OR REPLACE FUNCTION financeiro_hml.tesouraria_habilitar_conta(p jsonb) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,financeiro_hml AS $$
+BEGIN RAISE EXCEPTION 'CONF_OPERACAO_BLOQUEADA'; END $$;
+CREATE OR REPLACE FUNCTION financeiro_hml.tesouraria_estornar(p jsonb) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,financeiro_hml AS $$
+BEGIN RAISE EXCEPTION 'CONF_OPERACAO_BLOQUEADA'; END $$;
+-- COMPLEMENTO DEFINITIVO ETAPA 2. PREPARADO, NÃO APLICADO NO HML.
+-- Executar APÓS CONTROLES_OPERACIONAIS_PROPOSTOS.sql, sob manutenção.
+SET LOCAL lock_timeout='5s';
+LOCK TABLE financeiro_hml.tesouraria_conferencias, financeiro_hml.contas_financeiras,
+ financeiro_hml.tesouraria_operacoes, financeiro_hml.tesouraria_movimentos IN ACCESS EXCLUSIVE MODE NOWAIT;
+
+CREATE TABLE financeiro_hml.tesouraria_solicitacoes (
+ id uuid PRIMARY KEY DEFAULT gen_random_uuid(), chave uuid NOT NULL,
+ criado_por uuid NOT NULL, criado_em timestamptz NOT NULL DEFAULT clock_timestamp(),
+ pedido jsonb NOT NULL, referencia text UNIQUE,
+ estado text NOT NULL DEFAULT 'pendente' CHECK (estado IN ('pendente','executada','devolvida')),
+ versao bigint NOT NULL DEFAULT 0, aprovado_por uuid, aprovado_em timestamptz,
+ operacao_id uuid UNIQUE REFERENCES financeiro_hml.tesouraria_operacoes(id),
+ justificativa text, atualizado_por uuid, atualizado_em timestamptz NOT NULL DEFAULT clock_timestamp(),
+ acao text NOT NULL DEFAULT 'solicitar', UNIQUE(criado_por,chave)
+);
+GRANT SELECT ON financeiro_hml.tesouraria_solicitacoes TO authenticated;
+GRANT SELECT ON financeiro_hml.tesouraria_solicitacoes TO service_role;
+ALTER TABLE financeiro_hml.tesouraria_solicitacoes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY tes_solicitacoes_ler ON financeiro_hml.tesouraria_solicitacoes FOR SELECT TO authenticated
+ USING (financeiro_hml.tem_papel(ARRAY['admin_geral','admin_financeiro','analista_financeiro','consulta_gerencial']));
+CREATE TRIGGER tes_solicitacoes_auditar AFTER INSERT OR UPDATE ON financeiro_hml.tesouraria_solicitacoes
+ FOR EACH ROW EXECUTE FUNCTION financeiro_hml.tes_conf_auditar();
+
+CREATE FUNCTION financeiro_hml.tesouraria_listar_solicitacoes(p jsonb) RETURNS jsonb
+LANGUAGE sql STABLE SECURITY INVOKER SET search_path=pg_catalog,financeiro_hml AS $$
+ WITH filtrado AS (SELECT s.* FROM financeiro_hml.tesouraria_solicitacoes s WHERE p->>'estado' IS NULL OR s.estado=p->>'estado'),
+ pagina AS (SELECT * FROM filtrado ORDER BY criado_em DESC,id DESC LIMIT 50 OFFSET least(greatest(coalesce((p->>'pagina')::bigint,0),0),100000)*50)
+ SELECT jsonb_build_object('total',(SELECT count(*) FROM filtrado),'solicitacoes',coalesce((SELECT jsonb_agg(to_jsonb(s)||jsonb_build_object('versao',s.versao::text,'original_detalhes',(SELECT jsonb_build_object('valor',o.valor::text,'origem',o.conta_origem_id,'destino',o.conta_destino_id,'classificacao',o.classificacao_snapshot,'centro',o.centro_custo_id,'descricao',o.descricao) FROM financeiro_hml.tesouraria_operacoes o WHERE o.id=(s.pedido->>'original')::uuid)) ORDER BY criado_em DESC,id DESC) FROM pagina s),'[]'::jsonb));
+$$;
+REVOKE ALL ON FUNCTION financeiro_hml.tesouraria_listar_solicitacoes(jsonb) FROM PUBLIC,anon,service_role;
+GRANT EXECUTE ON FUNCTION financeiro_hml.tesouraria_listar_solicitacoes(jsonb) TO authenticated;
+
+CREATE FUNCTION financeiro_hml.tes_validar_solicitacao(p jsonb) RETURNS void
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,financeiro_hml,pg_temp AS $$
+DECLARE original financeiro_hml.tesouraria_operacoes; dt date; conta record; k text; ref text;
+BEGIN
+ -- Ordem única entre preparação/validação e motor; evita upgrades SHARE concorrentes.
+ PERFORM pg_advisory_xact_lock(hashtextextended('etapa2_execucao_financeira',0));
+ IF p IS NULL OR jsonb_typeof(p) IS DISTINCT FROM 'object' OR coalesce(p->>'tipo','') NOT IN ('entrada','saida','transferencia','estorno') THEN RAISE EXCEPTION 'SOL_DADOS'; END IF;
+ FOR k IN SELECT jsonb_object_keys(p) LOOP
+  IF k<>ALL(ARRAY['tipo','data','descricao','valor','origem','destino','plano','centro','original','justificativa','referencia']) THEN RAISE EXCEPTION 'SOL_DADOS'; END IF;
+ END LOOP;
+ IF coalesce(p->>'data','') !~ '^\d{4}-\d{2}-\d{2}$' OR length(btrim(coalesce(p->>'descricao',''))) NOT BETWEEN 2 AND 500 THEN RAISE EXCEPTION 'SOL_DADOS'; END IF;
+ dt:=(p->>'data')::date;
+ IF dt>(clock_timestamp() AT TIME ZONE 'America/Manaus')::date THEN RAISE EXCEPTION 'SOL_DATA_FUTURA'; END IF;
+ IF p->>'tipo'='estorno' THEN
+  IF length(btrim(coalesce(p->>'justificativa',''))) NOT BETWEEN 5 AND 500 THEN RAISE EXCEPTION 'TES_JUSTIFICATIVA'; END IF;
+  IF p ?| ARRAY['valor','origem','destino','plano','centro','referencia'] THEN RAISE EXCEPTION 'SOL_DADOS'; END IF;
+  SELECT * INTO original FROM financeiro_hml.tesouraria_operacoes WHERE id=(p->>'original')::uuid;
+  IF NOT FOUND OR original.tipo IN ('estorno','abertura') THEN RAISE EXCEPTION 'SOL_ESTORNO_INVALIDO'; END IF;
+  IF dt<original.data_movimento THEN RAISE EXCEPTION 'TES_DATA'; END IF;
+  IF EXISTS(SELECT 1 FROM financeiro_hml.tesouraria_operacoes WHERE operacao_original_id=original.id) THEN RAISE EXCEPTION 'TES_JA_ESTORNADA'; END IF;
+  FOR conta IN SELECT c.* FROM financeiro_hml.contas_financeiras c WHERE c.id IN(original.conta_origem_id,original.conta_destino_id) ORDER BY c.id FOR SHARE LOOP
+   IF NOT conta.ativo OR NOT EXISTS(SELECT 1 FROM financeiro_hml.contas_preparadas cp WHERE cp.conta_financeira_id=conta.id AND cp.situacao='habilitada') THEN RAISE EXCEPTION 'CONF_CONTA_OFICIAL'; END IF;
+  END LOOP;
+ ELSE
+  PERFORM financeiro_hml.conf_dinheiro(p->>'valor');
+  IF p ?| ARRAY['original','justificativa'] THEN RAISE EXCEPTION 'SOL_DADOS'; END IF;
+  IF p->>'tipo'='transferencia' THEN
+   IF nullif(p->>'origem','') IS NULL OR nullif(p->>'destino','') IS NULL OR p->>'origem'=p->>'destino' OR p ?| ARRAY['plano','centro','referencia'] THEN RAISE EXCEPTION 'TES_MESMA_CONTA'; END IF;
+   FOR conta IN SELECT c.* FROM financeiro_hml.contas_financeiras c WHERE c.id IN((p->>'origem')::uuid,(p->>'destino')::uuid) ORDER BY c.id FOR SHARE LOOP
+    IF NOT conta.ativo OR dt<conta.data_saldo_inicial OR NOT EXISTS(SELECT 1 FROM financeiro_hml.contas_preparadas cp WHERE cp.conta_financeira_id=conta.id AND cp.situacao='habilitada') THEN RAISE EXCEPTION 'CONF_CONTA_OFICIAL'; END IF;
+   END LOOP;
+   IF (SELECT count(*) FROM financeiro_hml.contas_financeiras WHERE id IN((p->>'origem')::uuid,(p->>'destino')::uuid))<>2 THEN RAISE EXCEPTION 'CONF_CONTA_OFICIAL'; END IF;
+  ELSE
+   IF (p->>'tipo'='entrada' AND p ? 'origem') OR (p->>'tipo'='saida' AND p ? 'destino') THEN RAISE EXCEPTION 'SOL_DADOS'; END IF;
+   -- Referência documental externa obrigatória: recebimentos importados usam exclusivamente a conferência.
+   ref:=lower(btrim(coalesce(p->>'referencia','')));
+   IF length(ref) NOT BETWEEN 8 AND 200 OR ref !~ '^externo:[a-z0-9][a-z0-9._:/-]+$' THEN RAISE EXCEPTION 'SOL_REFERENCIA'; END IF;
+   IF EXISTS(SELECT 1 FROM financeiro_hml.tesouraria_conferencias WHERE lower(referencia_origem)=ref)
+    OR EXISTS(SELECT 1 FROM financeiro_hml.conferencia_vinculos WHERE lower(referencia_origem)=ref) THEN RAISE EXCEPTION 'CONF_DUPLICIDADE'; END IF;
+   PERFORM financeiro_hml.conf_validar(jsonb_build_object('forma','pix','descricao',p->>'descricao','data_ocorrencia',p->>'data','valor_bruto',p->>'valor','conta_financeira_id',CASE p->>'tipo' WHEN 'entrada' THEN p->>'destino' ELSE p->>'origem' END,'plano_conta_id',p->>'plano','centro_custo_id',p->>'centro'),p->>'tipo');
+  END IF;
+ END IF;
+END $$;
+
+CREATE FUNCTION financeiro_hml.tesouraria_solicitar(p jsonb) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,financeiro_hml,pg_temp AS $$
+DECLARE req jsonb; anterior financeiro_hml.tesouraria_solicitacoes; ident uuid; chave_pedido uuid; ref text;
+BEGIN
+ IF auth.uid() IS NULL OR NOT financeiro_hml.tem_papel(ARRAY['admin_geral','admin_financeiro','analista_financeiro']) THEN RAISE EXCEPTION 'TES_PERMISSAO' USING ERRCODE='42501'; END IF;
+ chave_pedido:=(p->>'chave')::uuid;
+ IF chave_pedido IS NULL THEN RAISE EXCEPTION 'SOL_DADOS'; END IF;
+ req:=jsonb_strip_nulls(p-'chave');
+ IF req ? 'referencia' THEN req:=jsonb_set(req,'{referencia}',to_jsonb(lower(btrim(req->>'referencia')))); END IF;
+ PERFORM pg_advisory_xact_lock(hashtextextended('sol_chave:'||auth.uid()::text||chave_pedido::text,0));
+ SELECT * INTO anterior FROM financeiro_hml.tesouraria_solicitacoes WHERE criado_por=auth.uid() AND tesouraria_solicitacoes.chave=chave_pedido;
+ IF FOUND THEN
+  IF anterior.pedido<>req THEN RAISE EXCEPTION 'TES_IDEMPOTENCIA'; END IF;
+  RETURN jsonb_build_object('id',anterior.id,'repetida',true);
+ END IF;
+ PERFORM financeiro_hml.tes_validar_solicitacao(req);
+ ref:=req->>'referencia';
+ IF ref IS NOT NULL THEN
+  PERFORM pg_advisory_xact_lock(hashtextextended('sol_ref:'||ref,0));
+  IF EXISTS(SELECT 1 FROM financeiro_hml.tesouraria_solicitacoes WHERE referencia=ref) THEN RAISE EXCEPTION 'CONF_DUPLICIDADE'; END IF;
+ END IF;
+ INSERT INTO financeiro_hml.tesouraria_solicitacoes(chave,criado_por,pedido,referencia,atualizado_por)
+ VALUES(chave_pedido,auth.uid(),req,ref,auth.uid()) RETURNING id INTO ident;
+ RETURN jsonb_build_object('id',ident,'repetida',false);
+END $$;
+
+CREATE FUNCTION financeiro_hml.tesouraria_decidir(p jsonb) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,financeiro_hml,pg_temp AS $$
+DECLARE s financeiro_hml.tesouraria_solicitacoes; r jsonb; corte date; motivo text:=btrim(coalesce(p->>'justificativa',''));
+BEGIN
+ IF auth.uid() IS NULL OR NOT financeiro_hml.tem_papel(ARRAY['admin_geral','admin_financeiro']) THEN RAISE EXCEPTION 'TES_PERMISSAO' USING ERRCODE='42501'; END IF;
+ IF coalesce(p->>'acao','') NOT IN ('executar','devolver') OR coalesce(p->>'versao','') !~ '^\d+$' THEN RAISE EXCEPTION 'SOL_DADOS'; END IF;
+ SELECT * INTO s FROM financeiro_hml.tesouraria_solicitacoes WHERE id=(p->>'id')::uuid FOR UPDATE;
+ IF NOT FOUND THEN RAISE EXCEPTION 'SOL_INEXISTENTE'; END IF;
+ IF s.criado_por=auth.uid() THEN RAISE EXCEPTION 'CONF_REVISOR_DISTINTO'; END IF;
+ IF s.estado='executada' AND p->>'acao'='executar' THEN RETURN jsonb_build_object('id',s.operacao_id,'repetida',true); END IF;
+ IF s.estado<>'pendente' OR s.versao<>(p->>'versao')::bigint THEN RAISE EXCEPTION 'CONF_CONFLITO'; END IF;
+ IF p->>'acao'='devolver' THEN
+  IF length(motivo) NOT BETWEEN 5 AND 500 THEN RAISE EXCEPTION 'TES_JUSTIFICATIVA'; END IF;
+  UPDATE financeiro_hml.tesouraria_solicitacoes SET estado='devolvida',versao=versao+1,justificativa=motivo,atualizado_por=auth.uid(),atualizado_em=clock_timestamp(),acao='devolver' WHERE id=s.id;
+  RETURN jsonb_build_object('id',s.id,'repetida',false);
+ END IF;
+ SELECT a.corte INTO corte FROM financeiro_hml.conferencia_operacao_autorizada a WHERE a.id FOR SHARE;
+ IF NOT FOUND THEN RAISE EXCEPTION 'CONF_OPERACAO_BLOQUEADA'; END IF;
+ IF (s.pedido->>'data')::date<corte THEN RAISE EXCEPTION 'CONF_HISTORICO'; END IF;
+ PERFORM financeiro_hml.tes_validar_solicitacao(s.pedido);
+ -- Motor privado conserva transação, efeitos exatos, locks de contas/estorno e idempotência.
+ r:=financeiro_hml.tes_executar((s.pedido-'referencia')||jsonb_build_object('chave',s.id));
+ UPDATE financeiro_hml.tesouraria_solicitacoes SET estado='executada',versao=versao+1,aprovado_por=auth.uid(),aprovado_em=clock_timestamp(),operacao_id=(r->>'id')::uuid,atualizado_por=auth.uid(),atualizado_em=clock_timestamp(),acao='aprovar_executar' WHERE id=s.id;
+ RETURN r;
+END $$;
+
+-- Nenhum wrapper antigo executa diretamente: todos só registram pedido para revisão humana.
+CREATE OR REPLACE FUNCTION financeiro_hml.tesouraria_lancar(p jsonb) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,financeiro_hml AS $$
+BEGIN IF p->>'tipo' NOT IN ('entrada','saida') OR p->>'tipo' IS NULL THEN RAISE EXCEPTION 'SOL_DADOS'; END IF; RETURN financeiro_hml.tesouraria_solicitar(p); END $$;
+CREATE OR REPLACE FUNCTION financeiro_hml.tesouraria_transferir(p jsonb) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,financeiro_hml AS $$
+BEGIN IF p->>'tipo' IS DISTINCT FROM 'transferencia' THEN RAISE EXCEPTION 'SOL_DADOS'; END IF; RETURN financeiro_hml.tesouraria_solicitar(p); END $$;
+CREATE OR REPLACE FUNCTION financeiro_hml.tesouraria_estornar(p jsonb) RETURNS jsonb
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,financeiro_hml AS $$
+BEGIN IF p->>'tipo' IS DISTINCT FROM 'estorno' THEN RAISE EXCEPTION 'SOL_DADOS'; END IF; RETURN financeiro_hml.tesouraria_solicitar(p); END $$;
+
+REVOKE ALL ON FUNCTION financeiro_hml.tes_validar_solicitacao(jsonb),financeiro_hml.tesouraria_solicitar(jsonb),financeiro_hml.tesouraria_decidir(jsonb) FROM PUBLIC,anon,authenticated,service_role;
+REVOKE EXECUTE ON FUNCTION financeiro_hml.tes_executar(jsonb) FROM PUBLIC,anon,authenticated,service_role;
+-- Instalação selada. Liberação autenticada será ato separado após compatibilidade/autorizações.
+REVOKE EXECUTE ON FUNCTION financeiro_hml.conferencia_comandar(jsonb),financeiro_hml.tesouraria_lancar_conferencia(jsonb),financeiro_hml.tesouraria_lancar(jsonb),financeiro_hml.tesouraria_transferir(jsonb),financeiro_hml.tesouraria_estornar(jsonb),financeiro_hml.tesouraria_criar_conta(jsonb),financeiro_hml.tesouraria_habilitar_conta(jsonb) FROM PUBLIC,anon,authenticated,service_role;
+SET CONSTRAINTS ALL IMMEDIATE;
+COMMIT;

@@ -65,6 +65,7 @@ CREATE FUNCTION financeiro_hml.conf_validar(d jsonb, natureza text) RETURNS void
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,financeiro_hml,pg_temp AS $$
 DECLARE conta financeiro_hml.contas_financeiras; plano financeiro_hml.plano_contas; regra financeiro_hml.conferencia_regras_oficiais; bruto numeric; liquido numeric; dt date;
 BEGIN
+ PERFORM pg_advisory_xact_lock(hashtextextended('etapa2_execucao_financeira',0));
  IF d IS NULL OR jsonb_typeof(d)<>'object' THEN RAISE EXCEPTION 'CONF_DADOS'; END IF;
  bruto:=financeiro_hml.conf_dinheiro(d->>'valor_bruto');
  IF coalesce(d->>'forma','') NOT IN ('dinheiro','pix','credito','debito','parcelado','boleto') THEN RAISE EXCEPTION 'CONF_FORMA'; END IF;
@@ -178,6 +179,7 @@ BEGIN
   IF c.estado NOT IN ('encaminhado','conciliado','autorizado') THEN RAISE EXCEPTION 'CONF_ESTADO'; END IF;
   c.estado:='devolvido'; c.aprovado_por:=NULL; c.aprovado_em:=NULL; c.versao_aprovada:=NULL; c.autorizado_por:=NULL; c.autorizado_em:=NULL;
  ELSIF acao='autorizar' THEN
+  IF c.preparado_por=auth.uid() THEN RAISE EXCEPTION 'CONF_REVISOR_DISTINTO'; END IF;
   IF c.estado<>'conciliado' OR c.versao_aprovada<>c.versao OR c.aprovado_por IS NULL THEN RAISE EXCEPTION 'CONF_ESTADO'; END IF;
   PERFORM financeiro_hml.conf_validar_grupo(c.dados,c.componentes,fonte.natureza);
   c.estado:='autorizado'; c.autorizado_por:=auth.uid(); c.autorizado_em:=clock_timestamp(); c.versao_aprovada:=c.versao+1;
