@@ -66,7 +66,7 @@ BEGIN
  SELECT c.* INTO conta FROM financeiro_hml.contas_financeiras c JOIN financeiro_hml.contas_preparadas p ON p.conta_financeira_id=c.id AND p.situacao='habilitada' WHERE c.id=(d->>'conta_financeira_id')::uuid AND c.ativo FOR SHARE OF c,p;
  IF NOT FOUND THEN RAISE EXCEPTION 'CONF_CONTA_OFICIAL'; END IF;
  SELECT * INTO plano FROM financeiro_hml.plano_contas WHERE id=(d->>'plano_conta_id')::uuid AND ativo AND aceita_lancamentos FOR SHARE;
- IF NOT FOUND OR plano.natureza<>CASE natureza WHEN 'entrada' THEN 'receita' WHEN 'saida' THEN 'despesa' ELSE '' END THEN RAISE EXCEPTION 'CONF_CATEGORIA'; END IF;
+ IF NOT FOUND OR plano.natureza<>(CASE natureza WHEN 'entrada' THEN 'receita' WHEN 'saida' THEN 'despesa' ELSE '' END) THEN RAISE EXCEPTION 'CONF_CATEGORIA'; END IF;
  SELECT * INTO regra FROM financeiro_hml.conferencia_regras_oficiais WHERE plano_conta_id=plano.id FOR SHARE;
  IF NOT FOUND THEN RAISE EXCEPTION 'CONF_CATEGORIA_OFICIAL'; END IF;
  IF regra.centro_obrigatorio AND nullif(d->>'centro_custo_id','') IS NULL THEN RAISE EXCEPTION 'CONF_CENTRO'; END IF;
