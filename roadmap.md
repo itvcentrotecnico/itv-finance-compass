@@ -1,5 +1,12 @@
 # Autenticação segura — ITV FINANCEIRO HML
 
+## Finalização executiva — 30/10/2026
+
+- [ ] Consolidar relatório único A–G com auditoria de leitura, regressões existentes e compatibilidade, sem ampliar produto.
+- [ ] Recuperação: administrador informa dump de 29/10 às 21:16:57, inventário legível/13 entradas financeiras; falta evidência de restauração integral e integridade. Não solicitar arquivo sensível/senha pelo chat.
+- [ ] Implantação crítica: aguarda recuperação comprovada e autorização consolidada para janela, alterações críticas e publicação compatível. Sem operações financeiras ou alterações no GESTÃO ITV.
+- [ ] Prontidão administrativa: definir início oficial, aprovar categorias/centros e validar saldos reais; zeros atuais não são confirmação financeira.
+
 ## Fase de implantação operacional — 29/10/2026
 
 - [x] Etapa 1 — Contas oficiais: SICREDI — CONTA PRINCIPAL, MERCADO PAGO — RECEBIMENTOS e CAIXA FÍSICO ITV habilitadas pelo administrador em 29/10 às 19h40 Manaus; SELECTs confirmam três contas ativas, aberturas e saldos R$ 0,00, seis eventos de auditoria, zero movimentos e 49 registros/49 conferências preservados. Contas HML TESTE: direção decidiu tratar depois.
@@ -9,7 +16,7 @@
 - [ ] Etapa 2 — Aplicação SQL já autorizada: bloqueada até comprovar backup atual restaurável e manutenção/drenagem e resolver compatibilidade por publicação coordenada especificamente autorizada ou isolamento comprovado da interface antiga até futura publicação. Operação real não autorizada. Após migração, foco em início oficial, categorias/centros e validação dos saldos.
 - [x] Etapa 2 — Preparação final autorizada 20h11 concluída: docs/etapa2/PLANO_IMPLANTACAO_SEGURA.md apresenta backup/cobertura/evidência histórica 102 checks, limitação de recuperação atual, manutenção por barreira seletiva com consultas preservadas/drenagem, publicação coordenada pendente, reversão sem apagar histórico e sequência/condições para aprovação. Leitura confirma PostgreSQL 17.11/13 MB, 13 tabelas RLS, 49/49 hashes intactos/19 syncs/280 auditorias/zero movimentos e saldos. Nenhum SQL/restore/publicação executado.
 - [x] Etapa 2 — Alternativa de backup manual gratuito avaliada em 20h28: acessos locais sem credencial PostgreSQL; lista atual de segredos não oferece DB URL executável. Recomendar administrador exportar em computador próprio com pg_dump archive de snapshot único, roles/dependências inventariadas e arquivos sensíveis protegidos; documentar limites Auth/Storage/configuração, validação por snapshot/hashes e recuperação isolada sem rede. Nenhum dump, acesso HML, restauração ou alteração executado.
-- [ ] Etapa 2 — Backup/recuperação atual: aguarda administrador obter/exportar cópia PostgreSQL completa com credenciais mantidas localmente e inventário dos objetos/roles; depois ensaio isolado e evidência de integridade. Supabase Free confirmado pelo usuário, Pro não autorizado. Cópia de 23/10 insuficiente; migração suspensa, manutenção/reversão já validadas não precisam ser refeitas.
+- [ ] Etapa 2 — Backup/recuperação atual: dump de 29/10 criado e inventário validado conforme administrador (diretriz de 30/10); restauração integral e comparação de integridade ainda não comprovadas. Arquivo não disponível neste executor. Supabase Free, sem Pro. Cópia de 23/10 insuficiente; migração suspensa, manutenção/reversão já validadas não precisam ser refeitas.
 - [x] Etapa 2 — Autorização 20h17: quatro scripts psql de manutenção/selagem/retomada/reversão ACL seletiva preparados; 34 testes locais + 47 regressões SQL aprovados, bancos descartáveis eliminados. Exportação atual impedida: sem conexão direta, CLI query recusa backend externo; read_query só evidência, nenhum dump completo. Restore atual não executado/tempo não medido. Integridade 20h21: 49/49 hashes/19 syncs/280 auditorias/zero movimentos/aberturas. Relatório docs/etapa2/RESULTADO_PREPARACAO_FINAL.md; nenhuma mudança HML/publicação.
 - [ ] Etapa 3 — Dashboard executivo: somente após validar estrutura financeira e regras de lançamento; distinguir faturamento, recebimentos e resultado.
 - Decisões fixas: domínio itv-financeiro.lovable.app mantido; acesso restrito; nenhum dado financeiro inventado.
