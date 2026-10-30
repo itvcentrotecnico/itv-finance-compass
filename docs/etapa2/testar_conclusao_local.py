@@ -87,6 +87,20 @@ try:
  results=[proc.communicate(timeout=15) for proc in procs]
  check('dois revisores concorrentes retornam mesmo resultado',all(proc.returncode==0 for proc in procs) and json.loads(results[0][0])['id']==json.loads(results[1][0])['id'])
  check('concorrência só cria uma operação',sql(f"SELECT count(*) FROM financeiro_hml.tesouraria_operacoes WHERE chave_idempotencia='{concurrent['id']}';")=='1')
+ # Pedidos distintos nas mesmas contas: trava global evita upgrade compartilhado/exclusivo.
+ distinct=[read('tesouraria_transferir',{**transfer,'chave':str(uuid.uuid4()),'valor':'1.00'}) for _ in range(2)]
+ procs=[subprocess.Popen(BASE+['-d',DB],stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True) for _ in range(2)]
+ for proc,req,u in zip(procs,distinct,[A,G]):
+  proc.stdin.write(actor(u)+f"SELECT financeiro_hml.tesouraria_decidir('{json.dumps({'id':req['id'],'versao':'0','acao':'executar'})}'::jsonb);");proc.stdin.close();proc.stdin=None
+ results=[proc.communicate(timeout=15) for proc in procs]
+ check('pedidos distintos concorrentes sem deadlock',all(proc.returncode==0 for proc in procs))
+ # Conferência: preparador administrador não pode recuperar a autorização após revisão alheia.
+ ident=sql("SELECT id FROM financeiro_hml.tesouraria_conferencias ORDER BY id LIMIT 1;")
+ rev=read('conferencia_consultar',{'id':ident},A)
+ d={'forma':'pix','descricao':'TESTE LOCAL','data_ocorrencia':'2026-10-30','valor_bruto':'100.00','valor_liquido':None,'data_liquidacao':None,'boleto_vencimento':None,'boleto_pagamento':None,'boleto_status':None,'conta_financeira_id':contas[0],'plano_conta_id':plan,'centro_custo_id':None,'observacao':None}
+ for acao,u in [('salvar',A),('encaminhar',A),('aprovar',G)]:
+  rev=read('conferencia_comandar',{'id':ident,'versao':rev['versao'],'fonte_hash':rev['fonte_hash'],'acao':acao,'dados':d,'componentes':[]},u)
+ block('preparador não autoriza conferência','conferencia_comandar',{'id':ident,'versao':rev['versao'],'fonte_hash':rev['fonte_hash'],'acao':'autorizar'},'CONF_REVISOR_DISTINTO',A)
  # Trigger diferida força falha no commit: nenhum efeito ou decisão parcial.
  broken=read('tesouraria_transferir',{**transfer,'chave':str(uuid.uuid4()),'valor':'2.00'})
  before=sql('SELECT count(*) FROM financeiro_hml.tesouraria_operacoes;')
