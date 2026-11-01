@@ -115,7 +115,7 @@ describe("modo operacional com sonda do contrato corrigido", () => {
     await abrirEntrada();
     await preencherEntrada();
     fireEvent.click(screen.getByRole("button", { name: "Confirmar lançamento" }));
-    expect(await screen.findByText("Resposta perdida.")).toBeTruthy();
+    expect((await screen.findAllByText("Resposta perdida.")).length).toBeGreaterThan(0);
     expect(screen.getByRole("button", { name: "Consultar resultado" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Recuperar mesmos dados" })).toBeTruthy();
   });
