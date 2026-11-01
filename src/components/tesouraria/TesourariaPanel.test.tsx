@@ -116,8 +116,10 @@ describe("modo operacional com sonda do contrato corrigido", () => {
     await preencherEntrada();
     fireEvent.click(screen.getByRole("button", { name: "Confirmar lançamento" }));
     expect((await screen.findAllByText("Resposta perdida.")).length).toBeGreaterThan(0);
-    expect(screen.getByRole("button", { name: "Consultar resultado" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Recuperar mesmos dados" })).toBeTruthy();
+    const gravado = window.localStorage.getItem("itv:ayjppexbzpgdkzbehvzw:tesouraria:v1:u1");
+    expect(gravado).not.toBeNull();
+    expect(JSON.parse(gravado!)).toMatchObject({ tipo: "entrada", descricao: "Receita local", valor: "100.10" });
+    expect(enviar).toHaveBeenCalledTimes(1);
   });
 });
 
