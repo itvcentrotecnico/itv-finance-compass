@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { Pedido, ResultadoEnvio } from "./tesouraria";
 
-const pedido = z.object({ tipo: z.enum(["abertura", "entrada", "saida", "transferencia", "estorno"]), chave: z.string().uuid(), data: z.string(), descricao: z.string(), valor: z.string().optional(), nome: z.string().optional(), conta_tipo: z.string().optional(), banco: z.string().optional(), agencia: z.string().optional(), numero_conta: z.string().optional(), origem: z.string().optional(), destino: z.string().optional(), plano: z.string().optional(), centro: z.string().optional(), original: z.string().optional(), justificativa: z.string().optional() }).strict();
+const pedido = z.object({ tipo: z.enum(["abertura", "entrada", "saida", "transferencia", "estorno"]), chave: z.string().uuid(), data: z.string(), descricao: z.string(), valor: z.string().optional(), nome: z.string().optional(), conta_tipo: z.string().optional(), banco: z.string().optional(), agencia: z.string().optional(), numero_conta: z.string().optional(), origem: z.string().optional(), destino: z.string().optional(), plano: z.string().optional(), centro: z.string().optional(), original: z.string().optional(), justificativa: z.string().optional(), referencia: z.string().optional() }).strict();
 export const chavePendente = (usuario: string) => `itv:ayjppexbzpgdkzbehvzw:tesouraria:v1:${usuario}`;
 export function lerPendente(storage: Pick<Storage, "getItem">, usuario: string): Pedido | null {
   const raw = storage.getItem(chavePendente(usuario));
