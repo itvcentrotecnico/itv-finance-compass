@@ -58,7 +58,7 @@ function ModulePage() {
       <PageHeader
         eyebrow={group?.label}
         title={mod.title}
-        description={mod.key === "despesas" ? "Consulta das saídas registradas. Novas despesas aguardam os controles de aprovação." : mod.description}
+        description={mod.key === "despesas" ? "Consulta das saídas registradas. Novas despesas são lançadas na Tesouraria por administradores autorizados." : mod.description}
         actions={
           Operacional ? undefined : (
           <span className="inline-flex items-center gap-1.5 rounded-full border bg-card px-3 py-1 text-xs text-muted-foreground">
@@ -67,7 +67,7 @@ function ModulePage() {
           )
         }
       />
-      {mod.key === "despesas" ? <TesourariaPanel tipoInicial="saida" /> : Operacional ? <Operacional /> : <EmptyState icon={Icon} title="Recurso indisponível nesta versão" description="Este módulo ainda não possui uma operação validada. Nenhum registro financeiro pode ser criado por esta página." />}
+      {mod.key === "despesas" ? <TesourariaPanel tipoInicial="saida" /> : mod.key === "tesouraria" ? <TesourariaPanel somenteConsulta={false} /> : Operacional ? <Operacional /> : <EmptyState icon={Icon} title="Recurso indisponível nesta versão" description="Este módulo ainda não possui uma operação validada. Nenhum registro financeiro pode ser criado por esta página." />}
     </AppShell>
   );
 }

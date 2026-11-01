@@ -16,6 +16,14 @@ export const carregarTesouraria = createServerFn({ method: "POST" }).middleware(
   if (error) throw new Error(erroTesouraria(error));
   return data as ContaFinanceira[];
 });
+/** Sonda sem efeito financeiro: confirma que o intermediário corrigido (mínima v2) está ativo no banco. Falha fechada: qualquer erro ou resposta diversa mantém o formulário bloqueado. */
+export const verificarContratoLancamento = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = (context.supabase as any).schema("financeiro_hml");
+  const { data, error } = await db.rpc("tesouraria_lancar", { p: { tipo: "sonda" } });
+  if (error) return false;
+  return data?.contrato === "tesouraria_lancar_minima_v2";
+});
 export const carregarExtrato = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).inputValidator((v: unknown) => filtroSchema.parse(v)).handler(async ({ data, context }) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = (context.supabase as any).schema("financeiro_hml");

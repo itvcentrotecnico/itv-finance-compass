@@ -4,7 +4,7 @@ vi.mock("@/integrations/supabase/auth-middleware", () => ({ requireSupabaseAuth:
 vi.mock("@tanstack/react-start", () => ({ createServerFn: () => {
   const builder = { middleware: () => builder, inputValidator: () => builder, handler: (fn: (args: unknown) => unknown) => (args: { data?: unknown } = {}) => fn({ data: args.data, context }) }; return builder;
 } }));
-import { carregarHistoricoTesouraria, consultarEnvioTesouraria, registrarTesouraria } from "./tesouraria.functions";
+import { carregarHistoricoTesouraria, consultarEnvioTesouraria, registrarTesouraria, verificarContratoLancamento } from "./tesouraria.functions";
 beforeEach(() => vi.clearAllMocks());
 describe("adaptação das funções financeiras — somente mocks locais", () => {
   it("histórico preserva abertura e estorno zero e transferência única", async () => {
@@ -48,5 +48,17 @@ describe("adaptação das funções financeiras — somente mocks locais", () =>
   it("não transforma erro de conexão em rejeição", async () => {
     context.supabase.schema.mockReturnValue({ rpc: vi.fn().mockResolvedValue({ error: { message: "Failed to fetch", code: "" } }) });
     expect((await registrarTesouraria({ data: { tipo: "entrada" } as never })).estado).toBe("incerta");
+  });
+  it("sonda confirma somente o contrato corrigido", async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: { contrato: "tesouraria_lancar_minima_v2" }, error: null });
+    context.supabase.schema.mockReturnValue({ rpc });
+    expect(await verificarContratoLancamento({})).toBe(true);
+    expect(rpc).toHaveBeenCalledWith("tesouraria_lancar", { p: { tipo: "sonda" } });
+  });
+  it("sonda falha fechada no legado, em erro e em resposta diversa", async () => {
+    context.supabase.schema.mockReturnValue({ rpc: vi.fn().mockResolvedValue({ data: null, error: { code: "P0001", message: "TES_DADOS" } }) });
+    expect(await verificarContratoLancamento({})).toBe(false);
+    context.supabase.schema.mockReturnValue({ rpc: vi.fn().mockResolvedValue({ data: { contrato: "outro" }, error: null }) });
+    expect(await verificarContratoLancamento({})).toBe(false);
   });
 });

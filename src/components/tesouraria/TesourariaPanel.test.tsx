@@ -1,66 +1,138 @@
-import { fireEvent, render, screen, waitFor, cleanup } from "@testing-library/react";
+import { describe, expect, it, vi, beforeEach } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-const mocks = vi.hoisted(() => ({ enviar: vi.fn(), consultar: vi.fn(), historico: vi.fn() }));
-vi.mock("@tanstack/react-router", () => ({ useRouteContext: () => ({ role: "admin_geral", user: { id: "usuario-local" } }) }));
+
+const { enviar, sonda } = vi.hoisted(() => ({ enviar: vi.fn(), sonda: vi.fn() }));
+
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
-vi.mock("@/lib/tesouraria.functions", () => ({ carregarTesouraria: async () => [{id:"conta-a",nome:"Conta local A",ativo:true,tipo:"caixa",saldo:"0.00",data_saldo_inicial:"2026-10-26"},{id:"conta-b",nome:"Conta local B",ativo:true,tipo:"banco",saldo:"0.00",data_saldo_inicial:"2026-10-26"}], carregarExtrato: async () => ({ linhas: [], total: 0, saldo_anterior: "0", saldo_final: "0", subtotal: "0" }), carregarHistoricoTesouraria: mocks.historico, registrarTesouraria: mocks.enviar, consultarEnvioTesouraria: mocks.consultar }));
-vi.mock("@/lib/cadastros", () => ({ listarContas: async () => [], listarCentros: async () => [], podeVerAuditoria: () => false }));
-vi.mock("@/lib/auth/session", () => ({ fin: () => { throw new Error("HML proibido nos testes locais"); } }));
-vi.mock("@/components/cadastros/Historico", () => ({ Historico: () => null }));
-vi.mock("@/lib/conferencia-operacional.functions", () => ({ consultarConferencia: vi.fn(), comandarConferencia: vi.fn(), historicoConferencia: vi.fn(), opcoesConferencia: vi.fn() }));
-vi.mock("./SolicitacoesPanel",()=>({SolicitacoesPanel:()=>null}));
+vi.mock("@tanstack/react-router", () => ({ useRouteContext: () => ({ role: "admin_geral", user: { id: "u1" } }) }));
+vi.mock("@/lib/tesouraria.functions", () => ({
+  carregarTesouraria: vi.fn(async () => [{ id: "c1", nome: "Caixa", tipo: "caixa", saldo: "0.00", ativo: true, banco: null }]),
+  carregarExtrato: vi.fn(async () => ({ linhas: [], total: 0, saldo_anterior: "0.00", saldo_final: "0.00", subtotal: "0.00" })),
+  carregarHistoricoTesouraria: vi.fn(async () => ({ total: 0, operacoes: [] })),
+  registrarTesouraria: enviar,
+  consultarEnvioTesouraria: vi.fn(async () => null),
+  verificarContratoLancamento: sonda,
+}));
+vi.mock("@/lib/cadastros", () => ({
+  listarContas: vi.fn(async () => [
+    { id: "pc-rec", codigo: "1.1", descricao: "Receita local", natureza: "receita", ativo: true, aceita_lancamentos: true },
+    { id: "pc-des", codigo: "2.1", descricao: "Despesa local", natureza: "despesa", ativo: true, aceita_lancamentos: true },
+  ]),
+  listarCentros: vi.fn(async () => []),
+  podeVerAuditoria: () => false,
+}));
+
 import { TesourariaPanel } from "./TesourariaPanel";
-import { chavePendente } from "@/lib/tesouraria-recuperacao";
-afterEach(cleanup);
+
+function montar(props: { somenteConsulta?: boolean } = {}) {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(<QueryClientProvider client={qc}><TesourariaPanel {...props} /></QueryClientProvider>);
+}
+
+async function abrirEntrada() {
+  await screen.findByText("1 conta(s) financeira(s) · BRL");
+  fireEvent.click(await screen.findByRole("button", { name: /^Entrada$/ }));
+}
+
+async function preencherEntrada() {
+  fireEvent.click(screen.getByLabelText("Conta financeira"));
+  fireEvent.click(await screen.findByRole("option", { name: "Caixa" }));
+  fireEvent.change(screen.getByLabelText("Descrição da operação"), { target: { value: "Receita local" } });
+  fireEvent.change(screen.getByLabelText("Data da operação"), { target: { value: "2026-11-01" } });
+  fireEvent.change(screen.getByLabelText("Valor da operação"), { target: { value: "100,10" } });
+  fireEvent.change(screen.getByLabelText("Referência documental externa"), { target: { value: "externo:nota-1" } });
+  fireEvent.click(screen.getByLabelText("Classificação contábil"));
+  fireEvent.click(await screen.findByRole("option", { name: "1.1 · Receita local" }));
+}
+
 beforeEach(() => {
-  vi.clearAllMocks(); localStorage.clear();
+  enviar.mockReset(); sonda.mockReset(); window.localStorage.clear();
   Element.prototype.scrollIntoView = vi.fn();
   Object.defineProperty(navigator, "locks", { configurable: true, value: { request: (_: string, fn: () => unknown) => fn() } });
-  mocks.consultar.mockResolvedValue(null); mocks.historico.mockResolvedValue({ operacoes: [], total: 0 });
 });
-function abrir(somenteConsulta = false) { const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } }); return render(<QueryClientProvider client={qc}><TesourariaPanel somenteConsulta={somenteConsulta} /></QueryClientProvider>); }
-async function preencherTransferencia() {
-  fireEvent.click(await screen.findByRole("button", { name: "Transferir" }));
-  fireEvent.change(screen.getByLabelText("Descrição da operação"), { target: { value: "Transferência somente local" } });
-  fireEvent.click(screen.getByLabelText("Conta financeira"));
-  fireEvent.click(await screen.findByRole("option",{name:"Conta local A"}));
-  fireEvent.click(screen.getByLabelText("Conta de destino"));
-  fireEvent.click(await screen.findByRole("option",{name:"Conta local B"}));
-  fireEvent.change(screen.getByLabelText("Data da operação"), { target: { value: "2026-10-26" } });
-  fireEvent.change(screen.getByLabelText("Valor da operação"), { target: { value: "10.00" } });
-}
-describe("formulários da Tesouraria sem comunicação financeira externa", () => {
-  it("consulta não envia operações nem recupera solicitações na base sem Etapa 2", async () => {
-    abrir(true);
-    const tab = await screen.findByRole("tab", { name: "Movimentações" });
-    fireEvent.mouseDown(tab, { button: 0, ctrlKey: false }); fireEvent.click(tab);
-    await waitFor(() => expect(mocks.historico).toHaveBeenCalled());
-    expect(mocks.enviar).not.toHaveBeenCalled(); expect(mocks.consultar).not.toHaveBeenCalled();
-    expect(screen.queryByRole("button", { name: "Transferir" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Entrada" })).toBeNull();
-    expect(screen.queryByRole("button", { name: "Saída" })).toBeNull();
+
+describe("modo somente consulta", () => {
+  it("não exibe operações de escrita", async () => {
+    montar();
+    await screen.findByText("1 conta(s) financeira(s) · BRL");
+    expect(screen.queryByRole("button", { name: /^Entrada$/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Saída$/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Transferir/ })).toBeNull();
   });
-  it("rejeição inicial libera campos para correção", async () => {
-    mocks.enviar.mockResolvedValue({ estado: "rejeitada", mensagem: "Rejeição financeira local" }); abrir(); await preencherTransferencia();
-    fireEvent.click(screen.getByRole("button", { name: "Confirmar operação" }));
-    await screen.findAllByText("Rejeição financeira local");
-    expect(screen.getByLabelText("Descrição da operação")).toBeEnabled(); expect(screen.getByRole("button", { name: "Confirmar operação" })).toBeEnabled(); expect(localStorage.getItem(chavePendente("usuario-local"))).toBeNull();
+});
+
+describe("modo operacional com sonda do contrato corrigido", () => {
+  it("mantém o formulário fechado enquanto o banco não confirma a correção", async () => {
+    sonda.mockResolvedValue(false);
+    montar({ somenteConsulta: false });
+    await screen.findByText(/serão liberados após a aplicação dos controles/);
+    expect(screen.queryByRole("button", { name: /^Entrada$/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Saída$/ })).toBeNull();
   });
-  it("perda de resposta bloqueia nova operação após fechar/reabrir e recupera por consulta", async () => {
-    mocks.enviar.mockRejectedValue(new Error("resposta perdida")); const tela = abrir(); await preencherTransferencia();
-    fireEvent.click(screen.getByRole("button", { name: "Confirmar operação" }));
-    await waitFor(() => expect(screen.getByRole("button", { name: "Confirmar operação" })).toBeDisabled());
-    const raw = localStorage.getItem(chavePendente("usuario-local")); expect(raw).not.toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: "Cancelar" })); tela.unmount(); abrir();
-    await waitFor(() => expect(screen.getByRole("button", { name: "Transferir" })).toBeDisabled());
-    mocks.consultar.mockResolvedValue({ id: "confirmada-local" }); fireEvent.click(screen.getByRole("button", { name: "Consultar resultado" }));
-    await waitFor(() => expect(screen.getByRole("button", { name: "Transferir" })).toBeEnabled()); expect(mocks.enviar).toHaveBeenCalledTimes(1);
+  it("libera apenas entrada e saída quando a correção é confirmada", async () => {
+    sonda.mockResolvedValue(true);
+    montar({ somenteConsulta: false });
+    expect(await screen.findByRole("button", { name: /^Entrada$/ })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /^Saída$/ })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Transferir/ })).toBeNull();
+    expect(screen.queryByRole("tab", { name: /Conferência/ })).toBeNull();
+    expect(screen.queryByRole("tab", { name: /Solicitações/ })).toBeNull();
   });
-  it("histórico preserva abertura sem oferecer mudança de saldo", async () => {
-    mocks.historico.mockResolvedValue({ total: 1, operacoes: [{ id: "zero", tipo: "abertura", data_movimento: "2026-10-26", descricao: "Abertura local zero", valor: "0.00", conta_destino_id: "conta", conta_origem_id: null, efeitos: [], criado_em: "2026-10-26T19:00:00Z", criado_por: "usuario-local", estornada: false }] }); abrir();
-    const tab = await screen.findByRole("tab", { name: "Movimentações" }); fireEvent.mouseDown(tab, { button: 0, ctrlKey: false }); fireEvent.click(tab);
-    fireEvent.click(await screen.findByRole("button", { name: "Detalhes Abertura local zero" }));
-    expect(await screen.findByText("zero")).toBeInTheDocument(); expect(mocks.enviar).not.toHaveBeenCalled();
+  it("registra receita com chave única e confirmação explícita", async () => {
+    sonda.mockResolvedValue(true);
+    enviar.mockResolvedValue({ estado: "confirmada", id: "op" });
+    montar({ somenteConsulta: false });
+    await abrirEntrada();
+    await preencherEntrada();
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar lançamento" }));
+    await screen.findByText("1 conta(s) financeira(s) · BRL");
+    expect(enviar).toHaveBeenCalledWith({ data: expect.objectContaining({ tipo: "entrada", destino: "c1", valor: "100.10", descricao: "Receita local", plano: "pc-rec", referencia: "externo:nota-1", chave: expect.any(String) }) });
+    expect(screen.queryByRole("button", { name: "Confirmar lançamento" })).toBeNull();
+  });
+  it("oferece somente categorias da natureza da operação", async () => {
+    sonda.mockResolvedValue(true);
+    montar({ somenteConsulta: false });
+    await abrirEntrada();
+    fireEvent.click(screen.getByLabelText("Classificação contábil"));
+    expect(await screen.findByRole("option", { name: "1.1 · Receita local" })).toBeTruthy();
+    expect(screen.queryByRole("option", { name: "2.1 · Despesa local" })).toBeNull();
+  });
+  it("mantém a rejeição financeira aberta e explícita", async () => {
+    sonda.mockResolvedValue(true);
+    enviar.mockResolvedValue({ estado: "rejeitada", mensagem: "Classificação contábil inválida ou inativa." });
+    montar({ somenteConsulta: false });
+    await abrirEntrada();
+    await preencherEntrada();
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar lançamento" }));
+    expect((await screen.findAllByRole("alert")).some((a) => a.textContent?.includes("Classificação contábil inválida"))).toBe(true);
+    expect(enviar).toHaveBeenCalledTimes(1);
+  });
+  it("perda de resposta mantém envio original para recuperação", async () => {
+    sonda.mockResolvedValue(true);
+    enviar.mockResolvedValue({ estado: "incerta", mensagem: "Resposta perdida." });
+    montar({ somenteConsulta: false });
+    await abrirEntrada();
+    await preencherEntrada();
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar lançamento" }));
+    expect((await screen.findAllByText("Resposta perdida.")).length).toBeGreaterThan(0);
+    const gravado = window.localStorage.getItem("itv:ayjppexbzpgdkzbehvzw:tesouraria:v1:u1");
+    expect(gravado).not.toBeNull();
+    expect(JSON.parse(gravado!)).toMatchObject({ tipo: "entrada", descricao: "Receita local", valor: "100.10" });
+    expect(enviar).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("categoria oficial ausente", () => {
+  it("bloqueia o lançamento e explica a pendência", async () => {
+    sonda.mockResolvedValue(true);
+    const cadastros = await import("@/lib/cadastros");
+    vi.mocked(cadastros.listarContas).mockResolvedValueOnce([
+      { id: "pc-des", codigo: "2.1", descricao: "Despesa local", natureza: "despesa", ativo: true, aceita_lancamentos: true } as never,
+    ]);
+    montar({ somenteConsulta: false });
+    await abrirEntrada();
+    expect((await screen.findAllByRole("alert")).some((a) => a.textContent?.includes("Nenhuma categoria oficial de receita apta para lançamento"))).toBe(true);
+    expect(screen.getByRole("button", { name: "Confirmar lançamento" })).toBeDisabled();
   });
 });
