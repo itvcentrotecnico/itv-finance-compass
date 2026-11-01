@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 const { enviar, sonda } = vi.hoisted(() => ({ enviar: vi.fn(), sonda: vi.fn() }));
 
 vi.mock("@tanstack/react-start", () => ({ useServerFn: (fn: unknown) => fn }));
-vi.mock("@tanstack/react-router", () => ({ useRouteContext: () => ({ role: "admin_geral" }) }));
+vi.mock("@tanstack/react-router", () => ({ useRouteContext: () => ({ role: "admin_geral", user: { id: "u1" } }) }));
 vi.mock("@/lib/tesouraria.functions", () => ({
   carregarTesouraria: vi.fn(async () => [{ id: "c1", nome: "Caixa", tipo: "caixa", saldo: "0.00", ativo: true, banco: null }]),
   carregarExtrato: vi.fn(async () => ({ linhas: [], total: 0, saldo_anterior: "0.00", saldo_final: "0.00", subtotal: "0.00" })),
