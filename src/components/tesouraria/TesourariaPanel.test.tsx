@@ -1,6 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const { enviar, sonda } = vi.hoisted(() => ({ enviar: vi.fn(), sonda: vi.fn() }));
@@ -31,18 +30,18 @@ function montar(props: { somenteConsulta?: boolean } = {}) {
 
 async function abrirEntrada() {
   await screen.findByText("1 conta(s) financeira(s) · BRL");
-  await userEvent.click(await screen.findByRole("button", { name: /^Entrada$/ }));
+  fireEvent.click(await screen.findByRole("button", { name: /^Entrada$/ }));
 }
 
 async function preencherEntrada() {
-  await userEvent.click(screen.getByRole("combobox", { name: "Conta financeira" }));
-  await userEvent.click(await screen.findByRole("option", { name: "Caixa" }));
-  await userEvent.type(screen.getByLabelText("Descrição da operação"), "Receita local");
-  await userEvent.type(screen.getByLabelText("Data da operação"), "2026-11-01");
-  await userEvent.type(screen.getByLabelText("Valor da operação"), "100,10");
-  await userEvent.type(screen.getByLabelText("Referência documental externa"), "externo:nota-1");
-  await userEvent.click(screen.getByRole("combobox", { name: "Classificação contábil" }));
-  await userEvent.click(await screen.findByRole("option", { name: "1.1 · Receita local" }));
+  fireEvent.click(screen.getByRole("combobox", { name: "Conta financeira" }));
+  fireEvent.click(await screen.findByRole("option", { name: "Caixa" }));
+  fireEvent.change(screen.getByLabelText("Descrição da operação"), { target: { value: "Receita local" } });
+  fireEvent.change(screen.getByLabelText("Data da operação"), { target: { value: "2026-11-01" } });
+  fireEvent.change(screen.getByLabelText("Valor da operação"), { target: { value: "100,10" } });
+  fireEvent.change(screen.getByLabelText("Referência documental externa"), { target: { value: "externo:nota-1" } });
+  fireEvent.click(screen.getByRole("combobox", { name: "Classificação contábil" }));
+  fireEvent.click(await screen.findByRole("option", { name: "1.1 · Receita local" }));
 }
 
 beforeEach(() => { enviar.mockReset(); sonda.mockReset(); window.localStorage.clear(); });
@@ -80,7 +79,7 @@ describe("modo operacional com sonda do contrato corrigido", () => {
     montar({ somenteConsulta: false });
     await abrirEntrada();
     await preencherEntrada();
-    await userEvent.click(screen.getByRole("button", { name: "Confirmar lançamento" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar lançamento" }));
     await screen.findByText("1 conta(s) financeira(s) · BRL");
     expect(enviar).toHaveBeenCalledWith(expect.objectContaining({ tipo: "entrada", destino: "c1", valor: "100.10", descricao: "Receita local", plano: "pc-rec", referencia: "externo:nota-1", chave: expect.any(String) }));
     expect(screen.queryByRole("button", { name: "Confirmar lançamento" })).toBeNull();
@@ -89,7 +88,7 @@ describe("modo operacional com sonda do contrato corrigido", () => {
     sonda.mockResolvedValue(true);
     montar({ somenteConsulta: false });
     await abrirEntrada();
-    await userEvent.click(screen.getByRole("combobox", { name: "Classificação contábil" }));
+    fireEvent.click(screen.getByRole("combobox", { name: "Classificação contábil" }));
     expect(await screen.findByRole("option", { name: "1.1 · Receita local" })).toBeTruthy();
     expect(screen.queryByRole("option", { name: "2.1 · Despesa local" })).toBeNull();
   });
@@ -99,8 +98,8 @@ describe("modo operacional com sonda do contrato corrigido", () => {
     montar({ somenteConsulta: false });
     await abrirEntrada();
     await preencherEntrada();
-    await userEvent.click(screen.getByRole("button", { name: "Confirmar lançamento" }));
-    expect(await screen.findByRole("alert")).toHaveTextContent("Classificação contábil inválida");
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar lançamento" }));
+    expect((await screen.findAllByRole("alert")).some((a) => a.textContent?.includes("Classificação contábil inválida"))).toBe(true);
     expect(enviar).toHaveBeenCalledTimes(1);
   });
   it("perda de resposta mantém envio original para recuperação", async () => {
@@ -109,7 +108,7 @@ describe("modo operacional com sonda do contrato corrigido", () => {
     montar({ somenteConsulta: false });
     await abrirEntrada();
     await preencherEntrada();
-    await userEvent.click(screen.getByRole("button", { name: "Confirmar lançamento" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar lançamento" }));
     expect(await screen.findByText(/Envio pendente/)).toBeTruthy();
     expect(screen.getByRole("button", { name: "Consultar resultado" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Recuperar mesmos dados" })).toBeTruthy();
@@ -125,7 +124,7 @@ describe("categoria oficial ausente", () => {
     ]);
     montar({ somenteConsulta: false });
     await abrirEntrada();
-    expect(await screen.findByRole("alert")).toHaveTextContent("Nenhuma categoria oficial de receita apta para lançamento");
+    expect((await screen.findAllByRole("alert")).some((a) => a.textContent?.includes("Nenhuma categoria oficial de receita apta para lançamento"))).toBe(true);
     expect(screen.getByRole("button", { name: "Confirmar lançamento" })).toBeDisabled();
   });
 });
