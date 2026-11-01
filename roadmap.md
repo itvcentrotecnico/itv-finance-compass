@@ -131,3 +131,8 @@ Testes de convites e demais perfis ficam para homologação final; não bloqueia
 - [x] Integração GESTÃO ITV → HML: diagnóstico read-only concluído 26/10 (snapshot 42892eab, Supabase lyfgkhryrhytggexvjvn — banco distinto); relatório docs/integracao/RELATORIO_DIAGNOSTICO_INTEGRACAO.md. Sem tabela central de OS nem vendas; fontes: caixa_lancamentos, caixa_pagamentos, contas_receber(+_recebimentos); os é texto não único; âncora HML: referencia_origem gestao_itv:<tabela>:<uuid>.
 - [x] Integração M4 implementada e aplicada no HML 26/10: tabelas integracao_sincronizacoes/integracao_itens, RPCs com perfil, painel Integrações, 21/21 testes de banco + 15/15 unitários + 74/74 app; conexão desabilitada até configurar GESTAO_ITV_USUARIO/SENHA; 0 registros sincronizados; GESTÃO ITV inalterado; relatório docs/integracao/RELATORIO_IMPLEMENTACAO_INTEGRACAO.md.
 - [ ] Integração: criar identidade de leitura no GESTÃO ITV e registrar segredos GESTAO_ITV_USUARIO/SENHA no HML; depois executar primeira sincronização manual e homologar com dados reais.
+
+## Correção mínima v2 (01/11)
+- Pacote v2 preparado e testado em ambiente isolado: 36/36 verificações DB, 221/221 testes app, build OK.
+- Interface libera receitas/despesas somente após sonda do contrato corrigido; transferências/estornos/conferências seguem bloqueados.
+- NADA aplicado remotamente nem publicado. Pré-condições: categorias oficiais, manutenção, backup real, validação autenticada e aprovação final específica.
