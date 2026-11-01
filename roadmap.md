@@ -2,6 +2,8 @@
 
 ## Autorização executiva — 01/11/2026
 
+- [x] 14h02 Manaus: registrar backup atualizado informado (dump local de 01/11, catálogo legível e SHA-256), sem afirmar cobertura própria de arquivo não disponível; autorização de aplicar somente pacote final após verificar cobertura e reversão, sem publicar até aprovação final do relatório.
+- [ ] Verificação desta autorização: comparar pacote/reversão e inventário atual por leitura; confirmar cobertura pelo catálogo não sensível do backup e contenção de escritores antes da execução. Interromper se não comprovadas, sem aplicar versões novas não aprovadas.
 - [x] Registrar autorização condicional de migração/publicação, início oficial 01/11/2026 e saldos de referência 31/10/2026; gestor com autonomia e revisor distinto onde exigido. Não pedir novamente autorização genérica.
 - [x] Pré-verificação somente leitura em 01/11: quatro SQLs presentes e SHA-256 calculados; 206/206 testes do aplicativo reexecutados/aprovados, verificação automática sem erros. HML confirma 13 tabelas com RLS, 49 importados/49 conferências pendentes, seis aberturas zero (três oficiais e três TESTE), zero movimentos vinculados/gerais e 280 auditorias. Não valida recuperação nem uso autenticado publicado.
 - [x] Restauração isolada do backup de 29/10 aceita formalmente em 01/11/2026 com limitações registradas: comprova esquema financeiro, dados, índices, gatilhos, RLS e 24 FKs (280 auditorias, 49 itens, 19 sincronizações, 49 conferências, 6 operações, 0 movimentos); autenticação local simplificada não comprova infraestrutura Supabase/permissões reais.
