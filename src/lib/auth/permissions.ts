@@ -53,7 +53,7 @@ export function can(role: Role, module: ModuleKey, action: Action): boolean {
   if (module === "tesouraria") {
     if (action === "view") return true;
     if (action === "delete" || action === "update" || action === "approve") return false;
-    return role !== "consulta_gerencial";
+    return role === "admin_geral" || role === "admin_financeiro";
   }
   switch (role) {
     case "admin_geral":
