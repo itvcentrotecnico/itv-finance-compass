@@ -2,6 +2,7 @@
 
 ## Autorização executiva — 01/11/2026
 
+- [ ] Correção mínima 15h34: preparar SQL de autorização/natureza e compatibilidade do formulário; testar em PostgreSQL isolado, incluindo duplicidade/saldo/histórico/revisão; entregar procedimento de manutenção/reversão/recuperação e evidências. Nenhuma aplicação remota/publicação autorizada nesta etapa.
 - [x] 15h32: autorização administrativa de lançamentos/publicações recebida; segurança e validação continuam pré-condições. Não autoriza inventar categorias, movimentação de teste real ou migração estrutural.
 - [ ] Categorias oficiais: o responsável confirmou que ainda irá cadastrá-las; cadastro depende dele, sem categorias inventadas ou TESTE para operação real.
 - [x] Solicitação 15h28: diagnóstico mínimo concluído por SELECTs/HTTP/navegador: cadastro público desativado, saldos sem sessão 401, 13 tabelas RLS/31 funções e seis aberturas/zero movimentos preservados; motor permite analista e não valida natureza da categoria; só categorias TESTE, despesa inapta; tabela de solicitações ausente. Recuperação da chave corrigida apenas para ausência da tabela opcional, preservando erros de acesso; 9 testes adaptador e 11 acesso aprovados, sem repetir 42 anteriores. Relatório final entregue, nenhuma migração/publicação/operação/GESTÃO ITV.
