@@ -11,6 +11,7 @@ vi.mock("@/lib/tesouraria.functions", () => ({
   carregarExtrato: vi.fn(async () => ({ linhas: [], total: 0, saldo_anterior: "0.00", saldo_final: "0.00", subtotal: "0.00" })),
   carregarHistoricoTesouraria: vi.fn(async () => ({ total: 0, operacoes: [] })),
   registrarTesouraria: enviar,
+  consultarEnvioTesouraria: vi.fn(async () => null),
   verificarContratoLancamento: sonda,
 }));
 vi.mock("@/lib/cadastros", () => ({
