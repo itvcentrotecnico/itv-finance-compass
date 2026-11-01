@@ -1,7 +1,7 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
-import { Database, Inbox, Construction, ShieldOff } from "lucide-react";
+import { Construction, ShieldOff } from "lucide-react";
 import { AppShell } from "@/components/layout/AppShell";
-import { EmptyState, PageHeader, Panel } from "@/components/shared/finance";
+import { EmptyState, PageHeader } from "@/components/shared/finance";
 import { UsuariosPanel } from "@/components/usuarios/UsuariosPanel";
 import { PlanoContasPanel } from "@/components/cadastros/PlanoContasPanel";
 import { CentrosCustoPanel } from "@/components/cadastros/CentrosCustoPanel";
