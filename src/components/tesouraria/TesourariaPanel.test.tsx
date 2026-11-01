@@ -87,7 +87,7 @@ describe("modo operacional com sonda do contrato corrigido", () => {
     await preencherEntrada();
     fireEvent.click(screen.getByRole("button", { name: "Confirmar lançamento" }));
     await screen.findByText("1 conta(s) financeira(s) · BRL");
-    expect(enviar).toHaveBeenCalledWith(expect.objectContaining({ tipo: "entrada", destino: "c1", valor: "100.10", descricao: "Receita local", plano: "pc-rec", referencia: "externo:nota-1", chave: expect.any(String) }));
+    expect(enviar).toHaveBeenCalledWith({ data: expect.objectContaining({ tipo: "entrada", destino: "c1", valor: "100.10", descricao: "Receita local", plano: "pc-rec", referencia: "externo:nota-1", chave: expect.any(String) }) });
     expect(screen.queryByRole("button", { name: "Confirmar lançamento" })).toBeNull();
   });
   it("oferece somente categorias da natureza da operação", async () => {
@@ -115,7 +115,7 @@ describe("modo operacional com sonda do contrato corrigido", () => {
     await abrirEntrada();
     await preencherEntrada();
     fireEvent.click(screen.getByRole("button", { name: "Confirmar lançamento" }));
-    expect(await screen.findByText(/Envio pendente/)).toBeTruthy();
+    expect(await screen.findByText("Resposta perdida.")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Consultar resultado" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Recuperar mesmos dados" })).toBeTruthy();
   });
