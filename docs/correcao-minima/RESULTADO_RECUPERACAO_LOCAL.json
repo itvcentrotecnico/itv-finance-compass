@@ -1,0 +1,9 @@
+{
+  "status": "PASS",
+  "escopo": "dump e restauração somente da fixture sintética local; não do backup HML nem da infraestrutura Supabase",
+  "seis_aberturas": true,
+  "hash_operacoes_igual": true,
+  "motor_privado": true,
+  "acl_wrapper_preservada": true,
+  "sha256_dump_sintetico": "bdfaf32883425b538fb14a3cce08a15155298d65e0547930deb97008521d6344"
+}
