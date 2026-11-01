@@ -3,9 +3,10 @@
 ## Autorização executiva — 01/11/2026
 
 - [x] Registrar autorização condicional de migração/publicação, início oficial 01/11/2026 e saldos de referência 31/10/2026; gestor com autonomia e revisor distinto onde exigido. Não pedir novamente autorização genérica.
-- [ ] Comprovar restauração isolada íntegra e backup atualizado imediatamente anterior à implantação; interromper antes da migração se indisponíveis.
-- [ ] Incorporar confirmação/correção específica de saldo inicial das três contas oficiais, com preservação das seis aberturas/49 importados, idempotência, concorrência, auditoria e testes isolados; compatibilizar gestor/revisor sem privilégios irrestritos.
-- [ ] Revalidar pacote/hash/reversão/segurança e conter produtores privilegiados antes de eventual aplicação/publicação coordenadas; nenhuma operação real durante testes.
+- [x] Pré-verificação somente leitura em 01/11: quatro SQLs presentes e SHA-256 calculados; 206/206 testes do aplicativo reexecutados/aprovados, verificação automática sem erros. HML confirma 13 tabelas com RLS, 49 importados/49 conferências pendentes, seis aberturas zero (três oficiais e três TESTE), zero movimentos vinculados/gerais e 280 auditorias. Não valida recuperação nem uso autenticado publicado.
+- [ ] Comprovar restauração isolada íntegra e backup atualizado imediatamente anterior à implantação: BLOQUEADO. Dump de 29/10 não disponível nos uploads/Files/executor; nenhuma evidência de ensaio integral/comparação atual. DATABASE_URL/SUPABASE_DB_URL não disponíveis no processo executor; segredo hospedado listado não equivale a conexão utilizável para pg_dump. Administrador deve viabilizar cópia protegida e evidência de recuperação, sem enviar senhas/dump sensível no chat.
+- [ ] Incorporar confirmação/correção específica de saldo inicial das três contas oficiais, com preservação das seis aberturas/49 importados, idempotência, concorrência, auditoria e testes isolados; compatibilizar gestor/revisor sem privilégios irrestritos. Não implementado nesta verificação; fluxo atual ainda bloqueia abertura. Autorização continua válida, sem solicitar novamente decisão genérica.
+- [ ] Revalidar SQL final/reversão/segurança após ajustes e conter produtores privilegiados antes de eventual aplicação/publicação coordenadas; nenhuma operação real durante testes. Aplicação/publicação interrompidas antes da migração pela condição de recuperação não comprovada; sem SQL remoto, alteração de saldo, sincronização ou GESTÃO ITV.
 
 ## Finalização executiva — 30/10/2026
 
