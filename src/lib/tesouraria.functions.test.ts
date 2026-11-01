@@ -21,6 +21,26 @@ describe("adaptação das funções financeiras — somente mocks locais", () =>
     const select = vi.fn().mockReturnValue(chain); context.supabase.schema.mockReturnValue({ from: vi.fn().mockReturnValue({ select }) });
     expect(await consultarEnvioTesouraria({ data: { chave: "chave" } })).toEqual({ id: "op" }); expect(eq).toHaveBeenCalledWith("criado_por", "usuario"); expect(eq).toHaveBeenCalledWith("chave_idempotencia", "chave"); expect(select).toHaveBeenCalledWith("id");
   });
+  it.each(["42P01", "PGRST205"])("consulta sem operação não depende de tabela ausente no legado (%s)", async (code) => {
+    const maybeSingle = vi.fn()
+      .mockResolvedValueOnce({ data: null, error: null })
+      .mockResolvedValueOnce({ data: null, error: { code, message: "Tabela ausente" } });
+    const eq = vi.fn(); const chain = { eq, maybeSingle }; eq.mockReturnValue(chain);
+    const from = vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue(chain) });
+    context.supabase.schema.mockReturnValue({ from });
+    expect(await consultarEnvioTesouraria({ data: { chave: "chave-original" } })).toBeNull();
+    expect(eq).toHaveBeenCalledWith("criado_por", "usuario");
+    expect(eq).toHaveBeenCalledWith("chave_idempotencia", "chave-original");
+    expect(from).toHaveBeenCalledWith("tesouraria_solicitacoes");
+  });
+  it.each(["42501", "PGRST301", ""])("consulta mantém bloqueio para erro de permissão, sessão ou conexão (%s)", async (code) => {
+    const maybeSingle = vi.fn()
+      .mockResolvedValueOnce({ data: null, error: null })
+      .mockResolvedValueOnce({ data: null, error: { code, message: "Falha de acesso" } });
+    const eq = vi.fn(); const chain = { eq, maybeSingle }; eq.mockReturnValue(chain);
+    context.supabase.schema.mockReturnValue({ from: vi.fn().mockReturnValue({ select: vi.fn().mockReturnValue(chain) }) });
+    await expect(consultarEnvioTesouraria({ data: { chave: "chave-original" } })).rejects.toThrow();
+  });
   it("retorna rejeição financeira explícita", async () => {
     context.supabase.schema.mockReturnValue({ rpc: vi.fn().mockResolvedValue({ error: { code: "P0001", message: "TES_CLASSIFICACAO" } }) });
     expect((await registrarTesouraria({ data: { tipo: "entrada" } as never })).estado).toBe("rejeitada");
