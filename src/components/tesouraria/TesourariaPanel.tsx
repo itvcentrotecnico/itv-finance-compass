@@ -35,7 +35,11 @@ function Tesouraria({ somenteConsulta, tipoInicial }: { somenteConsulta: boolean
   const [aba, setAba] = useState(tipoInicial ? "movimentos" : "contas");
   const [form, setForm] = useState<TipoOperacao | ContaFinanceira | null>(null);
   const [detalhe, setDetalhe] = useState<LinhaExtrato | null>(null);
-  const seguro = useEnvioSeguro(() => { qc.invalidateQueries({ queryKey: ["tesouraria"] }); toast.success("Registro confirmado. Confira o histórico."); setForm(null); setDetalhe(null); });
+  const seguro = useEnvioSeguro(() => { qc.invalidateQueries({ queryKey: ["tesouraria"] }); toast.success("Lançamento registrado com sucesso."); setForm(null); setDetalhe(null); });
+  const contratoFn = useServerFn(verificarContratoLancamento);
+  const contrato = useQuery({ queryKey: ["tesouraria", "contrato-lancamento"], queryFn: () => contratoFn(), enabled: !somenteConsulta && podeOperar(role), staleTime: 60000 });
+  // Fail-closed: o formulário só existe quando o banco confirma o intermediário corrigido (mínima v2).
+  const liberado = !somenteConsulta && podeOperar(role) && contrato.data === true;
   const nomeConta = (id: string | null) => contas.find((c) => c.id === id)?.nome ?? id ?? "—";
   const abrirOperacao = (o: OperacaoHistorico) => setDetalhe({ id: o.id, movimento_id: "", tipo: o.tipo, data: o.data_movimento, descricao: o.descricao, conta_nome: [o.conta_origem_id, o.conta_destino_id].filter(Boolean).map((id) => nomeConta(id)).join(" → "), conta_id: o.conta_destino_id ?? o.conta_origem_id ?? "", direcao: "credito", valor: o.valor, plano_id: o.plano_conta_id, centro_id: o.centro_custo_id, classificacao: o.classificacao_snapshot, original: o.operacao_original_id, tipo_original: null, estornada: o.estornada, justificativa: o.justificativa, criado_por: o.criado_por, criado_em: o.criado_em });
   const [filtros, setFiltros] = useState<Filtros>({ pagina: 0, ...(tipoInicial ? { tipo: tipoInicial } : {}) });
