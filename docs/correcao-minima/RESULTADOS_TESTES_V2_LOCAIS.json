@@ -1,1 +1,146 @@
-[]
+[
+  {
+    "teste": "legado sem sonda: interface permanece fechada antes da correção",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "proposta sem autorização técnica local recusada",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "nenhuma tabela ou função adicional",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "sonda confirma contrato minima_v2 sem efeito financeiro",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "sonda não grava nada",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "1. Administrador Geral registra receita",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "2. Administrador Financeiro registra despesa",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "3. analista não consegue lançar",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "3. consulta não consegue lançar",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "3. perfil inativo não consegue lançar",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "4. usuário sem perfil não consegue lançar",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "4b. sessão sem identidade não consegue lançar",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "5. receita com categoria de despesa é recusada",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "6. despesa com categoria de receita é recusada",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "categoria inativa recusada",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "categoria sem aceite recusada",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "7. repetição da mesma chave não duplica",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "7b. mesma chave com outro valor recusada",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "8. saldo exato persistido 180.00",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "8b. histórico com seis aberturas e três lançamentos",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "8c. seis aberturas intactas",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "9. transferência pelo intermediário de lançamento bloqueada",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "9. estorno pelo intermediário de lançamento bloqueada",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "9. abertura pelo intermediário de lançamento bloqueada",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "9b. permanece fechado: tesouraria_transferir",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "9b. permanece fechado: tesouraria_estornar",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "9b. permanece fechado: tesouraria_criar_conta",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "9b. permanece fechado: tesouraria_habilitar_conta",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "9b. permanece fechado: tesouraria_lancar_conferencia",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "10. motor privado não vira API",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "manutenção recusa escritor concorrente sem esperar",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "reversão sem autorização recusada",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "reversão fecha o intermediário de lançamento",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "reversão fecha motor inclusive privilegiado com identidade",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "reversão preserva registros",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "reversão preserva consultas",
+    "resultado": "PASS"
+  }
+]
