@@ -1,0 +1,126 @@
+[
+  {
+    "teste": "proposta sem autorização técnica local recusada",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "nenhuma tabela ou função adicional",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "motor aceita administrador geral",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "motor aceita administrador financeiro",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "motor recusa analista",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "motor recusa consulta",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "motor recusa perfil inativo",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "motor recusa sem perfil",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "motor recusa ausência de identidade",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "receita com categoria despesa",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "despesa com categoria receita",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "categoria inativa",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "categoria sem aceite",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "motor aceita despesa compatível",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "mesma chave não duplica",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "mesma chave com outro valor recusada",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "saldo exato persistido 280.10",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "histórico persistido seis aberturas e quatro lançamentos",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "seis aberturas intactas",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "motor privado não vira API",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "revisão obrigatória: tesouraria_lancar",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "revisão obrigatória: tesouraria_transferir",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "revisão obrigatória: tesouraria_estornar",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "revisão obrigatória: tesouraria_criar_conta",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "revisão obrigatória: tesouraria_habilitar_conta",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "revisão obrigatória: tesouraria_lancar_conferencia",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "manutenção recusa escritor concorrente sem esperar",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "reversão sem autorização recusada",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "reversão fecha motor inclusive privilegiado com identidade",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "reversão preserva registros",
+    "resultado": "PASS"
+  },
+  {
+    "teste": "reversão preserva consultas",
+    "resultado": "PASS"
+  }
+]
