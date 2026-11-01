@@ -38,6 +38,9 @@ export const consultarEnvioTesouraria = createServerFn({ method: "POST" }).middl
   if (error) throw new Error(erroTesouraria(error));
   if (result) return result as { id: string };
   const { data: solicitacao, error: falha } = await db.from("tesouraria_solicitacoes").select("id").eq("criado_por", context.userId).eq("chave", data.chave).maybeSingle();
+  // The legacy schema has no request table; absence is not a failed operation lookup.
+  // Never suppress permission, authentication, network or other database errors.
+  if (falha?.code === "42P01" || falha?.code === "PGRST205") return null;
   if (falha) throw new Error(erroTesouraria(falha));
   return solicitacao as { id: string } | null;
 });
