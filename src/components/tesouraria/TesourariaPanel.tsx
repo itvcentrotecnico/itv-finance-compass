@@ -16,13 +16,11 @@ import { Historico } from "@/components/cadastros/Historico";
 import { canTable } from "@/lib/auth/permissions";
 import { listarContas, listarCentros, podeVerAuditoria, type Conta, type Centro } from "@/lib/cadastros";
 import { fin } from "@/lib/auth/session";
-import { carregarTesouraria, carregarExtrato, carregarHistoricoTesouraria } from "@/lib/tesouraria.functions";
+import { carregarTesouraria, carregarExtrato, carregarHistoricoTesouraria, verificarContratoLancamento } from "@/lib/tesouraria.functions";
 import { dinheiro, decimal, podeOperar, podeEstornar, validarPedido, erroTesouraria, TIPOS, type ContaFinanceira, type Pedido, type TipoOperacao, type LinhaExtrato, type Filtros, type OperacaoHistorico } from "@/lib/tesouraria";
 
 import { useEnvioSeguro } from "./useEnvioSeguro";
 import { HistoricoOperacoes } from "./HistoricoOperacoes";
-import { ConferenciaPanel, ContasPreparadas } from "./ConferenciaPanel";
-import { SolicitacoesPanel } from "./SolicitacoesPanel";
 
 export const tesourariaOptions = queryOptions({ queryKey: ["tesouraria", "contas"], queryFn: () => carregarTesouraria() });
 export function TesourariaPanel({ somenteConsulta = true, tipoInicial }: { somenteConsulta?: boolean; tipoInicial?: "saida" }) { return <Suspense fallback={<Carregando />}><Tesouraria somenteConsulta={somenteConsulta} tipoInicial={tipoInicial} /></Suspense>; }
