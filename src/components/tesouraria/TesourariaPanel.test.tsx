@@ -43,14 +43,14 @@ describe("formulários da Tesouraria sem comunicação financeira externa", () =
   });
   it("rejeição inicial libera campos para correção", async () => {
     mocks.enviar.mockResolvedValue({ estado: "rejeitada", mensagem: "Rejeição financeira local" }); abrir(); await preencherTransferencia();
-    fireEvent.click(screen.getByRole("button", { name: "Enviar para revisão" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar operação" }));
     await screen.findAllByText("Rejeição financeira local");
-    expect(screen.getByLabelText("Descrição da operação")).toBeEnabled(); expect(screen.getByRole("button", { name: "Enviar para revisão" })).toBeEnabled(); expect(localStorage.getItem(chavePendente("usuario-local"))).toBeNull();
+    expect(screen.getByLabelText("Descrição da operação")).toBeEnabled(); expect(screen.getByRole("button", { name: "Confirmar operação" })).toBeEnabled(); expect(localStorage.getItem(chavePendente("usuario-local"))).toBeNull();
   });
   it("perda de resposta bloqueia nova operação após fechar/reabrir e recupera por consulta", async () => {
     mocks.enviar.mockRejectedValue(new Error("resposta perdida")); const tela = abrir(); await preencherTransferencia();
-    fireEvent.click(screen.getByRole("button", { name: "Enviar para revisão" }));
-    await waitFor(() => expect(screen.getByRole("button", { name: "Enviar para revisão" })).toBeDisabled());
+    fireEvent.click(screen.getByRole("button", { name: "Confirmar operação" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Confirmar operação" })).toBeDisabled());
     const raw = localStorage.getItem(chavePendente("usuario-local")); expect(raw).not.toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Cancelar" })); tela.unmount(); abrir();
     await waitFor(() => expect(screen.getByRole("button", { name: "Transferir" })).toBeDisabled());

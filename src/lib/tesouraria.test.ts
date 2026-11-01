@@ -14,7 +14,9 @@ describe("integridade da Tesouraria", () => {
   it("exige classificação em entrada", () => expect(validarPedido({ tipo: "entrada", chave: "id", data: "2026-10-23", descricao: "Teste isolado", valor: "1.00", destino: "b" })).not.toBeNull());
   it("exige justificativa de estorno", () => expect(validarPedido({ ...p, tipo: "estorno", justificativa: "" })).not.toBeNull());
   it("Consulta Gerencial lê Tesouraria sem escrever", () => { expect(can("consulta_gerencial", "tesouraria", "view")).toBe(true); expect(podeOperar("consulta_gerencial")).toBe(false); });
-  it("Analista registra mas não estorna", () => { expect(podeOperar("analista_financeiro")).toBe(true); expect(podeEstornar("analista_financeiro")).toBe(false); });
+  it("Analista não executa lançamentos nem estorna", () => { expect(podeOperar("analista_financeiro")).toBe(false); expect(podeEstornar("analista_financeiro")).toBe(false); expect(can("analista_financeiro", "tesouraria", "create")).toBe(false); });
+  it("sem perfil não executa lançamentos", () => expect(podeOperar(null)).toBe(false));
+  it.each(["admin_geral", "admin_financeiro"] as const)("%s pode operar quando o contrato seguro for liberado", (role) => expect(podeOperar(role)).toBe(true));
   it("administradores estornam", () => { expect(podeEstornar("admin_geral")).toBe(true); expect(podeEstornar("admin_financeiro")).toBe(true); });
   it("ninguém exclui ou edita movimentação", () => { expect(can("admin_geral", "tesouraria", "delete")).toBe(false); expect(can("admin_financeiro", "tesouraria", "update")).toBe(false); });
 });
