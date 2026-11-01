@@ -73,7 +73,7 @@ try:
 
     # Caminho público autenticado: somente o intermediário tesouraria_lancar.
     p = {'tipo':'entrada', 'chave':str(uuid.uuid4()), 'data':'2026-11-01', 'descricao':'RECEITA SINTETICA', 'valor':'100.10', 'destino':account, 'plano':plans[0]}
-    r = call('tesouraria_lancar', p, users[0])
+    r = call('tesouraria_lancar', {**p, 'chave':str(uuid.uuid4())}, users[0])
     check('1. Administrador Geral registra receita', r.returncode == 0 and 'id' in json.loads(r.stdout))
     despesa = {'tipo':'saida', 'chave':str(uuid.uuid4()), 'data':'2026-11-01', 'descricao':'DESPESA SINTETICA', 'valor':'20.20', 'origem':account, 'plano':plans[1]}
     r = call('tesouraria_lancar', despesa, users[1])
