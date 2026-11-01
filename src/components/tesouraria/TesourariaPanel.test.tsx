@@ -36,17 +36,21 @@ async function abrirEntrada() {
 }
 
 async function preencherEntrada() {
-  fireEvent.click(screen.getByRole("combobox", { name: "Conta financeira" }));
+  fireEvent.click(screen.getByLabelText("Conta financeira"));
   fireEvent.click(await screen.findByRole("option", { name: "Caixa" }));
   fireEvent.change(screen.getByLabelText("Descrição da operação"), { target: { value: "Receita local" } });
   fireEvent.change(screen.getByLabelText("Data da operação"), { target: { value: "2026-11-01" } });
   fireEvent.change(screen.getByLabelText("Valor da operação"), { target: { value: "100,10" } });
   fireEvent.change(screen.getByLabelText("Referência documental externa"), { target: { value: "externo:nota-1" } });
-  fireEvent.click(screen.getByRole("combobox", { name: "Classificação contábil" }));
+  fireEvent.click(screen.getByLabelText("Classificação contábil"));
   fireEvent.click(await screen.findByRole("option", { name: "1.1 · Receita local" }));
 }
 
-beforeEach(() => { enviar.mockReset(); sonda.mockReset(); window.localStorage.clear(); });
+beforeEach(() => {
+  enviar.mockReset(); sonda.mockReset(); window.localStorage.clear();
+  Element.prototype.scrollIntoView = vi.fn();
+  Object.defineProperty(navigator, "locks", { configurable: true, value: { request: (_: string, fn: () => unknown) => fn() } });
+});
 
 describe("modo somente consulta", () => {
   it("não exibe operações de escrita", async () => {
@@ -90,7 +94,7 @@ describe("modo operacional com sonda do contrato corrigido", () => {
     sonda.mockResolvedValue(true);
     montar({ somenteConsulta: false });
     await abrirEntrada();
-    fireEvent.click(screen.getByRole("combobox", { name: "Classificação contábil" }));
+    fireEvent.click(screen.getByLabelText("Classificação contábil"));
     expect(await screen.findByRole("option", { name: "1.1 · Receita local" })).toBeTruthy();
     expect(screen.queryByRole("option", { name: "2.1 · Despesa local" })).toBeNull();
   });
