@@ -30,7 +30,7 @@ function Escolha({ label, value, onChange, items, empty = "Selecione" }: { label
   return <Select value={value || "nenhum"} onValueChange={(v) => onChange(v === "nenhum" ? "" : v)}><SelectTrigger aria-label={label} className="w-full"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="nenhum">{empty}</SelectItem>{items.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent></Select>;
 }
 function Campo({ label, children }: { label: string; children: ReactNode }) { return <div className="space-y-2"><Label>{label}</Label>{children}</div>; }
-function Tesouraria({ somenteConsulta, tipoInicial }: { somenteConsulta: boolean; tipoInicial?: "saida" }) {
+function Tesouraria({ somenteConsulta, tipoInicial }: { somenteConsulta: boolean; tipoInicial: "saida" | undefined }) {
   const { role } = useRouteContext({ from: "/_authenticated" });
   const { data: contas } = useSuspenseQuery(tesourariaOptions);
   const qc = useQueryClient();
