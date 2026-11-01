@@ -1,5 +1,12 @@
 # Autenticação segura — ITV FINANCEIRO HML
 
+## Autorização executiva — 01/11/2026
+
+- [x] Registrar autorização condicional de migração/publicação, início oficial 01/11/2026 e saldos de referência 31/10/2026; gestor com autonomia e revisor distinto onde exigido. Não pedir novamente autorização genérica.
+- [ ] Comprovar restauração isolada íntegra e backup atualizado imediatamente anterior à implantação; interromper antes da migração se indisponíveis.
+- [ ] Incorporar confirmação/correção específica de saldo inicial das três contas oficiais, com preservação das seis aberturas/49 importados, idempotência, concorrência, auditoria e testes isolados; compatibilizar gestor/revisor sem privilégios irrestritos.
+- [ ] Revalidar pacote/hash/reversão/segurança e conter produtores privilegiados antes de eventual aplicação/publicação coordenadas; nenhuma operação real durante testes.
+
 ## Finalização executiva — 30/10/2026
 
 - [x] Conclusão técnica 17h56: solicitações imutáveis para entradas/saídas/transferências/estornos, aprovação por pessoa diferente, referência externa única, histórico/efeitos do estorno, recuperação por mesma chave, wrappers sem execução direta. Abre/habilita contas continuam bloqueados. Sem alterações remotas.
