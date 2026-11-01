@@ -14,7 +14,7 @@ export function AppSidebar() {
   const { role } = useRouteContext({ from: "/_authenticated" });
   const groups = MODULE_GROUPS.map((g) => ({
     ...g,
-    modules: g.modules.filter((m) => role && can(role, m.key, "view")),
+    modules: g.modules.filter((m) => ["dashboard", "tesouraria", "despesas", "plano_contas", "centros_custo", "usuarios", "integracoes"].includes(m.key) && role && can(role, m.key, "view")),
   })).filter((g) => g.modules.length > 0);
 
   return (
@@ -73,7 +73,7 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter className="border-t border-sidebar-border">
         {!collapsed && (
-          <p className="px-2 py-1 text-[11px] text-sidebar-foreground/50">Fundação · Etapa 01</p>
+          <p className="px-2 py-1 text-[11px] text-sidebar-foreground/50">Financeiro · Somente consulta</p>
         )}
       </SidebarFooter>
     </Sidebar>
