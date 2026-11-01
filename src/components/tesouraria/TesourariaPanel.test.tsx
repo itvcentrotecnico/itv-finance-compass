@@ -19,7 +19,7 @@ beforeEach(() => {
   Object.defineProperty(navigator, "locks", { configurable: true, value: { request: (_: string, fn: () => unknown) => fn() } });
   mocks.consultar.mockResolvedValue(null); mocks.historico.mockResolvedValue({ operacoes: [], total: 0 });
 });
-function abrir() { const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } }); return render(<QueryClientProvider client={qc}><TesourariaPanel /></QueryClientProvider>); }
+function abrir(somenteConsulta = false) { const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } }); return render(<QueryClientProvider client={qc}><TesourariaPanel somenteConsulta={somenteConsulta} /></QueryClientProvider>); }
 async function preencherTransferencia() {
   fireEvent.click(await screen.findByRole("button", { name: "Transferir" }));
   fireEvent.change(screen.getByLabelText("Descrição da operação"), { target: { value: "Transferência somente local" } });
@@ -31,6 +31,16 @@ async function preencherTransferencia() {
   fireEvent.change(screen.getByLabelText("Valor da operação"), { target: { value: "10.00" } });
 }
 describe("formulários da Tesouraria sem comunicação financeira externa", () => {
+  it("consulta não envia operações nem recupera solicitações na base sem Etapa 2", async () => {
+    abrir(true);
+    const tab = await screen.findByRole("tab", { name: "Movimentações" });
+    fireEvent.mouseDown(tab, { button: 0, ctrlKey: false }); fireEvent.click(tab);
+    await waitFor(() => expect(mocks.historico).toHaveBeenCalled());
+    expect(mocks.enviar).not.toHaveBeenCalled(); expect(mocks.consultar).not.toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: "Transferir" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Entrada" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Saída" })).toBeNull();
+  });
   it("rejeição inicial libera campos para correção", async () => {
     mocks.enviar.mockResolvedValue({ estado: "rejeitada", mensagem: "Rejeição financeira local" }); abrir(); await preencherTransferencia();
     fireEvent.click(screen.getByRole("button", { name: "Enviar para revisão" }));
