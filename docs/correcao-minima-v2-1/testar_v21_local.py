@@ -68,6 +68,15 @@ try:
     settings="SET ROLE postgres; SET itv.v21.validacao='BACKUP_DRENAGEM_DESTINO_APROVADOS'; SET itv.v21.manifesto='"+json.dumps(manifest)+"';"
     rejected('Proposta sem confirmação técnica é recusada',proposal,'V21_NAO_AUTORIZADA')
     rejected('Manifesto vazio é recusado',"SET ROLE postgres; SET itv.v21.validacao='BACKUP_DRENAGEM_DESTINO_APROVADOS';"+proposal,'V21_MANIFESTO_OFICIAL_AUSENTE')
+    sql('ALTER TABLE financeiro_hml.tesouraria_operacoes DISABLE ROW LEVEL SECURITY;')
+    rejected('RLS divergente impede implantação',settings+proposal,'V21_ESTRUTURA_DIVERGENTE')
+    sql('ALTER TABLE financeiro_hml.tesouraria_operacoes ENABLE ROW LEVEL SECURITY;')
+    sql('ALTER TABLE financeiro_hml.tesouraria_operacoes DISABLE TRIGGER tes_op_efeitos;')
+    rejected('Gatilho de efeitos desativado impede implantação',settings+proposal,'V21_ESTRUTURA_DIVERGENTE')
+    sql('ALTER TABLE financeiro_hml.tesouraria_operacoes ENABLE TRIGGER tes_op_efeitos;')
+    sql('GRANT postgres TO authenticated;')
+    rejected('Herança de papel privilegiado impede implantação',settings+proposal,'V21_HERANCA_PRIVILEGIADA')
+    sql('REVOKE postgres FROM authenticated;')
     # Concurrent writer blocks preflight NOWAIT, never waits for old mutations.
     lockproc=subprocess.Popen(BASE,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
     lockproc.stdin.write("BEGIN; LOCK TABLE financeiro_hml.tesouraria_operacoes IN ROW EXCLUSIVE MODE; SELECT 'locked';\n");lockproc.stdin.flush()
@@ -122,8 +131,10 @@ try:
     check('M5 manual consulta relógio do banco',isinstance(state.get('motivo'),str))
     # Set up synthetic running sync as owner, without invoking any external source.
     sid=query(f"INSERT INTO financeiro_hml.integracao_sincronizacoes(responsavel_id,modo,status) VALUES ('{users[0]}','manual','em_andamento') RETURNING id")
-    fin=json.loads(sql(caller("SELECT financeiro_hml.integracao_concluir('"+json.dumps({'id':sid,'status':'concluida','itens':[]})+"');")))
-    check('M5 manual conclui lote local vazio',fin['status']=='concluida')
+    item={'referencia':'SINTETICO_LOCAL_M5','tipo':'pagamento','canonico':'somente ensaio local','resumo':{'forma':'dinheiro','data':'2026-11-02','valor_bruto':'12.34','descricao':'SINTETICO LOCAL M5'}}
+    fin=json.loads(sql(caller("SELECT financeiro_hml.integracao_concluir('"+json.dumps({'id':sid,'status':'concluida','itens':[item]})+"');")))
+    check('M5 manual conclui lote local sem origem externa',fin['status']=='concluida')
+    check('M5 manual conserva conferência pendente sem conciliação',query("SELECT count(*) FROM financeiro_hml.tesouraria_conferencias WHERE referencia_origem='SINTETICO_LOCAL_M5' AND status='pendente' AND operacao_id IS NULL")=='1')
     check('M5 manual não cria operações ou movimentos',query('SELECT count(*) FROM financeiro_hml.tesouraria_operacoes')=='8' and query('SELECT count(*) FROM financeiro_hml.tesouraria_movimentos')=='2')
     rejected('Automação permanece fechada',"SET ROLE service_role; SELECT financeiro_hml.integracao_iniciar_automatica('2026-11-01','2026-11-02');",'permission denied')
     # Concurrent identical request at official public entry: one insert, one repeat.
