@@ -72,6 +72,10 @@ try:
     settings="SET request.jwt.claim.sub='"+users[0]+"'; SET ROLE postgres; SET itv.v22.validacao='BACKUP_DRENAGEM_DESTINO_APROVADOS'; SET itv.v22.manifesto='"+json.dumps(manifest)+"';"
     rejected('Proposta sem confirmação técnica é recusada',proposal,'V22_NAO_AUTORIZADA')
     rejected('Manifesto vazio é recusado',"SET ROLE postgres; SET itv.v22.validacao='BACKUP_DRENAGEM_DESTINO_APROVADOS';"+proposal,'V22_MANIFESTO_OFICIAL_AUSENTE')
+    for bad in [{}, manifest|{'contas':[None]}, manifest|{'categorias':[None]*14}]:
+        rejected('Manifesto incompleto/nulo é recusado '+str(len(results)),"SET ROLE postgres; SET itv.v22.validacao='BACKUP_DRENAGEM_DESTINO_APROVADOS'; SET itv.v22.manifesto='"+json.dumps(bad)+"';"+proposal,'V22_MANIFESTO_OFICIAL_AUSENTE')
+    rejected('Instalação sem autor autenticado aprovado é recusada',settings+"SET request.jwt.claim.sub='';"+proposal,'V22_AUTORIA_INSTALACAO')
+    rejected('Manifesto com só um responsável é recusado',settings+"SET itv.v22.manifesto='"+json.dumps(manifest|{'responsaveis':users[:1]})+"';"+proposal,'V22_RESPONSAVEIS')
     sql('ALTER TABLE financeiro_hml.tesouraria_operacoes DISABLE ROW LEVEL SECURITY;')
     rejected('RLS divergente impede implantação',settings+proposal,'V22_ESTRUTURA_DIVERGENTE')
     sql('ALTER TABLE financeiro_hml.tesouraria_operacoes ENABLE ROW LEVEL SECURITY;')
@@ -173,6 +177,7 @@ try:
     sql("UPDATE financeiro_hml.perfis SET ativo=false WHERE usuario_id='"+users[4]+"';")
     rejected('UPDATE de operação como owner é imutável',caller("UPDATE financeiro_hml.tesouraria_operacoes SET descricao='alterada' WHERE id='"+r['id']+"';",role='postgres'),'TES_IMUTAVEL')
     rejected('Movimento em conta diferente falha por integridade',caller("BEGIN; INSERT INTO financeiro_hml.tesouraria_movimentos(operacao_id,conta_financeira_id,direcao,valor) VALUES ('"+r['id']+"','"+accounts[0]+"','credito',1); COMMIT;",role='postgres'),'TES_INTEGRIDADE')
+    print('MD5 histórico instalado:',query("SELECT md5(pg_get_functiondef('financeiro_hml.tesouraria_historico_operacoes(jsonb)'::regprocedure))"))
     reversal=(HERE/'ITV_CONTENCAO_LIVRO_V2_2_PROPOSTA.sql').read_text()
     rejected('Contenção sem confirmação técnica recusada',reversal,'V22_REVERSAO_NAO_AUTORIZADA')
     snapshot=query("SELECT md5(jsonb_agg(to_jsonb(o) ORDER BY id)::text) FROM financeiro_hml.tesouraria_operacoes o")
