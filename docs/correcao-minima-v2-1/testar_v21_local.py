@@ -1,0 +1,157 @@
+"""Ensaio descartável LOCAL. Não acessa Supabase, rede ou dados reais.
+python3 docs/correcao-minima-v2-1/testar_v21_local.py
+Requer binários PostgreSQL 17 (ou 18) em PATH. Cria/apaga apenas /tmp/itv-v21-teste-*.
+"""
+import hashlib, json, os, pwd, shutil, subprocess, tempfile
+from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor
+ROOT = Path(__file__).resolve().parents[2]
+HERE = Path(__file__).resolve().parent
+WORK = Path(tempfile.mkdtemp(prefix='itv-v21-teste-', dir='/tmp'))
+SOCKET = WORK/'socket'; SOCKET.mkdir(); DATA=WORK/'data'
+BIN = {k:shutil.which(k) for k in ['psql','initdb','pg_ctl','pg_dump','pg_restore']}
+if not all(BIN.values()): raise RuntimeError('Instale PostgreSQL local; nenhum banco remoto será utilizado.')
+USER = pwd.getpwnam('lovable') if os.geteuid()==0 else pwd.getpwuid(os.geteuid())
+if os.geteuid()==0:
+    os.chown(WORK,USER.pw_uid,USER.pw_gid); os.chown(SOCKET,USER.pw_uid,USER.pw_gid)
+def demote():
+    if os.geteuid()==0: os.setgroups([]); os.setgid(USER.pw_gid); os.setuid(USER.pw_uid)
+def cmd(args):
+    return subprocess.run(args,text=True,capture_output=True,check=True,preexec_fn=demote)
+PORT='55449'
+BASE=[BIN['psql'],'-X','-qAt','-h',str(SOCKET),'-p',PORT,'-U',USER.pw_name,'-d','postgres','-v','ON_ERROR_STOP=1']
+def sql(s,ok=True):
+    r=subprocess.run(BASE,input=s,text=True,capture_output=True)
+    if ok and r.returncode: raise RuntimeError(r.stderr[:2200])
+    return r.stdout.strip() if ok else r
+results=[]
+def check(name,value):
+    if not value: raise AssertionError(name)
+    results.append({'teste':name,'aprovado':True})
+def rejected(name,s,message):
+    r=sql(s,False);check(name,r.returncode!=0 and message in r.stderr)
+def query(q):return sql(q+';')
+originals={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in (ROOT/'docs/correcao-minima').glob('*V2_PROPOSTA.sql')}
+try:
+    cmd([BIN['initdb'],'-D',str(DATA),'-A','trust','--no-locale'])
+    cmd([BIN['pg_ctl'],'-D',str(DATA),'-l',str(WORK/'postgres.log'),'-o',f"-k {SOCKET} -p {PORT} -c listen_addresses=''",'-w','start'])
+    sql('CREATE ROLE postgres SUPERUSER; CREATE ROLE authenticated; CREATE ROLE anon; CREATE ROLE service_role BYPASSRLS; CREATE ROLE authenticator; CREATE ROLE supabase_auth_admin; CREATE ROLE supabase_admin SUPERUSER; CREATE SCHEMA extensions;')
+    sql((ROOT/'docs/m3/fixture_local.sql').read_text())
+    sql("CREATE FUNCTION auth.role() RETURNS text LANGUAGE sql STABLE AS $$ SELECT coalesce(nullif(current_setting('request.jwt.claim.role',true),''),'authenticated') $$; GRANT EXECUTE ON FUNCTION auth.role() TO authenticated,service_role;")
+    for p in sorted((ROOT/'supabase/migrations').glob('*.sql')):
+        if p.name.startswith('20261101'):continue
+        sql('SET ROLE postgres;'+p.read_text())
+    sql('SET ROLE postgres;'+(HERE/'DEFINICOES_BASE_LOCAL.sql').read_text())
+    cat=json.loads((HERE/'CATALOGO_BASE_20261101.json').read_text())
+    sql(';'.join('ALTER FUNCTION '+sig+' OWNER TO postgres' for sig in cat)+';')
+    sql("DO $$ DECLARE t record; BEGIN FOR t IN SELECT tablename FROM pg_tables WHERE schemaname='financeiro_hml' LOOP EXECUTE format('ALTER TABLE financeiro_hml.%I OWNER TO postgres',t.tablename); END LOOP; END $$;")
+    users=['10000000-0000-4000-8000-'+str(i).zfill(12) for i in range(1,8)]
+    sql('INSERT INTO auth.users VALUES '+','.join("('"+u+"')" for u in users)+';')
+    for i,role in enumerate(['admin_geral','admin_financeiro','analista_financeiro','consulta_gerencial','admin_geral','admin_financeiro']):
+        sql(f"INSERT INTO financeiro_hml.perfis(usuario_id,papel,ativo) VALUES ('{users[i]}','{role}',{str(i<4).lower()});")
+    def caller(q,i=0,role='authenticated'):
+        uid=users[i] if i is not None else ''
+        return f"SET ROLE {role}; SET request.jwt.claim.sub='{uid}'; SET request.jwt.claim.role='{role}'; "+q
+    def rpc(p,i=0,role='authenticated',fn='tesouraria_lancar'):
+        return caller("SELECT financeiro_hml."+fn+"('"+json.dumps(p,ensure_ascii=False).replace("'","''")+"'::jsonb);",i,role)
+    accounts=[]
+    names=['SICREDI — CONTA PRINCIPAL','MERCADO PAGO — RECEBIMENTOS','CAIXA FÍSICO ITV','SINTETICA TESTE 4','SINTETICA TESTE 5','SINTETICA TESTE 6']
+    for i,name in enumerate(names):
+        p={'tipo':'abertura','chave':'20000000-0000-4000-8000-'+str(i+1).zfill(12),'nome':name,'conta_tipo':'caixa' if i==2 else 'banco','data':'2026-11-01','valor':'0.00','descricao':'ABERTURA SINTETICA LOCAL'}
+        accounts.append(json.loads(sql(rpc(p,fn='tesouraria_criar_conta')))['conta_id'])
+        if i<3:sql(f"UPDATE financeiro_hml.contas_preparadas SET situacao='habilitada',conta_financeira_id='{accounts[-1]}',data_abertura='2026-11-01',saldo_validado=0,responsavel_conferencia='SINTETICO LOCAL' WHERE nome='{name}';")
+    sql(caller((ROOT/'supabase/migrations/20261101202655_43ca129d-0415-4574-bd75-076cc0bb5b0c.sql').read_text(),role='postgres'))
+    categories=json.loads(query('SELECT json_agg(id ORDER BY codigo) FROM financeiro_hml.plano_contas WHERE aceita_lancamentos'))
+    manifest={'contas':accounts[:3],'categorias':categories}
+    before=query("SELECT md5(jsonb_agg(to_jsonb(o) ORDER BY id)::text) FROM financeiro_hml.tesouraria_operacoes o")
+    proposal=(HERE/'ITV_CORRECAO_MINIMA_V2_1_PROPOSTA.sql').read_text()
+    settings="SET ROLE postgres; SET itv.v21.validacao='BACKUP_DRENAGEM_DESTINO_APROVADOS'; SET itv.v21.manifesto='"+json.dumps(manifest)+"';"
+    rejected('Proposta sem confirmação técnica é recusada',proposal,'V21_NAO_AUTORIZADA')
+    rejected('Manifesto vazio é recusado',"SET ROLE postgres; SET itv.v21.validacao='BACKUP_DRENAGEM_DESTINO_APROVADOS';"+proposal,'V21_MANIFESTO_OFICIAL_AUSENTE')
+    # Concurrent writer blocks preflight NOWAIT, never waits for old mutations.
+    lockproc=subprocess.Popen(BASE,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+    lockproc.stdin.write("BEGIN; LOCK TABLE financeiro_hml.tesouraria_operacoes IN ROW EXCLUSIVE MODE; SELECT 'locked';\n");lockproc.stdin.flush()
+    check('Sessão local de escritor preparada',lockproc.stdout.readline().strip()=='locked')
+    rejected('Escritor concorrente impede implantação',settings+proposal,'could not obtain lock')
+    lockproc.stdin.write('ROLLBACK;\n');lockproc.stdin.close();lockproc.wait(timeout=5)
+    sql(settings+proposal)
+    check('Seis aberturas integralmente preservadas pela proposta',before==query("SELECT md5(jsonb_agg(to_jsonb(o) ORDER BY id)::text) FROM financeiro_hml.tesouraria_operacoes o"))
+    check('Proposta não cria movimentos',query('SELECT count(*) FROM financeiro_hml.tesouraria_movimentos')=='0')
+    check('Continua com 13 tabelas',query("SELECT count(*) FROM pg_tables WHERE schemaname='financeiro_hml'")=='13')
+    check('Continua com 31 funções',query("SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='financeiro_hml'")=='31')
+    sonda=json.loads(sql(rpc({'tipo':'sonda'})))
+    check('Sonda devolve exatamente manifesto aprovado e contrato V2.1',sonda==manifest|{'contrato':'tesouraria_lancar_minima_v2_1'})
+    recipe={'tipo':'entrada','chave':'30000000-0000-4000-8000-000000000001','data':'2026-11-02','valor':'100.10','descricao':'SINTETICO LOCAL','destino':accounts[0],'plano':categories[0],'referencia':'externo:nota-1'}
+    r=json.loads(sql(rpc(recipe)));check('Administrador Geral registra receita',not r['repetida'])
+    repeated=json.loads(sql(rpc(recipe)));check('Mesma chave e conteúdo não duplica',r['id']==repeated['id'] and repeated['repetida'])
+    canonical=recipe|{'valor':'100.1','referencia':' EXTERNO:NOTA-1 '};check('Normalização monetária e referência preserva repetição',json.loads(sql(rpc(canonical)))['repetida'])
+    rejected('Mesma chave com referência alterada é recusada',rpc(recipe|{'referencia':'externo:nota-2'}),'TES_IDEMPOTENCIA')
+    rejected('Mesma chave com valor alterado é recusada',rpc(recipe|{'valor':'100.11'}),'TES_IDEMPOTENCIA')
+    check('Referência documental fica persistida',query(f"SELECT requisicao->>'referencia' FROM financeiro_hml.tesouraria_operacoes WHERE id='{r['id']}'")=='externo:nota-1')
+    for i,name in [(2,'Analista'),(3,'Consulta'),(4,'Geral inativo'),(5,'Financeiro inativo'),(6,'Sem perfil'),(None,'Sem identidade')]:
+        rejected(name+' não lança',rpc(recipe,i),'TES_PERMISSAO')
+    rejected('Anon não executa lançamento',rpc(recipe,None,'anon'),'permission denied')
+    rejected('Service role não executa lançamento',rpc(recipe,None,'service_role'),'permission denied')
+    for mode in ['abertura','transferencia','estorno']:
+        rejected(mode+' bloqueada no caminho público',rpc(recipe|{'tipo':mode}),'TES_OPERACAO_BLOQUEADA')
+        rejected(mode+' bloqueada também no motor central',rpc(recipe|{'tipo':mode},role='postgres',fn='tes_executar'),'TES_OPERACAO_BLOQUEADA')
+    rejected('Motor privado não é API',rpc(recipe,fn='tes_executar'),'permission denied')
+    for fn in ['tesouraria_transferir','tesouraria_estornar','tesouraria_criar_conta','tesouraria_habilitar_conta','tesouraria_lancar_conferencia']:
+        rejected(fn+' sem EXECUTE',rpc({},fn=fn),'permission denied')
+        rejected(fn+' corpo bloqueado mesmo como owner',rpc({},role='postgres',fn=fn),'TES_OPERACAO_BLOQUEADA')
+    def fresh(p):return p|{'chave':str(__import__('uuid').uuid4())}
+    rejected('Receita com categoria de despesa recusada',rpc(fresh(recipe|{'plano':categories[6]})),'TES_CATEGORIA_NATUREZA')
+    expense={'tipo':'saida','data':'2026-11-02','valor':'20.05','descricao':'SINTETICO LOCAL DESPESA','origem':accounts[0],'plano':categories[6],'referencia':'externo:despesa-1'}
+    rejected('Despesa com categoria de receita recusada',rpc(fresh(expense|{'plano':categories[0]}),1),'TES_CATEGORIA_NATUREZA')
+    check('Administrador Financeiro registra despesa',not json.loads(sql(rpc(fresh(expense),1)))['repetida'])
+    rejected('Conta de homologação não pode lançar',rpc(fresh(recipe|{'destino':accounts[3]})),'TES_CONTA_OFICIAL')
+    rejected('Categoria não oficial não pode lançar',rpc(fresh(recipe|{'plano':'99999999-9999-4999-8999-999999999999'})),'TES_CATEGORIA_OFICIAL')
+    rejected('Referência inválida recusada',rpc(fresh(recipe|{'referencia':'nota-1'})),'TES_REFERENCIA')
+    rejected('Referência ausente recusada',rpc(fresh({k:v for k,v in recipe.items() if k!='referencia'})),'TES_REFERENCIA')
+    rejected('Valor com terceiro centavo recusado',rpc(fresh(recipe|{'valor':'10.001'})),'TES_VALOR')
+    rejected('Data anterior à abertura recusada',rpc(fresh(recipe|{'data':'2026-10-31'})),'TES_DATA_ANTERIOR_ABERTURA')
+    check('Saldo exato 80.05',query(f"SELECT sum(CASE direcao WHEN 'credito' THEN valor ELSE -valor END)::text FROM financeiro_hml.tesouraria_movimentos WHERE conta_financeira_id='{accounts[0]}'")=='80.05')
+    check('Histórico público tem seis aberturas e dois lançamentos',json.loads(sql(caller("SELECT financeiro_hml.tesouraria_historico_operacoes('{}');")))['total']==8)
+    check('Auditoria rastreia os dois lançamentos',query("SELECT count(*) FROM financeiro_hml.auditoria WHERE tabela='tesouraria_operacoes' AND depois->>'referencia' IS NOT NULL")=='2')
+    for role in ['anon','authenticated','service_role']:
+        check(role+' sem DML de tabela e coluna',query(f"SELECT count(*) FROM pg_tables WHERE schemaname='financeiro_hml' AND (has_table_privilege('{role}',format('%I.%I',schemaname,tablename),'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') OR has_any_column_privilege('{role}',format('%I.%I',schemaname,tablename),'INSERT,UPDATE,REFERENCES'))")=='0')
+    rejected('UPDATE direto em conferências recusado',caller("UPDATE financeiro_hml.tesouraria_conferencias SET status='conciliado';"),'permission denied')
+    rejected('INSERT direto em conferências recusado',caller("INSERT INTO financeiro_hml.tesouraria_conferencias(referencia_origem) VALUES ('SINTETICO');"),'permission denied')
+    # Real clock untouched: at this time initiating manual sync can correctly reject outside window.
+    state=json.loads(sql(caller('SELECT financeiro_hml.integracao_estado_manual();')))
+    check('M5 manual consulta relógio do banco',isinstance(state.get('motivo'),str))
+    # Set up synthetic running sync as owner, without invoking any external source.
+    sid=query(f"INSERT INTO financeiro_hml.integracao_sincronizacoes(iniciado_por,modo,status) VALUES ('{users[0]}','manual','em_andamento') RETURNING id")
+    fin=json.loads(sql(caller("SELECT financeiro_hml.integracao_concluir('"+json.dumps({'id':sid,'status':'concluida','itens':[]})+"');")))
+    check('M5 manual conclui lote local vazio',fin['status']=='concluida')
+    check('M5 manual não cria operações ou movimentos',query('SELECT count(*) FROM financeiro_hml.tesouraria_operacoes')=='8' and query('SELECT count(*) FROM financeiro_hml.tesouraria_movimentos')=='2')
+    rejected('Automação permanece fechada',"SET ROLE service_role; SELECT financeiro_hml.integracao_iniciar_automatica('2026-11-01','2026-11-02');",'permission denied')
+    # Concurrent identical request at official public entry: one insert, one repeat.
+    concurrent=fresh(recipe|{'valor':'1.01','referencia':'externo:concorrente'})
+    with ThreadPoolExecutor(max_workers=2) as pool:pair=list(pool.map(lambda _:json.loads(sql(rpc(concurrent))),range(2)))
+    check('Concorrência mesma chave não duplica',pair[0]['id']==pair[1]['id'] and sorted(x['repetida'] for x in pair)==[False,True])
+    check('Aberturas intactas após operações sintéticas',before==query("SELECT md5(jsonb_agg(to_jsonb(o) ORDER BY id)::text) FROM financeiro_hml.tesouraria_operacoes o WHERE tipo='abertura'"))
+    reversal=(HERE/'ITV_CONTENCAO_V2_1_PROPOSTA.sql').read_text()
+    rejected('Contenção sem confirmação técnica recusada',reversal,'V21_REVERSAO_NAO_AUTORIZADA')
+    snapshot=query("SELECT md5(jsonb_agg(to_jsonb(o) ORDER BY id)::text) FROM financeiro_hml.tesouraria_operacoes o")
+    sql("SET ROLE postgres; SET itv.v21.reversao='CONTENCAO_DRENAGEM_APROVADAS';"+reversal)
+    check('Contenção preserva todos os registros',snapshot==query("SELECT md5(jsonb_agg(to_jsonb(o) ORDER BY id)::text) FROM financeiro_hml.tesouraria_operacoes o"))
+    rejected('Contenção fecha lançamento público',rpc(fresh(recipe)),'permission denied')
+    rejected('Contenção sela motor para owner',rpc(fresh(recipe),role='postgres',fn='tes_executar'),'TES_OPERACAO_BLOQUEADA')
+    check('Contenção preserva consulta de saldos',bool(sql(caller('SELECT financeiro_hml.tesouraria_saldos();'))))
+    check('Contenção preserva estado M5 manual',json.loads(sql(caller('SELECT financeiro_hml.integracao_estado_manual();')))['motivo']=='sucesso_diario')
+    # Dump including owner/ACL, restore in clean local database (not HML).
+    dump=WORK/'sintetico.dump'
+    cmd([BIN['pg_dump'],'-h',str(SOCKET),'-p',PORT,'-U',USER.pw_name,'-d','postgres','-Fc','-f',str(dump)])
+    cmd([BIN['pg_restore'],'--list',str(dump)]);sql('CREATE DATABASE recuperacao;')
+    cmd([BIN['pg_restore'],'-h',str(SOCKET),'-p',PORT,'-U',USER.pw_name,'-d','recuperacao','--exit-on-error',str(dump)])
+    old=BASE[:];BASE[BASE.index('postgres')]='recuperacao'
+    check('Restore sintético preserva hash de operações',snapshot==query("SELECT md5(jsonb_agg(to_jsonb(o) ORDER BY id)::text) FROM financeiro_hml.tesouraria_operacoes o"))
+    check('Restore sintético preserva EXECUTE fechado',query("SELECT has_function_privilege('authenticated','financeiro_hml.tesouraria_lancar(jsonb)','EXECUTE')")=='f')
+    BASE=old
+    check('Arquivos originais V2 permanecem intactos',originals=={p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in (ROOT/'docs/correcao-minima').glob('*V2_PROPOSTA.sql')})
+    (HERE/'RESULTADOS_TESTES_LOCAIS.json').write_text(json.dumps({'ambiente':'PostgreSQL local descartável; Auth simplificado; sem rede; sem dados reais','total':len(results),'testes':results},ensure_ascii=False,indent=2))
+    print(f'{len(results)}/{len(results)} testes PostgreSQL locais aprovados. Sem SQL hospedado.')
+finally:
+    if (DATA/'postmaster.pid').exists():cmd([BIN['pg_ctl'],'-D',str(DATA),'-m','fast','-w','stop'])
+    shutil.rmtree(WORK)
