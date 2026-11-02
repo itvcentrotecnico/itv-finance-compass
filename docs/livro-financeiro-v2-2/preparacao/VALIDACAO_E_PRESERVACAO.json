@@ -1,0 +1,37 @@
+{
+  "metodo": "Analisador PostgreSQL local; nenhuma conexao ou execucao SQL",
+  "consultas": [
+    {
+      "arquivo": "01_USUARIOS_SOMENTE_LEITURA.sql",
+      "comandos": 3,
+      "sintaxe_valida": true,
+      "execucao_sql": false
+    },
+    {
+      "arquivo": "02_CATEGORIAS_OFICIAIS_SOMENTE_LEITURA.sql",
+      "comandos": 3,
+      "sintaxe_valida": true,
+      "execucao_sql": false
+    },
+    {
+      "arquivo": "03_ESTADO_FINANCEIRO_SOMENTE_LEITURA.sql",
+      "comandos": 5,
+      "sintaxe_valida": true,
+      "execucao_sql": false
+    },
+    {
+      "arquivo": "04_CATALOGO_E_MANIFESTO_SOMENTE_LEITURA.sql",
+      "comandos": 7,
+      "sintaxe_valida": true,
+      "execucao_sql": false
+    },
+    {
+      "arquivo": "05_DEPENDENCIAS_E_JANELA_SOMENTE_LEITURA.sql",
+      "comandos": 12,
+      "sintaxe_valida": true,
+      "execucao_sql": false
+    }
+  ],
+  "pacote_v22_original_intacto": true,
+  "aplicativo_alterado": false
+}
