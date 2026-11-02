@@ -17,7 +17,7 @@ export const carregarTesouraria = createServerFn({ method: "POST" }).middleware(
   if (error) throw new Error(erroTesouraria(error));
   return data as ContaFinanceira[];
 });
-/** V2.1 only: marker and pinned official IDs are required; legacy fails closed. */
+/** Separate single-ledger contract only; V2.1 and legacy fail closed. */
 export const verificarContratoLancamento = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = (context.supabase as any).schema("financeiro_hml");
