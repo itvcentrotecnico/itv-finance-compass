@@ -61,4 +61,12 @@ describe("adaptação das funções financeiras — somente mocks locais", () =>
     context.supabase.schema.mockReturnValue({ rpc: vi.fn().mockResolvedValue({ data: { contrato: "outro" }, error: null }) });
     expect(await verificarContratoLancamento({})).toBe(false);
   });
+  it.each(["entrada", "saida"] as const)("encaminha %s somente para tesouraria_lancar, preservando referência, valor e chave", async (tipo) => {
+    const rpc = vi.fn().mockResolvedValue({ data: { id: "op-local" }, error: null });
+    context.supabase.schema.mockReturnValue({ rpc });
+    const pedido = { tipo, chave: "00000000-0000-4000-8000-000000000001", data: "2026-11-02", descricao: "Somente local", valor: "1234.56", plano: "00000000-0000-4000-8000-000000000002", referencia: "externo:local-1450" };
+    expect(await registrarTesouraria({ data: pedido })).toEqual({ estado: "confirmada", id: "op-local" });
+    expect(rpc).toHaveBeenCalledExactlyOnceWith("tesouraria_lancar", { p: pedido });
+    expect(context.supabase.schema).toHaveBeenCalledWith("financeiro_hml");
+  });
 });

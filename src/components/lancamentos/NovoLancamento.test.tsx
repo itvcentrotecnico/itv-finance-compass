@@ -1,5 +1,5 @@
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { beforeEach, describe, it, expect, vi } from "vitest";
+import { act, render, screen, fireEvent } from "@testing-library/react";
 import { NovoLancamento } from "./LancamentosPanel";
 
 vi.mock("@/lib/tesouraria.functions", () => ({ carregarTesouraria: vi.fn(), carregarHistoricoTesouraria: vi.fn(), verificarContratoLancamento: vi.fn() }));
@@ -19,6 +19,19 @@ function montar() {
   return executar;
 }
 
+beforeEach(() => { Element.prototype.scrollIntoView = vi.fn(); });
+
+async function preencher(tipo: "entrada" | "saida") {
+  if (tipo === "saida") fireEvent.click(screen.getByRole("radio", { name: "Despesa" }));
+  fireEvent.change(screen.getByLabelText("Valor"), { target: { value: "1.234,56" } });
+  fireEvent.change(screen.getByLabelText("Descrição"), { target: { value: "Documento somente local" } });
+  fireEvent.change(screen.getByLabelText("Referência"), { target: { value: "externo:local-1450" } });
+  fireEvent.click(screen.getByLabelText("Categoria do lançamento"));
+  fireEvent.click(await screen.findByRole("option", { name: tipo === "entrada" ? "1.01 · Conserto de televisores" : "2.01 · Compra de peças" }));
+  fireEvent.click(screen.getByLabelText("Conta financeira do lançamento"));
+  fireEvent.click(await screen.findByRole("option", { name: "Sicredi" }));
+}
+
 describe("Novo lançamento", () => {
   it("bloqueia valor inválido sem chamar o banco", () => {
     const executar = montar();
@@ -33,5 +46,16 @@ describe("Novo lançamento", () => {
     fireEvent.click(screen.getByRole("button", { name: /Registrar lançamento/ }));
     expect(screen.getByRole("alert").textContent).toMatch(/categoria de receita/);
     expect(executar).not.toHaveBeenCalled();
+  });
+  it.each(["entrada", "saida"] as const)("envia %s pelo envio seguro com valor exato, categoria compatível e chave original", async (tipo) => {
+    const executar = montar();
+    await preencher(tipo);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: /Registrar lançamento/ })); });
+    expect(executar).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
+      tipo, valor: "1234.56", plano: tipo === "entrada" ? "r" : "d", data: "2026-11-02",
+      referencia: "externo:local-1450", chave: expect.stringMatching(/^[a-f0-9-]{36}$/),
+      ...(tipo === "entrada" ? { destino: "11111111-1111-4111-8111-111111111111" } : { origem: "11111111-1111-4111-8111-111111111111" }),
+    }));
+    expect(executar.mock.calls[0]?.[0]).not.toHaveProperty(tipo === "entrada" ? "origem" : "destino");
   });
 });
