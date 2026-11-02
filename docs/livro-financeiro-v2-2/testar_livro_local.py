@@ -1,5 +1,5 @@
 """Ensaio descartável LOCAL. Não acessa Supabase, rede ou dados reais.
-python3 docs/correcao-minima-v2-1/testar_v21_local.py
+python3 docs/livro-financeiro-v2-2/testar_livro_local.py
 Requer binários PostgreSQL 17 (ou 18) em PATH. Cria/apaga apenas /tmp/itv-livro-teste-*.
 """
 import hashlib, json, os, pwd, shutil, subprocess, tempfile
@@ -88,12 +88,16 @@ try:
     rejected('Escritor concorrente impede implantação',settings+proposal,'could not obtain lock')
     lockproc.stdin.write('ROLLBACK;\n');lockproc.stdin.close();lockproc.wait(timeout=5)
     sql(settings+proposal)
+    check('Instalação acrescenta somente dois eventos técnicos de auditoria',query('SELECT count(*) FROM financeiro_hml.auditoria')==str(int(audits)+2))
     check('Seis aberturas integralmente preservadas pela proposta',before==query("SELECT md5(jsonb_agg(to_jsonb(o) ORDER BY id)::text) FROM financeiro_hml.tesouraria_operacoes o WHERE id<>'"+manifest['abertura']+"'"))
     check('Proposta não cria movimentos',query('SELECT count(*) FROM financeiro_hml.tesouraria_movimentos')=='0')
     check('Continua com 13 tabelas',query("SELECT count(*) FROM pg_tables WHERE schemaname='financeiro_hml'")=='13')
     check('Continua com 31 funções',query("SELECT count(*) FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='financeiro_hml'")=='31')
     sonda=json.loads(sql(rpc({'tipo':'sonda'})))
-    check('Sonda devolve exatamente manifesto aprovado e contrato V2.1',sonda=={'modo':'livro_unico','contas':[livro],'categorias':categories,'contrato':'tesouraria_lancar_livro_v2_2'})
+    check('Sonda devolve livro único e categorias, sem identidades de outros usuários',sonda=={'modo':'livro_unico','contas':[livro],'categorias':categories,'contrato':'tesouraria_lancar_livro_v2_2'})
+    first={'tipo':'saida','chave':'70000000-0000-4000-8000-000000000001','data':'2026-11-01','valor':'0.01','descricao':'PRIMEIRA DESPESA LOCAL','plano':categories[6],'referencia':'externo:primeira-despesa'}
+    sql(caller('BEGIN; '+rpc(first,1)+"SELECT sum(CASE direcao WHEN 'credito' THEN valor ELSE -valor END)::text FROM financeiro_hml.tesouraria_movimentos; ROLLBACK;",1))
+    check('Primeira despesa é permitida sem receita de cobertura',query('SELECT count(*) FROM financeiro_hml.tesouraria_movimentos')=='0')
     recipe={'tipo':'entrada','chave':'30000000-0000-4000-8000-000000000001','data':'2026-11-02','valor':'100.10','descricao':'SINTETICO LOCAL','plano':categories[0],'referencia':'externo:nota-1'}
     r=json.loads(sql(rpc(recipe)));check('Administrador Geral registra receita',not r['repetida'])
     repeated=json.loads(sql(rpc(recipe)));check('Mesma chave e conteúdo não duplica',r['id']==repeated['id'] and repeated['repetida'])

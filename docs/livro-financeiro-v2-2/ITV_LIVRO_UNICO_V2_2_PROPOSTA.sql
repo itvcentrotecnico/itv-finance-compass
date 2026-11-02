@@ -31,7 +31,8 @@ END $baseline$;
 DO $instalar$
 DECLARE m jsonb:=nullif(current_setting('itv.v22.manifesto',true),'')::jsonb; it jsonb; r record; ids uuid[]; contas uuid[]; body text;
 BEGIN
- IF m IS NULL OR jsonb_typeof(m->'contas')<>'array' OR jsonb_typeof(m->'categorias')<>'array' OR jsonb_array_length(m->'contas')<>1 OR jsonb_array_length(m->'categorias')<>14 THEN RAISE EXCEPTION 'V22_MANIFESTO_OFICIAL_AUSENTE'; END IF;
+ IF m IS NULL OR jsonb_typeof(m) IS DISTINCT FROM 'object' OR jsonb_typeof(m->'contas') IS DISTINCT FROM 'array' OR jsonb_typeof(m->'categorias') IS DISTINCT FROM 'array' THEN RAISE EXCEPTION 'V22_MANIFESTO_OFICIAL_AUSENTE'; END IF;
+ IF jsonb_array_length(m->'contas')<>1 OR jsonb_array_length(m->'categorias')<>14 OR EXISTS(SELECT 1 FROM jsonb_array_elements(m->'contas') x WHERE jsonb_typeof(x) IS DISTINCT FROM 'string') OR EXISTS(SELECT 1 FROM jsonb_array_elements(m->'categorias') x WHERE jsonb_typeof(x) IS DISTINCT FROM 'string') THEN RAISE EXCEPTION 'V22_MANIFESTO_OFICIAL_AUSENTE'; END IF;
  SELECT array_agg(value::uuid ORDER BY value) INTO contas FROM jsonb_array_elements_text(m->'contas');
  SELECT array_agg(value::uuid ORDER BY value) INTO ids FROM jsonb_array_elements_text(m->'categorias');
  IF (SELECT count(DISTINCT x) FROM unnest(contas) x)<>1 OR (SELECT count(DISTINCT x) FROM unnest(ids) x)<>14 THEN RAISE EXCEPTION 'V22_IDS_DUPLICADOS'; END IF;
