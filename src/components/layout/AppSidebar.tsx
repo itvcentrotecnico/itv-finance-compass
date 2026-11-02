@@ -14,7 +14,7 @@ export function AppSidebar() {
   const { role } = useRouteContext({ from: "/_authenticated" });
   const groups = MODULE_GROUPS.map((g) => ({
     ...g,
-    modules: g.modules.filter((m) => ["dashboard", "tesouraria", "despesas", "plano_contas", "centros_custo", "usuarios", "integracoes"].includes(m.key) && role && can(role, m.key, "view")),
+    modules: g.modules.filter((m) => ["dashboard", "lancamentos", "tesouraria", "despesas", "plano_contas", "centros_custo", "usuarios", "integracoes"].includes(m.key) && role && can(role, m.key, "view")),
   })).filter((g) => g.modules.length > 0);
 
   return (

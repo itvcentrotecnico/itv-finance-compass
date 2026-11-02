@@ -6,6 +6,7 @@ import { UsuariosPanel } from "@/components/usuarios/UsuariosPanel";
 import { PlanoContasPanel } from "@/components/cadastros/PlanoContasPanel";
 import { CentrosCustoPanel } from "@/components/cadastros/CentrosCustoPanel";
 import { TesourariaPanel, tesourariaOptions } from "@/components/tesouraria/TesourariaPanel";
+import { LancamentosPanel } from "@/components/lancamentos/LancamentosPanel";
 import { IntegracaoPanel } from "@/components/integracao/IntegracaoPanel";
 import { findGroupOf, findModuleBySlug } from "@/lib/modules";
 import { can } from "@/lib/auth/permissions";
@@ -14,7 +15,7 @@ export const Route = createFileRoute("/_authenticated/$modulo")({
   loader: async ({ params, context }) => {
     const mod = findModuleBySlug(params.modulo);
     if (!mod || !mod.slug) throw notFound();
-    if (mod.key === "tesouraria" || mod.key === "despesas") await context.queryClient.ensureQueryData(tesourariaOptions);
+    if (mod.key === "tesouraria" || mod.key === "despesas" || mod.key === "lancamentos") await context.queryClient.ensureQueryData(tesourariaOptions);
     return { slug: mod.slug, title: mod.title, description: mod.description };
   },
   head: ({ loaderData }) => {
@@ -51,7 +52,7 @@ function ModulePage() {
     );
   }
 
-  const Operacional = mod.key === "usuarios" ? UsuariosPanel : mod.key === "plano_contas" ? PlanoContasPanel : mod.key === "centros_custo" ? CentrosCustoPanel : mod.key === "tesouraria" || mod.key === "despesas" ? TesourariaPanel : mod.key === "integracoes" ? IntegracaoPanel : null;
+  const Operacional = mod.key === "usuarios" ? UsuariosPanel : mod.key === "plano_contas" ? PlanoContasPanel : mod.key === "centros_custo" ? CentrosCustoPanel : mod.key === "tesouraria" || mod.key === "despesas" ? TesourariaPanel : mod.key === "integracoes" ? IntegracaoPanel : mod.key === "lancamentos" ? LancamentosPanel : null;
 
   return (
     <AppShell>
@@ -67,7 +68,7 @@ function ModulePage() {
           )
         }
       />
-      {mod.key === "despesas" ? <TesourariaPanel tipoInicial="saida" /> : mod.key === "tesouraria" ? <TesourariaPanel somenteConsulta={false} /> : Operacional ? <Operacional /> : <EmptyState icon={Icon} title="Recurso indisponível nesta versão" description="Este módulo ainda não possui uma operação validada. Nenhum registro financeiro pode ser criado por esta página." />}
+      {mod.key === "lancamentos" ? <LancamentosPanel /> : mod.key === "despesas" ? <TesourariaPanel tipoInicial="saida" /> : mod.key === "tesouraria" ? <TesourariaPanel somenteConsulta={false} /> : Operacional ? <Operacional /> : <EmptyState icon={Icon} title="Recurso indisponível nesta versão" description="Este módulo ainda não possui uma operação validada. Nenhum registro financeiro pode ser criado por esta página." />}
     </AppShell>
   );
 }
