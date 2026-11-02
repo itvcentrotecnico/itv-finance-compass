@@ -18,9 +18,9 @@ function montar() {
 beforeEach(() => { sonda.mockReset(); historico.mockReset().mockResolvedValue({ total: 0, operacoes: [] }); acesso.role = "admin_geral"; });
 
 describe("admissão de lançamentos — sessão e banco simulados", () => {
-  it.each(["admin_geral", "admin_financeiro"])("permite %s somente com contrato V2.1 confirmado", async (role) => {
+  it.each(["admin_geral", "admin_financeiro"])("permite %s somente com contrato livro confirmado", async (role) => {
     const ids = (n: number) => Array.from({ length: n }, (_, i) => `00000000-0000-4000-8000-${String(i + 1).padStart(12, "0")}`);
-    acesso.role = role; sonda.mockResolvedValue({ contas: ids(3), categorias: ids(14) }); montar();
+    acesso.role = role; sonda.mockResolvedValue({ contas: ids(1), categorias: ids(14) }); montar();
     await waitFor(() => expect(screen.getByRole("button", { name: "Novo lançamento" })).toBeEnabled());
   });
   it.each(["analista_financeiro", "consulta_gerencial"])("mantém %s exclusivamente em consulta mesmo com contrato preparado", async (role) => {

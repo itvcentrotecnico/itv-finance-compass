@@ -5,7 +5,6 @@ import { NovoLancamento } from "./LancamentosPanel";
 vi.mock("@/lib/tesouraria.functions", () => ({ carregarTesouraria: vi.fn(), carregarHistoricoTesouraria: vi.fn(), verificarContratoLancamento: vi.fn() }));
 vi.mock("@/components/tesouraria/TesourariaPanel", () => ({ tesourariaOptions: {} }));
 
-const contas = [{ id: "11111111-1111-4111-8111-111111111111", nome: "Sicredi", tipo: "banco", moeda: "BRL", ativo: true, banco: null, agencia: null, numero_conta: null, data_saldo_inicial: "2026-11-01", saldo_inicial_centavos: "0", saldo: "0.00" }] as never;
 const planos = [
   { id: "r", codigo: "1.01", descricao: "Conserto de televisores", natureza: "receita", ativo: true, aceita_lancamentos: true },
   { id: "s", codigo: "1", descricao: "RECEITAS OPERACIONAIS", natureza: "receita", ativo: true, aceita_lancamentos: false },
@@ -16,7 +15,7 @@ const planos = [
 function montar(contasPermitidas = ["11111111-1111-4111-8111-111111111111"]) {
   const executar = vi.fn().mockResolvedValue({ estado: "confirmada", id: "x" });
   const seguro = { pendente: null, bloqueio: false, ocupado: false, mensagem: null, executar } as never;
-  render(<NovoLancamento oficiais={{ contas: contasPermitidas, categorias: ["r", "d"] }} contas={contas} planos={planos} seguro={seguro} hoje="2026-11-02" onCancel={() => {}} />);
+  render(<NovoLancamento oficiais={{ contas: contasPermitidas, categorias: ["r", "d"] }} planos={planos} seguro={seguro} hoje="2026-11-02" onCancel={() => {}} />);
   return executar;
 }
 
@@ -29,8 +28,6 @@ async function preencher(tipo: "entrada" | "saida") {
   fireEvent.change(screen.getByLabelText("Referência"), { target: { value: "externo:local-1450" } });
   fireEvent.click(screen.getByLabelText("Categoria do lançamento"));
   fireEvent.click(await screen.findByRole("option", { name: tipo === "entrada" ? "1.01 · Conserto de televisores" : "2.01 · Compra de peças" }));
-  fireEvent.click(screen.getByLabelText("Conta financeira do lançamento"));
-  fireEvent.click(await screen.findByRole("option", { name: "Sicredi" }));
 }
 
 describe("Novo lançamento", () => {
@@ -40,10 +37,11 @@ describe("Novo lançamento", () => {
     expect(await screen.findByRole("option", { name: "1.01 · Conserto de televisores" })).toBeTruthy();
     expect(screen.queryByRole("option", { name: /Categoria sintética fora do manifesto/ })).toBeNull();
   });
-  it("conta fora do manifesto oficial não é selecionável", async () => {
-    montar([]);
-    fireEvent.click(screen.getByLabelText("Conta financeira do lançamento"));
-    expect(screen.queryByRole("option", { name: "Sicredi" })).toBeNull();
+  it("controle não habilitado impede envio", async () => {
+    const executar = montar([]);
+    await preencher("entrada");
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: /Registrar lançamento/ })); });
+    expect(executar).not.toHaveBeenCalled();
   });
   it("bloqueia valor inválido sem chamar o banco", () => {
     const executar = montar();
@@ -66,8 +64,8 @@ describe("Novo lançamento", () => {
     expect(executar).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
       tipo, valor: "1234.56", plano: tipo === "entrada" ? "r" : "d", data: "2026-11-02",
       referencia: "externo:local-1450", chave: expect.stringMatching(/^[a-f0-9-]{36}$/),
-      ...(tipo === "entrada" ? { destino: "11111111-1111-4111-8111-111111111111" } : { origem: "11111111-1111-4111-8111-111111111111" }),
     }));
-    expect(executar.mock.calls[0]?.[0]).not.toHaveProperty(tipo === "entrada" ? "origem" : "destino");
+    expect(executar.mock.calls[0]?.[0]).not.toHaveProperty("origem");
+    expect(executar.mock.calls[0]?.[0]).not.toHaveProperty("destino");
   });
 });
