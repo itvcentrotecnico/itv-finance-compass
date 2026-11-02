@@ -1,5 +1,12 @@
 # Autenticação segura — ITV FINANCEIRO HML
 
+## Preparação V2.1 — 02/11/2026
+
+- [ ] Preparar SQL separado com motor entrada/saída, referência idempotente, seleção oficial fixada e contenção/lista positiva de ACLs.
+- [ ] Corrigir primeira aba: seleção oficial segura, indicadores indisponíveis em erro e precisão de agregados; validar testes locais/isolados reproduzíveis.
+- [ ] Entregar pacote, manifesto, verificações, backup Free e relatório de prontidão; V2 original intacta e nenhuma execução remota/publicação.
+- [ ] Implantação V2.1: aguarda aprovação da versão/IDs oficiais, recuperação externa comprovada, manutenção/drenagem e acesso autenticado hospedado.
+
 ## Revisão da primeira operação — 02/11/2026
 
 - [x] Revisar aba Lançamentos, perfis, natureza, contrato V2 e idempotência: 77 testes locais aprovados, nove casos adicionados; nenhum comportamento operacional/SQL alterado.
