@@ -121,7 +121,7 @@ try:
     state=json.loads(sql(caller('SELECT financeiro_hml.integracao_estado_manual();')))
     check('M5 manual consulta relógio do banco',isinstance(state.get('motivo'),str))
     # Set up synthetic running sync as owner, without invoking any external source.
-    sid=query(f"INSERT INTO financeiro_hml.integracao_sincronizacoes(iniciado_por,modo,status) VALUES ('{users[0]}','manual','em_andamento') RETURNING id")
+    sid=query(f"INSERT INTO financeiro_hml.integracao_sincronizacoes(responsavel_id,modo,status) VALUES ('{users[0]}','manual','em_andamento') RETURNING id")
     fin=json.loads(sql(caller("SELECT financeiro_hml.integracao_concluir('"+json.dumps({'id':sid,'status':'concluida','itens':[]})+"');")))
     check('M5 manual conclui lote local vazio',fin['status']=='concluida')
     check('M5 manual não cria operações ou movimentos',query('SELECT count(*) FROM financeiro_hml.tesouraria_operacoes')=='8' and query('SELECT count(*) FROM financeiro_hml.tesouraria_movimentos')=='2')
