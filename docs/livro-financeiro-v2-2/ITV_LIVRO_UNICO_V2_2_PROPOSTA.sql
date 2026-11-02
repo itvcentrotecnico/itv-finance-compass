@@ -153,11 +153,12 @@ DO $baseline$
 DECLARE t record; dados jsonb; b jsonb:=current_setting('itv.v22.baseline')::jsonb; m jsonb:=current_setting('itv.v22.manifesto')::jsonb; extra text;
 BEGIN
  FOR t IN SELECT c.oid,c.relname FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='financeiro_hml' AND c.relkind='r' LOOP
-  extra:=CASE t.relname WHEN 'contas_financeiras' THEN format(' WHERE id<>%L::uuid',m->'contas'->>0) WHEN 'tesouraria_operacoes' THEN format(' WHERE id<>%L::uuid',m->>'abertura') WHEN 'auditoria' THEN format(' WHERE NOT (tabela=''tesouraria_operacoes'' AND registro_id=%L::uuid)',m->>'abertura') ELSE '' END;
+  extra:=CASE t.relname WHEN 'contas_financeiras' THEN format(' WHERE id<>%L::uuid',m->'contas'->>0) WHEN 'tesouraria_operacoes' THEN format(' WHERE id<>%L::uuid',m->>'abertura') WHEN 'auditoria' THEN format(' WHERE NOT ((tabela=''tesouraria_operacoes'' AND registro_id=%L::uuid) OR (tabela=''contas_financeiras'' AND registro_id=%L::uuid))',m->>'abertura',m->'contas'->>0) ELSE '' END;
   EXECUTE format('SELECT coalesce(jsonb_agg(to_jsonb(x) ORDER BY to_jsonb(x)::text),''[]''::jsonb) FROM financeiro_hml.%I x%s',t.relname,extra) INTO dados;
   IF dados IS DISTINCT FROM b->t.relname THEN RAISE EXCEPTION 'V22_PRESERVACAO_FALHOU: %',t.relname; END IF;
  END LOOP;
- IF (SELECT count(*) FROM financeiro_hml.contas_financeiras)<>7 OR (SELECT count(*) FROM financeiro_hml.tesouraria_operacoes)<>7 OR EXISTS(SELECT 1 FROM financeiro_hml.tesouraria_movimentos) OR (SELECT count(*) FROM financeiro_hml.auditoria)<>jsonb_array_length(b->'auditoria')+1 THEN RAISE EXCEPTION 'V22_ACRESCIMOS_DIVERGENTES'; END IF;
+ IF (SELECT count(*) FROM financeiro_hml.contas_financeiras)<>7 OR (SELECT count(*) FROM financeiro_hml.tesouraria_operacoes)<>7 OR EXISTS(SELECT 1 FROM financeiro_hml.tesouraria_movimentos) OR (SELECT count(*) FROM financeiro_hml.auditoria)<>jsonb_array_length(b->'auditoria')+2 THEN RAISE EXCEPTION 'V22_ACRESCIMOS_DIVERGENTES'; END IF;
+ IF (SELECT count(*) FROM financeiro_hml.auditoria WHERE tabela='tesouraria_operacoes' AND registro_id=(m->>'abertura')::uuid AND acao='criar' AND usuario_id=auth.uid())<>1 OR (SELECT count(*) FROM financeiro_hml.auditoria WHERE tabela='contas_financeiras' AND registro_id=(m->'contas'->>0)::uuid AND usuario_id=auth.uid())<>1 THEN RAISE EXCEPTION 'V22_AUDITORIA_TECNICA'; END IF;
  IF (SELECT criado_por FROM financeiro_hml.contas_financeiras WHERE id=(m->'contas'->>0)::uuid) IS DISTINCT FROM auth.uid() OR (SELECT criado_por FROM financeiro_hml.tesouraria_operacoes WHERE id=(m->>'abertura')::uuid) IS DISTINCT FROM auth.uid() THEN RAISE EXCEPTION 'V22_AUTORIA_INSTALACAO'; END IF;
 END $baseline$;
 DO $pos$
