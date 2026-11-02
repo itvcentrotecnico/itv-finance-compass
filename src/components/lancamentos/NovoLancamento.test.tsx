@@ -1,5 +1,5 @@
 import { beforeEach, describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { act, render, screen, fireEvent } from "@testing-library/react";
 import { NovoLancamento } from "./LancamentosPanel";
 
 vi.mock("@/lib/tesouraria.functions", () => ({ carregarTesouraria: vi.fn(), carregarHistoricoTesouraria: vi.fn(), verificarContratoLancamento: vi.fn() }));
@@ -50,7 +50,7 @@ describe("Novo lançamento", () => {
   it.each(["entrada", "saida"] as const)("envia %s pelo envio seguro com valor exato, categoria compatível e chave original", async (tipo) => {
     const executar = montar();
     await preencher(tipo);
-    fireEvent.click(screen.getByRole("button", { name: /Registrar lançamento/ }));
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: /Registrar lançamento/ })); });
     expect(executar).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
       tipo, valor: "1234.56", plano: tipo === "entrada" ? "r" : "d", data: "2026-11-02",
       referencia: "externo:local-1450", chave: expect.stringMatching(/^[a-f0-9-]{36}$/),
