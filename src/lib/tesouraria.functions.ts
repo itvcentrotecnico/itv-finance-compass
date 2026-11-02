@@ -4,6 +4,7 @@ import { z } from "zod";
 import { erroTesouraria, resultadoErro, type ContaFinanceira, type Extrato, type HistoricoOperacoes, type ResultadoEnvio } from "./tesouraria";
 import { erroConferencia } from "./conferencia-operacional";
 import { erroSolicitacao } from "./tesouraria-solicitacoes";
+import { lerOpcoesOficiais } from "./lancamentos-oficiais";
 
 const pedidoSchema = z.object({ tipo: z.enum(["abertura", "entrada", "saida", "transferencia", "estorno"]), chave: z.string().uuid(), data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), descricao: z.string().trim().min(2).max(500), valor: z.string().optional(), nome: z.string().trim().max(160).optional(), conta_tipo: z.enum(["banco", "caixa"]).optional(), banco: z.string().trim().max(120).optional(), agencia: z.string().trim().max(32).optional(), numero_conta: z.string().trim().max(64).optional(), origem: z.string().uuid().optional(), destino: z.string().uuid().optional(), plano: z.string().uuid().optional(), centro: z.string().uuid().optional(), original: z.string().uuid().optional(), justificativa: z.string().trim().max(500).optional(), referencia: z.string().trim().max(200).optional() });
 const filtroSchema = z.object({ conta: z.string().optional(), inicio: z.string().optional(), fim: z.string().optional(), tipo: z.string().optional(), plano: z.string().optional(), pagina: z.number().int().min(0).max(100000) });
@@ -16,13 +17,20 @@ export const carregarTesouraria = createServerFn({ method: "POST" }).middleware(
   if (error) throw new Error(erroTesouraria(error));
   return data as ContaFinanceira[];
 });
-/** Sonda sem efeito financeiro: confirma que o intermediário corrigido (mínima v2) está ativo no banco. Falha fechada: qualquer erro ou resposta diversa mantém o formulário bloqueado. */
+/** V2.1 only: marker and pinned official IDs are required; legacy fails closed. */
 export const verificarContratoLancamento = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const db = (context.supabase as any).schema("financeiro_hml");
   const { data, error } = await db.rpc("tesouraria_lancar", { p: { tipo: "sonda" } });
   if (error) return false;
-  return data?.contrato === "tesouraria_lancar_minima_v2";
+  return lerOpcoesOficiais(data) !== null;
+});
+export const carregarOpcoesLancamento = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).handler(async ({ context }) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const db = (context.supabase as any).schema("financeiro_hml");
+  const { data, error } = await db.rpc("tesouraria_lancar", { p: { tipo: "sonda" } });
+  if (error) return null;
+  return lerOpcoesOficiais(data);
 });
 export const carregarExtrato = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth]).inputValidator((v: unknown) => filtroSchema.parse(v)).handler(async ({ data, context }) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
