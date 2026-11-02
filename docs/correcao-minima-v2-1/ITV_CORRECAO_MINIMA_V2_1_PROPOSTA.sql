@@ -65,7 +65,7 @@ BEGIN
   IF NOT (m->'categorias') ? coalesce(pc::text,'') THEN RAISE EXCEPTION 'TES_CATEGORIA_OFICIAL'; END IF;
   SELECT * INTO categoria FROM financeiro_hml.plano_contas WHERE id=pc FOR SHARE;
   IF NOT FOUND OR NOT categoria.ativo OR NOT categoria.aceita_lancamentos THEN RAISE EXCEPTION 'TES_CLASSIFICACAO'; END IF;
-  IF categoria.natureza IS DISTINCT FROM CASE tipo WHEN 'entrada' THEN 'receita' ELSE 'despesa' END THEN RAISE EXCEPTION 'TES_CATEGORIA_NATUREZA'; END IF;
+  IF categoria.natureza IS DISTINCT FROM (CASE tipo WHEN 'entrada' THEN 'receita' ELSE 'despesa' END) THEN RAISE EXCEPTION 'TES_CATEGORIA_NATUREZA'; END IF;
   IF NOT (m->'contas') ? coalesce(coalesce(origem,destino)::text,'') THEN RAISE EXCEPTION 'TES_CONTA_OFICIAL'; END IF;
   SELECT * INTO conta FROM financeiro_hml.contas_financeiras WHERE id=coalesce(origem,destino) FOR UPDATE;
   IF NOT FOUND THEN RAISE EXCEPTION 'TES_CONTA_INEXISTENTE'; END IF;
