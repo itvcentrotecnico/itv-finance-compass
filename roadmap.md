@@ -3,7 +3,11 @@
 ## Decisão operacional simplificada — 02/11/2026, 19h40 UTC
 
 - [x] Analisar dependências das contas na V2.1 e entregar recomendação mínima, reuso, impactos de implantação e conceito futuro de Conferência de Caixa em docs/lancamentos/ANALISE_OPERACAO_SIMPLIFICADA_20261102.md; somente leitura local/documentação. Pacote V2.1/testes preservados; nenhum SQL/consulta remota/publicação.
-- [ ] Adaptação futura: aguarda aprovação do conceito de controle interno não bancário e eventual cadastro/abertura técnica zero; não autorizada para implementação nesta análise.
+- [x] Conceito de livro único aprovado em 02/11/2026 às 19h45 UTC, somente preparação local.
+- [ ] Preparar V2.2 separada: controle não bancário/abertura zero única, vínculo obrigatório no motor, preservação e contenção.
+- [ ] Adaptar somente primeira aba: sem seleção de conta, referência/responsável nos detalhes, receitas/despesas/resultado por período.
+- [ ] Testar localmente vínculo, resultado negativo, duplicidades, integridade, acesso e preservação; entregar pacote/procedimentos.
+- [ ] Implantação V2.2: bloqueada por proibição expressa de SQL hospedado/criação real/publicação nesta etapa; aguarda autorização e evidências de recuperação/manutenção/validação real.
 - Diretriz vigente: duas pessoas autorizadas, sem seleção bancária nem gestão de saldos por banco; preservar V2.1/testes/histórico e GESTÃO ITV isolado. Nenhum SQL, nova aba, alteração financeira real ou publicação nesta etapa.
 
 ## Preparação V2.1 — 02/11/2026
