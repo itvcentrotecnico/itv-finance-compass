@@ -15,7 +15,7 @@ const planos = [
 function montar() {
   const executar = vi.fn().mockResolvedValue({ estado: "confirmada", id: "x" });
   const seguro = { pendente: null, bloqueio: false, ocupado: false, mensagem: null, executar } as never;
-  render(<NovoLancamento contas={contas} planos={planos} seguro={seguro} hoje="2026-11-02" onCancel={() => {}} />);
+  render(<NovoLancamento oficiais={{ contas: ["11111111-1111-4111-8111-111111111111"], categorias: ["r", "d"] }} contas={contas} planos={planos} seguro={seguro} hoje="2026-11-02" onCancel={() => {}} />);
   return executar;
 }
 
