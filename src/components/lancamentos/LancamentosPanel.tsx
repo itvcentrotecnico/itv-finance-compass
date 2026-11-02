@@ -122,7 +122,7 @@ function Lancamentos() {
   </>;
 }
 
-function Campo({ label, obrigatorio, children, nota }: { label: string; obrigatorio?: boolean; children: ReactNode; nota?: string }) {
+function Campo({ label, obrigatorio, children, nota }: { label: string; obrigatorio?: boolean; children: ReactNode; nota?: string | undefined }) {
   return <div className="space-y-2"><Label>{label}{obrigatorio && <span className="text-destructive"> *</span>}</Label>{children}{nota && <p className="text-xs text-muted-foreground">{nota}</p>}</div>;
 }
 
@@ -159,8 +159,8 @@ export function NovoLancamento({ contas, planos, seguro, hoje, onCancel }: { con
     </div>
     <Campo label="Valor (R$)" obrigatorio><Input aria-label="Valor" inputMode="decimal" placeholder="0,00" value={f.valor} onChange={(e) => set("valor", e.target.value)} /></Campo>
     <Campo label="Descrição" obrigatorio><Input aria-label="Descrição" maxLength={500} placeholder={tipo === "entrada" ? "Conserto de TV Samsung 55”" : "Compra de barras LED"} value={f.descricao} onChange={(e) => set("descricao", e.target.value)} /></Campo>
-    <Campo label="Categoria" obrigatorio nota={!aptas.length ? `Nenhuma categoria de ${natureza} disponível.` : undefined}><Select value={f.plano || undefined} onValueChange={(v) => set("plano", v)}><SelectTrigger aria-label="Categoria do lançamento"><SelectValue placeholder="Selecione" /></SelectTrigger><SelectContent>{aptas.map((c) => <SelectItem key={c.id} value={c.id}>{c.codigo} · {c.descricao}</SelectItem>)}</SelectContent></Select></Campo>
-    <Campo label="Conta financeira" obrigatorio><Select value={f.conta || undefined} onValueChange={(v) => set("conta", v)}><SelectTrigger aria-label="Conta financeira do lançamento"><SelectValue placeholder="Selecione" /></SelectTrigger><SelectContent>{contas.filter((c) => c.ativo).map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent></Select></Campo>
+    <Campo label="Categoria" obrigatorio nota={!aptas.length ? `Nenhuma categoria de ${natureza} disponível.` : undefined}><Select value={f.plano} onValueChange={(v) => set("plano", v)}><SelectTrigger aria-label="Categoria do lançamento"><SelectValue placeholder="Selecione" /></SelectTrigger><SelectContent>{aptas.map((c) => <SelectItem key={c.id} value={c.id}>{c.codigo} · {c.descricao}</SelectItem>)}</SelectContent></Select></Campo>
+    <Campo label="Conta financeira" obrigatorio><Select value={f.conta} onValueChange={(v) => set("conta", v)}><SelectTrigger aria-label="Conta financeira do lançamento"><SelectValue placeholder="Selecione" /></SelectTrigger><SelectContent>{contas.filter((c) => c.ativo).map((c) => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}</SelectContent></Select></Campo>
     <Campo label="Data do lançamento" obrigatorio nota="Não pode ser anterior à abertura da conta."><Input type="date" aria-label="Data do lançamento" value={f.data} onChange={(e) => set("data", e.target.value)} /></Campo>
     <Campo label="Referência documental" obrigatorio nota="Exigida pelo banco no formato externo:documento — ex.: externo:os-1450, externo:nf-325."><Input aria-label="Referência" maxLength={200} placeholder="externo:os-1450" value={f.referencia} onChange={(e) => set("referencia", e.target.value)} /></Campo>
     <Campo label="Forma de pagamento" nota="Ainda não há campo próprio no banco; será habilitada após aprovação dessa evolução."><Select disabled><SelectTrigger aria-label="Forma de pagamento"><SelectValue placeholder={FORMAS_PAGAMENTO.join(" · ")} /></SelectTrigger><SelectContent /></Select></Campo>

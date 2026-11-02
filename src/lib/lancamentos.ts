@@ -9,7 +9,7 @@ export function hojeManaus(agora = new Date()): string {
 }
 const iso = (d: Date) => d.toISOString().slice(0, 10);
 export function intervalo(p: Exclude<Periodo, "personalizado">, hoje: string): { inicio: string; fim: string } {
-  const [a, m, d] = hoje.split("-").map(Number);
+  const [a = 0, m = 1, d = 1] = hoje.split("-").map(Number);
   if (p === "hoje") return { inicio: hoje, fim: hoje };
   if (p === "7dias") return { inicio: iso(new Date(Date.UTC(a, m - 1, d - 6))), fim: hoje };
   if (p === "mes") return { inicio: iso(new Date(Date.UTC(a, m - 1, 1))), fim: iso(new Date(Date.UTC(a, m, 0))) };
