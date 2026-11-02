@@ -1,10 +1,16 @@
 # Autenticação segura — ITV FINANCEIRO HML
 
+## Revisão da primeira operação — 02/11/2026
+
+- [ ] Revisar aba Lançamentos, perfis, natureza, contrato V2 e idempotência com testes exclusivamente locais.
+- [ ] Auditar caminhos alternativos da V2/reversão e entregar procedimento Supabase Free, evidências, riscos e condições do primeiro lançamento; sem execução remota/publicação.
+- [x] Categorias oficiais cadastradas em 01/11: 16 aprovadas (14 analíticas), conforme relatório anterior; não repetir cadastro.
+
 ## Autorização executiva — 01/11/2026
 
 - [x] Correção mínima 15h34 preparada em docs/correcao-minima: motor limita administradores/natureza, seis intermediários fechados por revisão não comprovada, confirmações sem promessa de revisão, analista sem escrita na interface; 31 verificações PostgreSQL + 38 testes app aprovados; dump/restore sintético com ACL/hash aprovado com limite explícito (não backup real HML). Relatório/proposta/reversão/testes entregues; banco local encerrado, nenhuma aplicação remota/publicação/GESTÃO ITV. Fluxo público não liberado; recuperação real/manutenção hospedada/revisão/categorias/acesso real seguem bloqueios externos.
 - [x] 15h32: autorização administrativa de lançamentos/publicações recebida; segurança e validação continuam pré-condições. Não autoriza inventar categorias, movimentação de teste real ou migração estrutural.
-- [ ] Categorias oficiais: o responsável confirmou que ainda irá cadastrá-las; cadastro depende dele, sem categorias inventadas ou TESTE para operação real.
+- [x] Categorias oficiais: 16 contas aprovadas cadastradas e verificadas em 01/11; 14 analíticas e duas sintéticas, homologação preservada.
 - [x] Solicitação 15h28: diagnóstico mínimo concluído por SELECTs/HTTP/navegador: cadastro público desativado, saldos sem sessão 401, 13 tabelas RLS/31 funções e seis aberturas/zero movimentos preservados; motor permite analista e não valida natureza da categoria; só categorias TESTE, despesa inapta; tabela de solicitações ausente. Recuperação da chave corrigida apenas para ausência da tabela opcional, preservando erros de acesso; 9 testes adaptador e 11 acesso aprovados, sem repetir 42 anteriores. Relatório final entregue, nenhuma migração/publicação/operação/GESTÃO ITV.
 - [ ] Liberação operacional 15h28: depende de correção crítica do motor autorizada especificamente (analista não lança e natureza compatível), aprovação/cadastro de categorias oficiais pelo responsável e validação autenticada real; formulários/publicação continuam bloqueados. Não executar Etapa2 nem mudanças de saldo/histórico para resolver estes requisitos.
 - [x] Prioridade 15h15: painel/menu ligados às consultas existentes; despesas reutiliza histórico com filtro de saída; recursos provisórios fora da navegação inicial e URLs preservadas; Tesouraria somente consulta por padrão, sem gravações/painéis da Etapa 2/reenvio. 42 testes locais aprovados; /, /tesouraria e /despesas exigem login sem erros; build OK. Relatório docs/etapa2/LIBERACAO_MINIMA_20261101.md. Não migrado/publicado nem financeiro externo.
