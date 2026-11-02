@@ -10,12 +10,13 @@ const planos = [
   { id: "r", codigo: "1.01", descricao: "Conserto de televisores", natureza: "receita", ativo: true, aceita_lancamentos: true },
   { id: "s", codigo: "1", descricao: "RECEITAS OPERACIONAIS", natureza: "receita", ativo: true, aceita_lancamentos: false },
   { id: "d", codigo: "2.01", descricao: "Compra de peças", natureza: "despesa", ativo: true, aceita_lancamentos: true },
+  { id: "nao-oficial", codigo: "1.99", descricao: "Categoria sintética fora do manifesto", natureza: "receita", ativo: true, aceita_lancamentos: true },
 ] as never;
 
-function montar() {
+function montar(contasPermitidas = ["11111111-1111-4111-8111-111111111111"]) {
   const executar = vi.fn().mockResolvedValue({ estado: "confirmada", id: "x" });
   const seguro = { pendente: null, bloqueio: false, ocupado: false, mensagem: null, executar } as never;
-  render(<NovoLancamento oficiais={{ contas: ["11111111-1111-4111-8111-111111111111"], categorias: ["r", "d"] }} contas={contas} planos={planos} seguro={seguro} hoje="2026-11-02" onCancel={() => {}} />);
+  render(<NovoLancamento oficiais={{ contas: contasPermitidas, categorias: ["r", "d"] }} contas={contas} planos={planos} seguro={seguro} hoje="2026-11-02" onCancel={() => {}} />);
   return executar;
 }
 
@@ -33,6 +34,17 @@ async function preencher(tipo: "entrada" | "saida") {
 }
 
 describe("Novo lançamento", () => {
+  it("categoria numérica fora do manifesto oficial não pode ser selecionada", async () => {
+    montar();
+    fireEvent.click(screen.getByLabelText("Categoria do lançamento"));
+    expect(await screen.findByRole("option", { name: "1.01 · Conserto de televisores" })).toBeTruthy();
+    expect(screen.queryByRole("option", { name: /Categoria sintética fora do manifesto/ })).toBeNull();
+  });
+  it("conta fora do manifesto oficial não é selecionável", async () => {
+    montar([]);
+    fireEvent.click(screen.getByLabelText("Conta financeira do lançamento"));
+    expect(screen.queryByRole("option", { name: "Sicredi" })).toBeNull();
+  });
   it("bloqueia valor inválido sem chamar o banco", () => {
     const executar = montar();
     fireEvent.change(screen.getByLabelText("Valor"), { target: { value: "-5" } });
