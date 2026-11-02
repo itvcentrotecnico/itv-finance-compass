@@ -1,6 +1,6 @@
 {
   "ambiente": "PostgreSQL local descartável; Auth simplificado; sem rede; sem dados reais",
-  "total": 91,
+  "total": 93,
   "testes": [
     {
       "teste": "Proposta sem confirmação técnica é recusada",
@@ -31,6 +31,10 @@
       "aprovado": true
     },
     {
+      "teste": "Instalação acrescenta somente dois eventos técnicos de auditoria",
+      "aprovado": true
+    },
+    {
       "teste": "Seis aberturas integralmente preservadas pela proposta",
       "aprovado": true
     },
@@ -47,7 +51,11 @@
       "aprovado": true
     },
     {
-      "teste": "Sonda devolve exatamente manifesto aprovado e contrato V2.1",
+      "teste": "Sonda devolve livro único e categorias, sem identidades de outros usuários",
+      "aprovado": true
+    },
+    {
+      "teste": "Primeira despesa é permitida sem receita de cobertura",
       "aprovado": true
     },
     {
