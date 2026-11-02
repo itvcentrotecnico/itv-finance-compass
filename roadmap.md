@@ -2,8 +2,9 @@
 
 ## Revisão da primeira operação — 02/11/2026
 
-- [ ] Revisar aba Lançamentos, perfis, natureza, contrato V2 e idempotência com testes exclusivamente locais.
-- [ ] Auditar caminhos alternativos da V2/reversão e entregar procedimento Supabase Free, evidências, riscos e condições do primeiro lançamento; sem execução remota/publicação.
+- [x] Revisar aba Lançamentos, perfis, natureza, contrato V2 e idempotência: 77 testes locais aprovados, nove casos adicionados; nenhum comportamento operacional/SQL alterado.
+- [x] Auditar V2/reversão e entregar RELATORIO_REVISAO_OPERACIONAL_20261102.md: DML de conferências não fechado, motor amplo, retomada incompatível, referência descartada/critério oficial inconsistente; sem execução remota/publicação. Roteiro condicionado não é pacote executável aprovado.
+- [ ] Implantação/primeiro lançamento: dependem de autorização específica para fechar proposta e ACLs, recuperação/maintenance demonstradas e validação autenticada hospedada; não autorizados nesta revisão.
 - [x] Categorias oficiais cadastradas em 01/11: 16 aprovadas (14 analíticas), conforme relatório anterior; não repetir cadastro.
 
 ## Autorização executiva — 01/11/2026
