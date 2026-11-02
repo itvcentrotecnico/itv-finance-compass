@@ -1,0 +1,126 @@
+{
+  "financeiro_hml.autoria()": {
+    "md5": "167f40fd1f0506f0de0a566c3be38da2",
+    "owner": "postgres"
+  },
+  "financeiro_hml.autoria_cadastro()": {
+    "md5": "4e4f9210bb82bdfb92c104de9cfc71dd",
+    "owner": "postgres"
+  },
+  "financeiro_hml.diagnostico_finalizar(uuid,uuid,integer,integer,text,text)": {
+    "md5": "4ebe2f56016907cfa4d5633ea8a3f544",
+    "owner": "postgres"
+  },
+  "financeiro_hml.diagnostico_reservar(uuid,text)": {
+    "md5": "01b85221e475f18a663f10a39ee9e8c2",
+    "owner": "postgres"
+  },
+  "financeiro_hml.integracao_concluir(jsonb)": {
+    "md5": "d2fcbb76dd8521b4e8742879a33f4216",
+    "owner": "postgres"
+  },
+  "financeiro_hml.integracao_estado_manual()": {
+    "md5": "12b05c826dd7d702c135f533c5bfb538",
+    "owner": "postgres"
+  },
+  "financeiro_hml.integracao_expirar_travadas()": {
+    "md5": "7f71d7e5947aa5797d3a1b7a5dee33af",
+    "owner": "postgres"
+  },
+  "financeiro_hml.integracao_iniciar()": {
+    "md5": "2c08d74468969909eb539130a785c56c",
+    "owner": "postgres"
+  },
+  "financeiro_hml.integracao_iniciar_automatica(date,date)": {
+    "md5": "0eb46bd9a67f2e0cb14da0fbc8c0b302",
+    "owner": "postgres"
+  },
+  "financeiro_hml.papel_atual()": {
+    "md5": "ff6e26e80bea9e4e9a8ec60d183915d9",
+    "owner": "postgres"
+  },
+  "financeiro_hml.pc_hierarquia()": {
+    "md5": "b997693a30edf98768ee9a66d7907ec6",
+    "owner": "postgres"
+  },
+  "financeiro_hml.perfis_protecao()": {
+    "md5": "61d5750e5d25ba1740159026d9e5a72e",
+    "owner": "postgres"
+  },
+  "financeiro_hml.registrar_auditoria()": {
+    "md5": "ef434542af5a5735d531640e4a7cbc8c",
+    "owner": "postgres"
+  },
+  "financeiro_hml.tem_papel(text[])": {
+    "md5": "9652b9d1810b1d2273cdfed0d7a0ea07",
+    "owner": "postgres"
+  },
+  "financeiro_hml.tes_conf_auditar()": {
+    "md5": "c6a017d70d412451ca0bfc408ec52eed",
+    "owner": "postgres"
+  },
+  "financeiro_hml.tes_conf_proteger()": {
+    "md5": "05cbdfeaa8957c81393f00fcd16739bb",
+    "owner": "postgres"
+  },
+  "financeiro_hml.tes_conta_exige_abertura()": {
+    "md5": "f30e26b8e87ebf0a63ac04cf27c9df4e",
+    "owner": "postgres"
+  },
+  "financeiro_hml.tes_executar(jsonb)": {
+    "md5": "028954f4e03ac8a5402dde2d32f62410",
+    "owner": "postgres"
+  },
+  "financeiro_hml.tes_imutavel()": {
+    "md5": "3781de7d81ac4d248871565c7700a2fb",
+    "owner": "postgres"
+  },
+  "financeiro_hml.tes_proteger_conta()": {
+    "md5": "833cba25cdae146f782bb07560574e2b",
+    "owner": "postgres"
+  },
+  "financeiro_hml.tes_proteger_natureza()": {
+    "md5": "019a3664b770494ff71647be079f2bb5",
+    "owner": "postgres"
+  },
+  "financeiro_hml.tes_validar_efeitos()": {
+    "md5": "5fc456018ec1207ba0f85b2c4d869305",
+    "owner": "postgres"
+  },
+  "financeiro_hml.tesouraria_criar_conta(jsonb)": {
+    "md5": "026000de0ad4630239652e25641b5fb5",
+    "owner": "postgres"
+  },
+  "financeiro_hml.tesouraria_estornar(jsonb)": {
+    "md5": "3d0a9a341dd02642718db613031f63e1",
+    "owner": "postgres"
+  },
+  "financeiro_hml.tesouraria_extrato(jsonb)": {
+    "md5": "df18ba14c55612a5791499dd459dab5d",
+    "owner": "postgres"
+  },
+  "financeiro_hml.tesouraria_habilitar_conta(jsonb)": {
+    "md5": "02c3db2711eb0aece17fa4c0d2d88792",
+    "owner": "postgres"
+  },
+  "financeiro_hml.tesouraria_historico_operacoes(jsonb)": {
+    "md5": "c4be449256a6a03fedc3262f4d0d6b45",
+    "owner": "postgres"
+  },
+  "financeiro_hml.tesouraria_lancar(jsonb)": {
+    "md5": "12893e4cf1ec633acc2cb9051f6290f3",
+    "owner": "postgres"
+  },
+  "financeiro_hml.tesouraria_lancar_conferencia(jsonb)": {
+    "md5": "1cce3f157da433610b6983ba7cd1b2b0",
+    "owner": "postgres"
+  },
+  "financeiro_hml.tesouraria_saldos()": {
+    "md5": "6b5905c5d0f7ffbdc6aa3ad49d353501",
+    "owner": "postgres"
+  },
+  "financeiro_hml.tesouraria_transferir(jsonb)": {
+    "md5": "d337c33d1e2296addc801835aabd94fc",
+    "owner": "postgres"
+  }
+}

@@ -50,13 +50,16 @@ describe("adaptação das funções financeiras — somente mocks locais", () =>
     expect((await registrarTesouraria({ data: { tipo: "entrada" } as never })).estado).toBe("incerta");
   });
   it("sonda confirma somente o contrato corrigido", async () => {
-    const rpc = vi.fn().mockResolvedValue({ data: { contrato: "tesouraria_lancar_minima_v2" }, error: null });
+    const ids = (n: number) => Array.from({ length: n }, (_, i) => `00000000-0000-4000-8000-${String(i + 1).padStart(12, "0")}`);
+    const rpc = vi.fn().mockResolvedValue({ data: { contrato: "tesouraria_lancar_minima_v2_1", contas: ids(3), categorias: ids(14) }, error: null });
     context.supabase.schema.mockReturnValue({ rpc });
     expect(await verificarContratoLancamento({})).toBe(true);
     expect(rpc).toHaveBeenCalledWith("tesouraria_lancar", { p: { tipo: "sonda" } });
   });
   it("sonda falha fechada no legado, em erro e em resposta diversa", async () => {
     context.supabase.schema.mockReturnValue({ rpc: vi.fn().mockResolvedValue({ data: null, error: { code: "P0001", message: "TES_DADOS" } }) });
+    expect(await verificarContratoLancamento({})).toBe(false);
+    context.supabase.schema.mockReturnValue({ rpc: vi.fn().mockResolvedValue({ data: { contrato: "tesouraria_lancar_minima_v2" }, error: null }) });
     expect(await verificarContratoLancamento({})).toBe(false);
     context.supabase.schema.mockReturnValue({ rpc: vi.fn().mockResolvedValue({ data: { contrato: "outro" }, error: null }) });
     expect(await verificarContratoLancamento({})).toBe(false);

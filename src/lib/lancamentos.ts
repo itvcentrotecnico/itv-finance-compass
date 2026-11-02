@@ -1,4 +1,4 @@
-import { centavos, decimal, dinheiro, type OperacaoHistorico } from "./tesouraria";
+import { centavos, decimal, type OperacaoHistorico } from "./tesouraria";
 
 export type Periodo = "hoje" | "7dias" | "mes" | "mes_anterior" | "personalizado";
 export const PERIODOS: Record<Periodo, string> = { hoje: "Hoje", "7dias": "Últimos 7 dias", mes: "Mês atual", mes_anterior: "Mês anterior", personalizado: "Personalizado" };
@@ -39,5 +39,11 @@ export function resumir(ops: OperacaoHistorico[]): Resumo {
   }
   return { receitas: paraDecimal(r), despesas: paraDecimal(d), resultado: paraDecimal(r - d), quantidade: q };
 }
-export { dinheiro };
+/** Aggregates have no individual numeric(18,2) ceiling. Never use Number. */
+export function dinheiro(valor: string): string {
+  if (!/^-?\d+(\.\d{1,2})?$/.test(valor)) throw new Error("Total monetário inválido.");
+  const [inteiro = "0", fracao = ""] = valor.replace("-", "").split(".");
+  const cents = BigInt(inteiro) * 100n + BigInt(fracao.padEnd(2, "0"));
+  return `${valor.startsWith("-") && cents !== 0n ? "−" : ""}R$ ${(cents / 100n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")},${(cents % 100n).toString().padStart(2, "0")}`;
+}
 export const FORMAS_PAGAMENTO = ["PIX", "Dinheiro", "Cartão de débito", "Cartão de crédito", "Transferência bancária", "Boleto", "Outros"];

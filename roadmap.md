@@ -1,5 +1,12 @@
 # Autenticação segura — ITV FINANCEIRO HML
 
+## Preparação V2.1 — 02/11/2026
+
+- [x] Preparar SQL V2.1 separado com motor entrada/saída, referência idempotente, UUIDs fixados na instalação, contenção/lista positiva de ACLs e verificações fail-closed de catálogo/RLS/gatilhos/permissões.
+- [x] Corrigir primeira aba: seleção oficial, indicadores indisponíveis em erro e precisão de agregados; 240 testes app e 76 PostgreSQL isolados reproduzíveis aprovados. Outras páginas financeiras seguem consulta; acesso sem sessão redireciona sem erro, não equivale a teste autenticado real.
+- [x] Preparar pacote, manifesto vazio intencional, verificações, backup Free e relatório em docs/correcao-minima-v2-1; V2 original intacta, nenhuma execução remota/publicação. Catálogo estrutural local e histórico exige revisão atual; impactos em cadastros/perfis e risco preexistente M5 documentados.
+- [ ] Implantação V2.1: aguarda aprovação da versão/IDs oficiais, recuperação externa comprovada, manutenção/drenagem e acesso autenticado hospedado.
+
 ## Revisão da primeira operação — 02/11/2026
 
 - [x] Revisar aba Lançamentos, perfis, natureza, contrato V2 e idempotência: 77 testes locais aprovados, nove casos adicionados; nenhum comportamento operacional/SQL alterado.
