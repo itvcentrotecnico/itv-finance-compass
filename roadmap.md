@@ -2,8 +2,8 @@
 
 ## Pré-condições V2.2 — 02/11/2026, 19h56 UTC
 
-- [ ] Preparar consultas somente leitura de usuários, categorias oficiais, integridade e catálogo/manifesto de segurança; não executar no hospedado.
-- [ ] Consolidar checklist de identificadores pendentes, backup Free, sequência V2.2 e impactos administrativos, sem mudar proposta/app ou criar nova versão.
+- [x] Preparar cinco arquivos de consultas somente leitura de usuários, categorias oficiais, integridade e catálogo/manifesto/dependências; sintaxe validada localmente sem execução SQL hospedada.
+- [x] Consolidar checklist de identificadores pendentes, backup Free/snapshot/manifesto separado, sequência V2.2 e impactos administrativos (cadastros/perfis bloqueados e convite parcial), sem mudar proposta/app ou criar nova versão. Entrega complementar em docs/livro-financeiro-v2-2/preparacao; hashes V2.2 intactos.
 - [ ] Executar preparação real: bloqueada nesta etapa por proibição expressa de SQL hospedado e dependente dos resultados fornecidos pelo administrador.
 
 ## Decisão operacional simplificada — 02/11/2026, 19h40 UTC
