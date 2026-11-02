@@ -1,5 +1,11 @@
 # Autenticação segura — ITV FINANCEIRO HML
 
+## Pré-condições V2.2 — 02/11/2026, 19h56 UTC
+
+- [ ] Preparar consultas somente leitura de usuários, categorias oficiais, integridade e catálogo/manifesto de segurança; não executar no hospedado.
+- [ ] Consolidar checklist de identificadores pendentes, backup Free, sequência V2.2 e impactos administrativos, sem mudar proposta/app ou criar nova versão.
+- [ ] Executar preparação real: bloqueada nesta etapa por proibição expressa de SQL hospedado e dependente dos resultados fornecidos pelo administrador.
+
 ## Decisão operacional simplificada — 02/11/2026, 19h40 UTC
 
 - [x] Analisar dependências das contas na V2.1 e entregar recomendação mínima, reuso, impactos de implantação e conceito futuro de Conferência de Caixa em docs/lancamentos/ANALISE_OPERACAO_SIMPLIFICADA_20261102.md; somente leitura local/documentação. Pacote V2.1/testes preservados; nenhum SQL/consulta remota/publicação.
