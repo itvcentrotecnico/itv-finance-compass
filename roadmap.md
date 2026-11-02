@@ -2,7 +2,8 @@
 
 ## Decisão operacional simplificada — 02/11/2026, 19h40 UTC
 
-- [ ] Analisar dependências das contas na V2.1 e entregar recomendação mínima, reuso, impactos de implantação e conceito futuro de Conferência de Caixa; somente leitura local/documentação.
+- [x] Analisar dependências das contas na V2.1 e entregar recomendação mínima, reuso, impactos de implantação e conceito futuro de Conferência de Caixa em docs/lancamentos/ANALISE_OPERACAO_SIMPLIFICADA_20261102.md; somente leitura local/documentação. Pacote V2.1/testes preservados; nenhum SQL/consulta remota/publicação.
+- [ ] Adaptação futura: aguarda aprovação do conceito de controle interno não bancário e eventual cadastro/abertura técnica zero; não autorizada para implementação nesta análise.
 - Diretriz vigente: duas pessoas autorizadas, sem seleção bancária nem gestão de saldos por banco; preservar V2.1/testes/histórico e GESTÃO ITV isolado. Nenhum SQL, nova aba, alteração financeira real ou publicação nesta etapa.
 
 ## Preparação V2.1 — 02/11/2026
