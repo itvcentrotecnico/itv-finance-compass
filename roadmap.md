@@ -1,5 +1,10 @@
 # Autenticação segura — ITV FINANCEIRO HML
 
+## Decisão operacional simplificada — 02/11/2026, 19h40 UTC
+
+- [ ] Analisar dependências das contas na V2.1 e entregar recomendação mínima, reuso, impactos de implantação e conceito futuro de Conferência de Caixa; somente leitura local/documentação.
+- Diretriz vigente: duas pessoas autorizadas, sem seleção bancária nem gestão de saldos por banco; preservar V2.1/testes/histórico e GESTÃO ITV isolado. Nenhum SQL, nova aba, alteração financeira real ou publicação nesta etapa.
+
 ## Preparação V2.1 — 02/11/2026
 
 - [x] Preparar SQL V2.1 separado com motor entrada/saída, referência idempotente, UUIDs fixados na instalação, contenção/lista positiva de ACLs e verificações fail-closed de catálogo/RLS/gatilhos/permissões.
