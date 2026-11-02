@@ -1,6 +1,6 @@
 {
   "ambiente": "PostgreSQL local descartável; Auth simplificado; sem rede; sem dados reais",
-  "total": 95,
+  "total": 100,
   "testes": [
     {
       "teste": "Proposta sem confirmação técnica é recusada",
@@ -8,6 +8,26 @@
     },
     {
       "teste": "Manifesto vazio é recusado",
+      "aprovado": true
+    },
+    {
+      "teste": "Manifesto incompleto/nulo é recusado 2",
+      "aprovado": true
+    },
+    {
+      "teste": "Manifesto incompleto/nulo é recusado 3",
+      "aprovado": true
+    },
+    {
+      "teste": "Manifesto incompleto/nulo é recusado 4",
+      "aprovado": true
+    },
+    {
+      "teste": "Instalação sem autor autenticado aprovado é recusada",
+      "aprovado": true
+    },
+    {
+      "teste": "Manifesto com só um responsável é recusado",
       "aprovado": true
     },
     {
