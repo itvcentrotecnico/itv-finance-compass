@@ -90,7 +90,7 @@ BEGIN
   IF NOT FOUND THEN RAISE EXCEPTION 'TES_CONTA_INEXISTENTE'; END IF;
   IF NOT conta.ativo THEN RAISE EXCEPTION 'TES_CONTA_INATIVA'; END IF;
   IF conta.tipo IS DISTINCT FROM 'interno' OR conta.moeda IS DISTINCT FROM 'BRL' OR conta.saldo_inicial_centavos<>0 OR conta.data_saldo_inicial IS DISTINCT FROM '2026-11-01'::date OR conta.banco IS NOT NULL OR conta.agencia IS NOT NULL OR conta.numero_conta IS NOT NULL THEN RAISE EXCEPTION 'TES_VINCULO_INTERNO'; END IF;
-  IF (SELECT count(*) FROM financeiro_hml.tesouraria_operacoes WHERE tipo='abertura' AND conta_destino_id=conta.id AND id=(m->>'abertura')::uuid AND valor=0)<>1 THEN RAISE EXCEPTION 'TES_INTEGRIDADE'; END IF;
+  IF (SELECT count(*) FROM financeiro_hml.tesouraria_operacoes o WHERE o.tipo='abertura' AND o.conta_destino_id=conta.id AND o.id=(m->>'abertura')::uuid AND o.valor=0)<>1 THEN RAISE EXCEPTION 'TES_INTEGRIDADE'; END IF;
   IF dt<conta.data_saldo_inicial THEN RAISE EXCEPTION 'TES_DATA_ANTERIOR_ABERTURA'; END IF;
   IF cc IS NOT NULL THEN PERFORM 1 FROM financeiro_hml.centros_custo WHERE id=cc AND ativo FOR SHARE; IF NOT FOUND THEN RAISE EXCEPTION 'TES_CENTRO'; END IF; END IF;
   INSERT INTO financeiro_hml.tesouraria_operacoes(id,tipo,data_movimento,descricao,valor,conta_origem_id,conta_destino_id,plano_conta_id,centro_custo_id,classificacao_snapshot,chave_idempotencia,requisicao,criado_por) VALUES(oid,tipo,dt,descricao,valor,origem,destino,pc,cc,jsonb_build_object('codigo',categoria.codigo,'descricao',categoria.descricao,'natureza',categoria.natureza),chave,req,uid);
