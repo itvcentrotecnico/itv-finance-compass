@@ -18,7 +18,7 @@ DO $baseline$
 DECLARE t record; dados jsonb; b jsonb:='{}';
 BEGIN
  FOR t IN SELECT c.oid,c.relname FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='financeiro_hml' AND c.relkind='r' LOOP
-  EXECUTE format('SELECT coalesce(jsonb_agg(to_jsonb(x) ORDER BY to_jsonb(x)::text),'[]'::jsonb) FROM financeiro_hml.%I x',t.relname) INTO dados;
+  EXECUTE format('SELECT coalesce(jsonb_agg(to_jsonb(x) ORDER BY to_jsonb(x)::text),''[]''::jsonb) FROM financeiro_hml.%I x',t.relname) INTO dados;
   b:=b||jsonb_build_object(t.relname,dados);
  END LOOP;
  PERFORM set_config('itv.v21.baseline',b::text,true);
@@ -35,7 +35,7 @@ BEGIN
   SELECT c.*,p.codigo pai INTO r FROM financeiro_hml.plano_contas c LEFT JOIN financeiro_hml.plano_contas p ON p.id=c.conta_pai_id WHERE c.codigo=it->>'codigo';
   IF NOT FOUND OR r.descricao IS DISTINCT FROM it->>'descricao' OR r.natureza IS DISTINCT FROM it->>'natureza' OR r.pai IS DISTINCT FROM it->>'pai' OR r.aceita_lancamentos IS DISTINCT FROM (it->>'aceita')::boolean OR NOT r.ativo OR (r.aceita_lancamentos AND NOT r.id=ANY(ids)) THEN RAISE EXCEPTION 'V21_CATEGORIA_DIVERGENTE: %',it->>'codigo'; END IF;
  END LOOP;
- IF (SELECT count(*) FROM financeiro_hml.contas_financeiras c WHERE c.id=ANY(contas) AND c.ativo AND c.moeda='BRL' AND c.nome=ANY(ARRAY['SICREDI — CONTA PRINCIPAL','MERCADO PAGO — RECEBIMENTOS','CAIXA FÍSICO ITV']) AND EXISTS(SELECT 1 FROM financeiro_hml.contas_preparadas p WHERE p.conta_financeira_id=c.id AND p.nome=c.nome AND p.status='habilitada'))<>3 OR (SELECT count(DISTINCT nome) FROM financeiro_hml.contas_financeiras WHERE id=ANY(contas))<>3 THEN RAISE EXCEPTION 'V21_CONTAS_DIVERGENTES'; END IF;
+ IF (SELECT count(*) FROM financeiro_hml.contas_financeiras c WHERE c.id=ANY(contas) AND c.ativo AND c.moeda='BRL' AND c.nome=ANY(ARRAY['SICREDI — CONTA PRINCIPAL','MERCADO PAGO — RECEBIMENTOS','CAIXA FÍSICO ITV']) AND EXISTS(SELECT 1 FROM financeiro_hml.contas_preparadas p WHERE p.conta_financeira_id=c.id AND p.nome=c.nome AND p.situacao='habilitada'))<>3 OR (SELECT count(DISTINCT nome) FROM financeiro_hml.contas_financeiras WHERE id=ANY(contas))<>3 THEN RAISE EXCEPTION 'V21_CONTAS_DIVERGENTES'; END IF;
  -- Embed literal approved UUIDs; no runtime/session setting can replace them.
  body := $motor$CREATE OR REPLACE FUNCTION financeiro_hml.tes_executar(p jsonb) RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,financeiro_hml,pg_temp AS $fn$
  DECLARE uid uuid:=auth.uid(); perfil record; chave uuid; tipo text; valor numeric(18,2); origem uuid; destino uuid; pc uuid; cc uuid; dt date; descricao text; ref text; oid uuid:=gen_random_uuid(); req jsonb; anterior financeiro_hml.tesouraria_operacoes; categoria record; conta record; m jsonb:=__MANIFESTO__::jsonb;
@@ -96,7 +96,7 @@ CREATE OR REPLACE FUNCTION financeiro_hml.tesouraria_lancar_conferencia(p jsonb)
 DO $acl$
 DECLARE t text; cols text; f record;
 BEGIN
- FOREACH t IN ARRAY ARRAY['contas_financeiras','contas_preparadas','tesouraria_conferencias','tesouraria_operacoes','tesouraria_movimentos','auditoria'] LOOP
+ FOR t IN SELECT tablename FROM pg_tables WHERE schemaname='financeiro_hml' LOOP
   EXECUTE format('REVOKE INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER ON financeiro_hml.%I FROM PUBLIC,anon,authenticated,service_role',t);
   SELECT string_agg(quote_ident(attname),',') INTO cols FROM pg_attribute WHERE attrelid=format('financeiro_hml.%I',t)::regclass AND attnum>0 AND NOT attisdropped;
   EXECUTE format('REVOKE INSERT (%s),UPDATE (%s),REFERENCES (%s) ON financeiro_hml.%I FROM PUBLIC,anon,authenticated,service_role',cols,cols,cols,t);
@@ -116,7 +116,7 @@ DO $baseline$
 DECLARE t record; dados jsonb; b jsonb:=current_setting('itv.v21.baseline')::jsonb;
 BEGIN
  FOR t IN SELECT c.oid,c.relname FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='financeiro_hml' AND c.relkind='r' LOOP
-  EXECUTE format('SELECT coalesce(jsonb_agg(to_jsonb(x) ORDER BY to_jsonb(x)::text),'[]'::jsonb) FROM financeiro_hml.%I x',t.relname) INTO dados;
+  EXECUTE format('SELECT coalesce(jsonb_agg(to_jsonb(x) ORDER BY to_jsonb(x)::text),''[]''::jsonb) FROM financeiro_hml.%I x',t.relname) INTO dados;
   IF dados IS DISTINCT FROM b->t.relname THEN RAISE EXCEPTION 'V21_PRESERVACAO_FALHOU: %',t.relname; END IF;
  END LOOP;
  

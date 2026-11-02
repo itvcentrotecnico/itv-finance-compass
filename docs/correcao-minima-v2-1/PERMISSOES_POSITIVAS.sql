@@ -3,7 +3,7 @@
 DO $acl$
 DECLARE t text; cols text; f record;
 BEGIN
- FOREACH t IN ARRAY ARRAY['contas_financeiras','contas_preparadas','tesouraria_conferencias','tesouraria_operacoes','tesouraria_movimentos','auditoria'] LOOP
+ FOR t IN SELECT tablename FROM pg_tables WHERE schemaname='financeiro_hml' LOOP
   EXECUTE format('REVOKE INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER ON financeiro_hml.%I FROM PUBLIC,anon,authenticated,service_role',t);
   SELECT string_agg(quote_ident(attname),',') INTO cols FROM pg_attribute WHERE attrelid=format('financeiro_hml.%I',t)::regclass AND attnum>0 AND NOT attisdropped;
   EXECUTE format('REVOKE INSERT (%s),UPDATE (%s),REFERENCES (%s) ON financeiro_hml.%I FROM PUBLIC,anon,authenticated,service_role',cols,cols,cols,t);

@@ -7,7 +7,7 @@ DO $baseline$
 DECLARE t record; dados jsonb; b jsonb:='{}';
 BEGIN
  FOR t IN SELECT c.oid,c.relname FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='financeiro_hml' AND c.relkind='r' LOOP
-  EXECUTE format('SELECT coalesce(jsonb_agg(to_jsonb(x) ORDER BY to_jsonb(x)::text),'[]'::jsonb) FROM financeiro_hml.%I x',t.relname) INTO dados;
+  EXECUTE format('SELECT coalesce(jsonb_agg(to_jsonb(x) ORDER BY to_jsonb(x)::text),''[]''::jsonb) FROM financeiro_hml.%I x',t.relname) INTO dados;
   b:=b||jsonb_build_object(t.relname,dados);
  END LOOP;
  PERFORM set_config('itv.v21.baseline',b::text,true);
@@ -23,7 +23,7 @@ CREATE OR REPLACE FUNCTION financeiro_hml.tesouraria_lancar(p jsonb) RETURNS jso
 DO $acl$
 DECLARE t text; cols text; f record;
 BEGIN
- FOREACH t IN ARRAY ARRAY['contas_financeiras','contas_preparadas','tesouraria_conferencias','tesouraria_operacoes','tesouraria_movimentos','auditoria'] LOOP
+ FOR t IN SELECT tablename FROM pg_tables WHERE schemaname='financeiro_hml' LOOP
   EXECUTE format('REVOKE INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER ON financeiro_hml.%I FROM PUBLIC,anon,authenticated,service_role',t);
   SELECT string_agg(quote_ident(attname),',') INTO cols FROM pg_attribute WHERE attrelid=format('financeiro_hml.%I',t)::regclass AND attnum>0 AND NOT attisdropped;
   EXECUTE format('REVOKE INSERT (%s),UPDATE (%s),REFERENCES (%s) ON financeiro_hml.%I FROM PUBLIC,anon,authenticated,service_role',cols,cols,cols,t);
@@ -42,7 +42,7 @@ DO $baseline$
 DECLARE t record; dados jsonb; b jsonb:=current_setting('itv.v21.baseline')::jsonb;
 BEGIN
  FOR t IN SELECT c.oid,c.relname FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='financeiro_hml' AND c.relkind='r' LOOP
-  EXECUTE format('SELECT coalesce(jsonb_agg(to_jsonb(x) ORDER BY to_jsonb(x)::text),'[]'::jsonb) FROM financeiro_hml.%I x',t.relname) INTO dados;
+  EXECUTE format('SELECT coalesce(jsonb_agg(to_jsonb(x) ORDER BY to_jsonb(x)::text),''[]''::jsonb) FROM financeiro_hml.%I x',t.relname) INTO dados;
   IF dados IS DISTINCT FROM b->t.relname THEN RAISE EXCEPTION 'V21_PRESERVACAO_FALHOU: %',t.relname; END IF;
  END LOOP;
  
