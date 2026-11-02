@@ -14,6 +14,11 @@ BEGIN
  END LOOP;
  IF (SELECT count(*) FROM financeiro_hml.tesouraria_operacoes WHERE tipo='abertura')<>6 OR EXISTS(SELECT 1 FROM financeiro_hml.tesouraria_operacoes WHERE tipo<>'abertura') OR EXISTS(SELECT 1 FROM financeiro_hml.tesouraria_movimentos) THEN RAISE EXCEPTION 'V21_ESTADO_FINANCEIRO_DIVERGENTE'; END IF;
 END $pre$;
+DO $estrutura$
+BEGIN
+ IF md5((SELECT jsonb_build_object('tabelas',(SELECT jsonb_agg(jsonb_build_object('nome',c.relname,'owner',pg_get_userbyid(c.relowner),'rls',c.relrowsecurity,'force',c.relforcerowsecurity) ORDER BY c.relname) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='financeiro_hml' AND c.relkind='r'), 'gatilhos',(SELECT jsonb_agg(jsonb_build_object('tabela',c.relname,'nome',t.tgname,'enabled',t.tgenabled,'def',pg_get_triggerdef(t.oid)) ORDER BY c.relname,t.tgname) FROM pg_trigger t JOIN pg_class c ON c.oid=t.tgrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='financeiro_hml' AND NOT t.tgisinternal), 'politicas',(SELECT jsonb_agg(to_jsonb(p) ORDER BY tablename,policyname) FROM pg_policies p WHERE schemaname='financeiro_hml'), 'constraints',(SELECT jsonb_agg(jsonb_build_object('tabela',r.relname,'nome',c.conname,'def',pg_get_constraintdef(c.oid)) ORDER BY r.relname,c.conname) FROM pg_constraint c JOIN pg_class r ON r.oid=c.conrelid JOIN pg_namespace n ON n.oid=r.relnamespace WHERE n.nspname='financeiro_hml')))::text) <> 'd985be75654eb3c1998218115c5d6f06' THEN RAISE EXCEPTION 'V21_ESTRUTURA_DIVERGENTE'; END IF;
+ IF EXISTS(SELECT 1 FROM pg_roles r WHERE r.rolname IN ('anon','authenticated') AND (r.rolsuper OR r.rolbypassrls)) OR EXISTS(SELECT 1 FROM pg_auth_members m JOIN pg_roles r ON r.oid=m.member WHERE r.rolname IN ('anon','authenticated','service_role')) THEN RAISE EXCEPTION 'V21_HERANCA_PRIVILEGIADA'; END IF;
+END $estrutura$;
 DO $baseline$
 DECLARE t record; dados jsonb; b jsonb:='{}';
 BEGIN
@@ -97,14 +102,15 @@ DO $acl$
 DECLARE t text; cols text; f record;
 BEGIN
  FOR t IN SELECT tablename FROM pg_tables WHERE schemaname='financeiro_hml' LOOP
-  EXECUTE format('REVOKE INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER ON financeiro_hml.%I FROM PUBLIC,anon,authenticated,service_role',t);
+  EXECUTE format('REVOKE SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER ON financeiro_hml.%I FROM PUBLIC,anon,authenticated,service_role',t);
   SELECT string_agg(quote_ident(attname),',') INTO cols FROM pg_attribute WHERE attrelid=format('financeiro_hml.%I',t)::regclass AND attnum>0 AND NOT attisdropped;
-  EXECUTE format('REVOKE INSERT (%s),UPDATE (%s),REFERENCES (%s) ON financeiro_hml.%I FROM PUBLIC,anon,authenticated,service_role',cols,cols,cols,t);
+  EXECUTE format('REVOKE SELECT (%s),INSERT (%s),UPDATE (%s),REFERENCES (%s) ON financeiro_hml.%I FROM PUBLIC,anon,authenticated,service_role',cols,cols,cols,cols,t);
  END LOOP;
  -- Fecha cada sobrecarga; catálogo divergente é recusado antes desta etapa.
  FOR f IN SELECT p.oid::regprocedure assinatura FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='financeiro_hml' LOOP
   EXECUTE format('REVOKE EXECUTE ON FUNCTION %s FROM PUBLIC,anon,authenticated,service_role',f.assinatura);
  END LOOP;
+REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA financeiro_hml FROM PUBLIC,anon,authenticated,service_role;
 END $acl$;
 GRANT USAGE ON SCHEMA financeiro_hml TO authenticated,service_role;
 REVOKE CREATE ON SCHEMA financeiro_hml FROM PUBLIC,anon,authenticated,service_role;
@@ -121,4 +127,22 @@ BEGIN
  END LOOP;
  
 END $baseline$;
+DO $pos$
+DECLARE t record; r text; f record; allowed text[];
+BEGIN
+ FOREACH r IN ARRAY ARRAY['anon','authenticated','service_role'] LOOP
+  FOR t IN SELECT c.oid,c.relname FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='financeiro_hml' AND c.relkind='r' LOOP
+   IF has_table_privilege(r,t.oid,'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') OR has_any_column_privilege(r,t.oid,'INSERT,UPDATE,REFERENCES') THEN RAISE EXCEPTION 'V21_DML_RESIDUAL: % %',r,t.relname; END IF;
+  END LOOP;
+  allowed:=CASE r WHEN 'authenticated' THEN ARRAY['tem_papel','papel_atual','tesouraria_saldos','tesouraria_extrato','tesouraria_historico_operacoes','integracao_estado_manual','integracao_iniciar','integracao_concluir','diagnostico_reservar','tesouraria_lancar'] WHEN 'service_role' THEN ARRAY['diagnostico_finalizar'] ELSE ARRAY[]::text[] END;
+  FOR f IN SELECT p.oid,p.proname FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='financeiro_hml' LOOP
+   IF has_function_privilege(r,f.oid,'EXECUTE') IS DISTINCT FROM (f.proname=ANY(allowed)) THEN RAISE EXCEPTION 'V21_EXECUTE_DIVERGENTE: % %',r,f.proname; END IF;
+  END LOOP;
+ END LOOP;
+END $pos$;
+DO $estrutura$
+BEGIN
+ IF md5((SELECT jsonb_build_object('tabelas',(SELECT jsonb_agg(jsonb_build_object('nome',c.relname,'owner',pg_get_userbyid(c.relowner),'rls',c.relrowsecurity,'force',c.relforcerowsecurity) ORDER BY c.relname) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='financeiro_hml' AND c.relkind='r'), 'gatilhos',(SELECT jsonb_agg(jsonb_build_object('tabela',c.relname,'nome',t.tgname,'enabled',t.tgenabled,'def',pg_get_triggerdef(t.oid)) ORDER BY c.relname,t.tgname) FROM pg_trigger t JOIN pg_class c ON c.oid=t.tgrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='financeiro_hml' AND NOT t.tgisinternal), 'politicas',(SELECT jsonb_agg(to_jsonb(p) ORDER BY tablename,policyname) FROM pg_policies p WHERE schemaname='financeiro_hml'), 'constraints',(SELECT jsonb_agg(jsonb_build_object('tabela',r.relname,'nome',c.conname,'def',pg_get_constraintdef(c.oid)) ORDER BY r.relname,c.conname) FROM pg_constraint c JOIN pg_class r ON r.oid=c.conrelid JOIN pg_namespace n ON n.oid=r.relnamespace WHERE n.nspname='financeiro_hml')))::text) <> 'd985be75654eb3c1998218115c5d6f06' THEN RAISE EXCEPTION 'V21_ESTRUTURA_DIVERGENTE'; END IF;
+ IF EXISTS(SELECT 1 FROM pg_roles r WHERE r.rolname IN ('anon','authenticated') AND (r.rolsuper OR r.rolbypassrls)) OR EXISTS(SELECT 1 FROM pg_auth_members m JOIN pg_roles r ON r.oid=m.member WHERE r.rolname IN ('anon','authenticated','service_role')) THEN RAISE EXCEPTION 'V21_HERANCA_PRIVILEGIADA'; END IF;
+END $estrutura$;
 COMMIT;
