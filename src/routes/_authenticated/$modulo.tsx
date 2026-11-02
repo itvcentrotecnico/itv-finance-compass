@@ -15,7 +15,7 @@ export const Route = createFileRoute("/_authenticated/$modulo")({
   loader: async ({ params, context }) => {
     const mod = findModuleBySlug(params.modulo);
     if (!mod || !mod.slug) throw notFound();
-    if (mod.key === "tesouraria" || mod.key === "despesas" || mod.key === "lancamentos") await context.queryClient.ensureQueryData(tesourariaOptions);
+    if (mod.key === "tesouraria" || mod.key === "despesas") await context.queryClient.ensureQueryData(tesourariaOptions);
     return { slug: mod.slug, title: mod.title, description: mod.description };
   },
   head: ({ loaderData }) => {

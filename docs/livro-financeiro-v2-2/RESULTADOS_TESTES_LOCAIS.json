@@ -1,0 +1,406 @@
+{
+  "ambiente": "PostgreSQL local descartável; Auth simplificado; sem rede; sem dados reais",
+  "total": 100,
+  "testes": [
+    {
+      "teste": "Proposta sem confirmação técnica é recusada",
+      "aprovado": true
+    },
+    {
+      "teste": "Manifesto vazio é recusado",
+      "aprovado": true
+    },
+    {
+      "teste": "Manifesto incompleto/nulo é recusado 2",
+      "aprovado": true
+    },
+    {
+      "teste": "Manifesto incompleto/nulo é recusado 3",
+      "aprovado": true
+    },
+    {
+      "teste": "Manifesto incompleto/nulo é recusado 4",
+      "aprovado": true
+    },
+    {
+      "teste": "Instalação sem autor autenticado aprovado é recusada",
+      "aprovado": true
+    },
+    {
+      "teste": "Manifesto com só um responsável é recusado",
+      "aprovado": true
+    },
+    {
+      "teste": "RLS divergente impede implantação",
+      "aprovado": true
+    },
+    {
+      "teste": "Gatilho de efeitos desativado impede implantação",
+      "aprovado": true
+    },
+    {
+      "teste": "Herança de papel privilegiado impede implantação",
+      "aprovado": true
+    },
+    {
+      "teste": "Sessão local de escritor preparada",
+      "aprovado": true
+    },
+    {
+      "teste": "Escritor concorrente impede implantação",
+      "aprovado": true
+    },
+    {
+      "teste": "Instalação acrescenta somente dois eventos técnicos de auditoria",
+      "aprovado": true
+    },
+    {
+      "teste": "Seis aberturas integralmente preservadas pela proposta",
+      "aprovado": true
+    },
+    {
+      "teste": "Proposta não cria movimentos",
+      "aprovado": true
+    },
+    {
+      "teste": "Continua com 13 tabelas",
+      "aprovado": true
+    },
+    {
+      "teste": "Continua com 31 funções",
+      "aprovado": true
+    },
+    {
+      "teste": "Sonda devolve livro único e categorias, sem identidades de outros usuários",
+      "aprovado": true
+    },
+    {
+      "teste": "Primeira despesa produz -0.01 sem receita de cobertura",
+      "aprovado": true
+    },
+    {
+      "teste": "Administrador Geral registra receita",
+      "aprovado": true
+    },
+    {
+      "teste": "Mesma chave e conteúdo não duplica",
+      "aprovado": true
+    },
+    {
+      "teste": "Normalização monetária e referência preserva repetição",
+      "aprovado": true
+    },
+    {
+      "teste": "Mesma chave com referência alterada é recusada",
+      "aprovado": true
+    },
+    {
+      "teste": "Mesma chave com valor alterado é recusada",
+      "aprovado": true
+    },
+    {
+      "teste": "Referência documental fica persistida",
+      "aprovado": true
+    },
+    {
+      "teste": "Analista não lança",
+      "aprovado": true
+    },
+    {
+      "teste": "Consulta não lança",
+      "aprovado": true
+    },
+    {
+      "teste": "Geral inativo não lança",
+      "aprovado": true
+    },
+    {
+      "teste": "Financeiro inativo não lança",
+      "aprovado": true
+    },
+    {
+      "teste": "Sem perfil não lança",
+      "aprovado": true
+    },
+    {
+      "teste": "Sem identidade não lança",
+      "aprovado": true
+    },
+    {
+      "teste": "Anon não executa lançamento",
+      "aprovado": true
+    },
+    {
+      "teste": "Service role não executa lançamento",
+      "aprovado": true
+    },
+    {
+      "teste": "abertura bloqueada no caminho público",
+      "aprovado": true
+    },
+    {
+      "teste": "abertura bloqueada também no motor central",
+      "aprovado": true
+    },
+    {
+      "teste": "transferencia bloqueada no caminho público",
+      "aprovado": true
+    },
+    {
+      "teste": "transferencia bloqueada também no motor central",
+      "aprovado": true
+    },
+    {
+      "teste": "estorno bloqueada no caminho público",
+      "aprovado": true
+    },
+    {
+      "teste": "estorno bloqueada também no motor central",
+      "aprovado": true
+    },
+    {
+      "teste": "Motor privado não é API",
+      "aprovado": true
+    },
+    {
+      "teste": "tesouraria_transferir sem EXECUTE",
+      "aprovado": true
+    },
+    {
+      "teste": "tesouraria_transferir corpo bloqueado mesmo como owner",
+      "aprovado": true
+    },
+    {
+      "teste": "tesouraria_estornar sem EXECUTE",
+      "aprovado": true
+    },
+    {
+      "teste": "tesouraria_estornar corpo bloqueado mesmo como owner",
+      "aprovado": true
+    },
+    {
+      "teste": "tesouraria_criar_conta sem EXECUTE",
+      "aprovado": true
+    },
+    {
+      "teste": "tesouraria_criar_conta corpo bloqueado mesmo como owner",
+      "aprovado": true
+    },
+    {
+      "teste": "tesouraria_habilitar_conta sem EXECUTE",
+      "aprovado": true
+    },
+    {
+      "teste": "tesouraria_habilitar_conta corpo bloqueado mesmo como owner",
+      "aprovado": true
+    },
+    {
+      "teste": "tesouraria_lancar_conferencia sem EXECUTE",
+      "aprovado": true
+    },
+    {
+      "teste": "tesouraria_lancar_conferencia corpo bloqueado mesmo como owner",
+      "aprovado": true
+    },
+    {
+      "teste": "Receita com categoria de despesa recusada",
+      "aprovado": true
+    },
+    {
+      "teste": "Despesa com categoria de receita recusada",
+      "aprovado": true
+    },
+    {
+      "teste": "Administrador Financeiro registra despesa",
+      "aprovado": true
+    },
+    {
+      "teste": "Conta de homologação não pode lançar",
+      "aprovado": true
+    },
+    {
+      "teste": "Categoria não oficial não pode lançar",
+      "aprovado": true
+    },
+    {
+      "teste": "Referência inválida recusada",
+      "aprovado": true
+    },
+    {
+      "teste": "Referência ausente recusada",
+      "aprovado": true
+    },
+    {
+      "teste": "Valor com terceiro centavo recusado",
+      "aprovado": true
+    },
+    {
+      "teste": "Data anterior à abertura recusada",
+      "aprovado": true
+    },
+    {
+      "teste": "Saldo exato 80.05",
+      "aprovado": true
+    },
+    {
+      "teste": "Histórico público tem seis aberturas e dois lançamentos",
+      "aprovado": true
+    },
+    {
+      "teste": "Auditoria rastreia abertura técnica e dois lançamentos",
+      "aprovado": true
+    },
+    {
+      "teste": "anon sem DML de tabela e coluna",
+      "aprovado": true
+    },
+    {
+      "teste": "authenticated sem DML de tabela e coluna",
+      "aprovado": true
+    },
+    {
+      "teste": "service_role sem DML de tabela e coluna",
+      "aprovado": true
+    },
+    {
+      "teste": "UPDATE direto em conferências recusado",
+      "aprovado": true
+    },
+    {
+      "teste": "INSERT direto em conferências recusado",
+      "aprovado": true
+    },
+    {
+      "teste": "M5 manual consulta relógio do banco",
+      "aprovado": true
+    },
+    {
+      "teste": "M5 manual conclui lote local sem origem externa",
+      "aprovado": true
+    },
+    {
+      "teste": "M5 manual conserva conferência pendente sem conciliação",
+      "aprovado": true
+    },
+    {
+      "teste": "M5 manual não cria operações ou movimentos",
+      "aprovado": true
+    },
+    {
+      "teste": "Automação permanece fechada",
+      "aprovado": true
+    },
+    {
+      "teste": "Concorrência mesma chave não duplica",
+      "aprovado": true
+    },
+    {
+      "teste": "Aberturas intactas após operações sintéticas",
+      "aprovado": true
+    },
+    {
+      "teste": "Reexecução não duplica abertura",
+      "aprovado": true
+    },
+    {
+      "teste": "Seis contas originais preservadas",
+      "aprovado": true
+    },
+    {
+      "teste": "Sete contas e sete aberturas somente",
+      "aprovado": true
+    },
+    {
+      "teste": "Abertura interna zero sem efeitos",
+      "aprovado": true
+    },
+    {
+      "teste": "Cliente não atribui origem nem UUID interno",
+      "aprovado": true
+    },
+    {
+      "teste": "Cliente não atribui destino nem UUID interno",
+      "aprovado": true
+    },
+    {
+      "teste": "Vínculo do motor é exclusivamente interno",
+      "aprovado": true
+    },
+    {
+      "teste": "Resultado negativo exato -118.94",
+      "aprovado": true
+    },
+    {
+      "teste": "Histórico devolve referência documental",
+      "aprovado": true
+    },
+    {
+      "teste": "Histórico devolve autoria canônica",
+      "aprovado": true
+    },
+    {
+      "teste": "Administrador geral lê nome autorizado",
+      "aprovado": true
+    },
+    {
+      "teste": "Nome invisível por RLS não remove histórico",
+      "aprovado": true
+    },
+    {
+      "teste": "Terceiro administrador não aprovado é recusado",
+      "aprovado": true
+    },
+    {
+      "teste": "UPDATE de operação como owner é imutável",
+      "aprovado": true
+    },
+    {
+      "teste": "Movimento em conta diferente falha por integridade",
+      "aprovado": true
+    },
+    {
+      "teste": "Contenção sem confirmação técnica recusada",
+      "aprovado": true
+    },
+    {
+      "teste": "Contenção preserva todos os registros",
+      "aprovado": true
+    },
+    {
+      "teste": "Contenção mantém leitura caller-owned de chave para resposta perdida",
+      "aprovado": true
+    },
+    {
+      "teste": "Outro usuário não encontra chave do autor na recuperação",
+      "aprovado": true
+    },
+    {
+      "teste": "Contenção fecha lançamento público",
+      "aprovado": true
+    },
+    {
+      "teste": "Contenção sela motor para owner",
+      "aprovado": true
+    },
+    {
+      "teste": "Contenção preserva consulta de saldos",
+      "aprovado": true
+    },
+    {
+      "teste": "Contenção preserva estado M5 manual",
+      "aprovado": true
+    },
+    {
+      "teste": "Restore sintético preserva hash de operações",
+      "aprovado": true
+    },
+    {
+      "teste": "Restore sintético preserva EXECUTE fechado",
+      "aprovado": true
+    },
+    {
+      "teste": "Arquivos originais V2 permanecem intactos",
+      "aprovado": true
+    }
+  ]
+}
