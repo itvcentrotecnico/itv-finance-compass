@@ -96,8 +96,8 @@ try:
     sonda=json.loads(sql(rpc({'tipo':'sonda'})))
     check('Sonda devolve livro único e categorias, sem identidades de outros usuários',sonda=={'modo':'livro_unico','contas':[livro],'categorias':categories,'contrato':'tesouraria_lancar_livro_v2_2'})
     first={'tipo':'saida','chave':'70000000-0000-4000-8000-000000000001','data':'2026-11-01','valor':'0.01','descricao':'PRIMEIRA DESPESA LOCAL','plano':categories[6],'referencia':'externo:primeira-despesa'}
-    sql(caller('BEGIN; '+rpc(first,1)+"SELECT sum(CASE direcao WHEN 'credito' THEN valor ELSE -valor END)::text FROM financeiro_hml.tesouraria_movimentos; ROLLBACK;",1))
-    check('Primeira despesa é permitida sem receita de cobertura',query('SELECT count(*) FROM financeiro_hml.tesouraria_movimentos')=='0')
+    first_result=sql(caller('BEGIN; '+rpc(first,1)+"SELECT sum(CASE direcao WHEN 'credito' THEN valor ELSE -valor END)::text FROM financeiro_hml.tesouraria_movimentos; ROLLBACK;",1))
+    check('Primeira despesa produz -0.01 sem receita de cobertura',first_result.splitlines()[-1]=='-0.01' and query('SELECT count(*) FROM financeiro_hml.tesouraria_movimentos')=='0')
     recipe={'tipo':'entrada','chave':'30000000-0000-4000-8000-000000000001','data':'2026-11-02','valor':'100.10','descricao':'SINTETICO LOCAL','plano':categories[0],'referencia':'externo:nota-1'}
     r=json.loads(sql(rpc(recipe)));check('Administrador Geral registra receita',not r['repetida'])
     repeated=json.loads(sql(rpc(recipe)));check('Mesma chave e conteúdo não duplica',r['id']==repeated['id'] and repeated['repetida'])
@@ -178,6 +178,8 @@ try:
     snapshot=query("SELECT md5(jsonb_agg(to_jsonb(o) ORDER BY id)::text) FROM financeiro_hml.tesouraria_operacoes o")
     sql("SET ROLE postgres; SET itv.v22.reversao='CONTENCAO_DRENAGEM_APROVADAS';"+reversal)
     check('Contenção preserva todos os registros',snapshot==query("SELECT md5(jsonb_agg(to_jsonb(o) ORDER BY id)::text) FROM financeiro_hml.tesouraria_operacoes o"))
+    check('Contenção mantém leitura caller-owned de chave para resposta perdida',sql(caller("SELECT id FROM financeiro_hml.tesouraria_operacoes WHERE criado_por=auth.uid() AND chave_idempotencia='"+recipe['chave']+"';"))==r['id'])
+    check('Outro usuário não encontra chave do autor na recuperação',sql(caller("SELECT id FROM financeiro_hml.tesouraria_operacoes WHERE criado_por=auth.uid() AND chave_idempotencia='"+recipe['chave']+"';",1))=='')
     rejected('Contenção fecha lançamento público',rpc(fresh(recipe)),'permission denied')
     rejected('Contenção sela motor para owner',rpc(fresh(recipe),role='postgres',fn='tes_executar'),'TES_OPERACAO_BLOQUEADA')
     check('Contenção preserva consulta de saldos',bool(sql(caller('SELECT financeiro_hml.tesouraria_saldos();'))))
