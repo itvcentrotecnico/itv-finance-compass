@@ -1,6 +1,6 @@
 {
   "ambiente": "PostgreSQL local descartável; Auth simplificado; sem rede; sem dados reais",
-  "total": 93,
+  "total": 95,
   "testes": [
     {
       "teste": "Proposta sem confirmação técnica é recusada",
@@ -55,7 +55,7 @@
       "aprovado": true
     },
     {
-      "teste": "Primeira despesa é permitida sem receita de cobertura",
+      "teste": "Primeira despesa produz -0.01 sem receita de cobertura",
       "aprovado": true
     },
     {
@@ -344,6 +344,14 @@
     },
     {
       "teste": "Contenção preserva todos os registros",
+      "aprovado": true
+    },
+    {
+      "teste": "Contenção mantém leitura caller-owned de chave para resposta perdida",
+      "aprovado": true
+    },
+    {
+      "teste": "Outro usuário não encontra chave do autor na recuperação",
       "aprovado": true
     },
     {
