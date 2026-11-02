@@ -1,6 +1,6 @@
 {
   "ambiente": "PostgreSQL local descartável; Auth simplificado; sem rede; sem dados reais",
-  "total": 72,
+  "total": 76,
   "testes": [
     {
       "teste": "Proposta sem confirmação técnica é recusada",
@@ -8,6 +8,18 @@
     },
     {
       "teste": "Manifesto vazio é recusado",
+      "aprovado": true
+    },
+    {
+      "teste": "RLS divergente impede implantação",
+      "aprovado": true
+    },
+    {
+      "teste": "Gatilho de efeitos desativado impede implantação",
+      "aprovado": true
+    },
+    {
+      "teste": "Herança de papel privilegiado impede implantação",
       "aprovado": true
     },
     {
@@ -235,7 +247,11 @@
       "aprovado": true
     },
     {
-      "teste": "M5 manual conclui lote local vazio",
+      "teste": "M5 manual conclui lote local sem origem externa",
+      "aprovado": true
+    },
+    {
+      "teste": "M5 manual conserva conferência pendente sem conciliação",
       "aprovado": true
     },
     {
