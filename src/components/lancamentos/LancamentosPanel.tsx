@@ -133,7 +133,8 @@ export function NovoLancamento({ contas, planos, seguro, hoje, onCancel }: { con
   const [erro, setErro] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
   const natureza = tipo === "entrada" ? "receita" : "despesa";
-  const aptas = planos.filter((c) => c.ativo && c.aceita_lancamentos && c.natureza === natureza);
+  // Somente códigos do Plano de Contas oficial (ex.: 1.01); contas de homologação ficam fora.
+  const aptas = planos.filter((c) => c.ativo && c.aceita_lancamentos && c.natureza === natureza && /^\d+(\.\d+)*$/.test(c.codigo));
   const set = (k: keyof typeof f, v: string) => setF((x) => ({ ...x, [k]: v }));
   const travado = enviando || !!seguro.pendente || seguro.bloqueio || seguro.ocupado;
 
