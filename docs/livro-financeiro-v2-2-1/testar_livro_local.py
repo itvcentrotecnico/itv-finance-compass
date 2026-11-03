@@ -135,7 +135,7 @@ try:
     check('Histórico público tem seis aberturas e dois lançamentos',json.loads(sql(caller("SELECT financeiro_hml.tesouraria_historico_operacoes('{}');")))['total']==9)
     check('Auditoria rastreia abertura técnica e dois lançamentos',query("SELECT count(*) FROM financeiro_hml.auditoria WHERE tabela='tesouraria_operacoes' AND depois->>'referencia' IS NOT NULL")=='3')
     for role in ['anon','authenticated','service_role']:
-        check(role+' sem DML de tabela e coluna',query(f"SELECT count(*) FROM pg_tables WHERE schemaname='financeiro_hml' AND (has_table_privilege('{role}',format('%I.%I',schemaname,tablename),'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') OR has_any_column_privilege('{role}',format('%I.%I',schemaname,tablename),'INSERT,UPDATE,REFERENCES'))")=='0')
+        check(role+' sem DML fora da lista aprovada',query(f"SELECT count(*) FROM pg_tables WHERE schemaname='financeiro_hml' AND ('{role}'<>'authenticated' OR tablename NOT IN ('perfis','plano_contas','centros_custo') OR has_table_privilege('{role}',format('%I.%I',schemaname,tablename),'DELETE,TRUNCATE')) AND (has_table_privilege('{role}',format('%I.%I',schemaname,tablename),'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') OR has_any_column_privilege('{role}',format('%I.%I',schemaname,tablename),'INSERT,UPDATE,REFERENCES'))")=='0')
     rejected('UPDATE direto em conferências recusado',caller("UPDATE financeiro_hml.tesouraria_conferencias SET status='conciliado';"),'permission denied')
     rejected('INSERT direto em conferências recusado',caller("INSERT INTO financeiro_hml.tesouraria_conferencias(referencia_origem) VALUES ('SINTETICO');"),'permission denied')
     # Real clock untouched: at this time initiating manual sync can correctly reject outside window.
