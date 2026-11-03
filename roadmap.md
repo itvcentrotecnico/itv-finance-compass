@@ -1,5 +1,12 @@
 # Autenticação segura — ITV FINANCEIRO HML
 
+## Encerramento da homologação V2.2.1 — 03/11/2026
+
+- [ ] Coletar evidências hospedadas somente leitura: colunas reais, 13 contagens/hashes, categorias, usuários, segurança e dependências; separar de testes locais.
+- [ ] Revisar scripts existentes e corrigir apenas inconsistências comprovadas; validar localmente sem instalação hospedada.
+- [ ] Entregar relatório consolidado, SQL revisado e contingência/backup Free com parecer objetivo.
+- [ ] Implantação e acesso real do analista: dependem de ativação/teste pelo usuário, recuperação e manutenção comprovadas e autorização posterior; escrita hospedada/publicação proibidas nesta solicitação.
+
 ## Pré-condições V2.2 — 02/11/2026, 19h56 UTC
 
 - [x] Preparar cinco arquivos de consultas somente leitura de usuários, categorias oficiais, integridade e catálogo/manifesto/dependências; sintaxe validada localmente sem execução SQL hospedada.
