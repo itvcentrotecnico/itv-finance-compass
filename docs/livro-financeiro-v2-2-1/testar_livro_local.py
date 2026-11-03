@@ -45,6 +45,7 @@ try:
     cat=json.loads((ROOT/'docs/correcao-minima-v2-1/CATALOGO_BASE_20261101.json').read_text())
     sql(';'.join('ALTER FUNCTION '+sig+' OWNER TO postgres' for sig in cat)+';')
     sql("DO $$ DECLARE t record; BEGIN FOR t IN SELECT tablename FROM pg_tables WHERE schemaname='financeiro_hml' LOOP EXECUTE format('ALTER TABLE financeiro_hml.%I OWNER TO postgres',t.tablename); END LOOP; END $$;")
+    sql((HERE/'FIXTURE_AJUSTE_REAL_LOCAL.sql').read_text())
     users=['10000000-0000-4000-8000-'+str(i).zfill(12) for i in range(1,8)]
     sql('INSERT INTO auth.users VALUES '+','.join("('"+u+"')" for u in users)+';')
     for i,role in enumerate(['admin_geral','analista_financeiro','admin_financeiro','consulta_gerencial','admin_geral','admin_financeiro']):
@@ -64,7 +65,7 @@ try:
     categories=json.loads(query('SELECT json_agg(id ORDER BY codigo) FROM financeiro_hml.plano_contas WHERE aceita_lancamentos'))
     livro='80000000-0000-4000-8000-000000000001'
     manifest={'modo':'livro_unico','contas':[livro],'categorias':categories,'responsaveis':users[:2],'abertura':'80000000-0000-4000-8000-000000000002','chave_abertura':'80000000-0000-4000-8000-000000000003'}
-    sql("UPDATE financeiro_hml.perfis SET nome='Responsável sintético' WHERE usuario_id='"+users[0]+"';")
+    check('Fixture reproduz ausência real de perfis.nome',query("SELECT count(*) FROM pg_attribute WHERE attrelid='financeiro_hml.perfis'::regclass AND attname='nome' AND NOT attisdropped")=='0')
     allbefore=query("SELECT md5(jsonb_agg(to_jsonb(c) ORDER BY id)::text) FROM financeiro_hml.contas_financeiras c")
     audits=query("SELECT count(*) FROM financeiro_hml.auditoria")
     before=query("SELECT md5(jsonb_agg(to_jsonb(o) ORDER BY id)::text) FROM financeiro_hml.tesouraria_operacoes o")
@@ -91,7 +92,9 @@ try:
     check('Sessão local de escritor preparada',lockproc.stdout.readline().strip()=='locked')
     rejected('Escritor concorrente impede implantação',settings+proposal,'could not obtain lock')
     lockproc.stdin.write('ROLLBACK;\n');lockproc.stdin.close();lockproc.wait(timeout=5)
+    check('Constraint real antes: apenas banco e caixa',query("SELECT pg_get_constraintdef(oid) FROM pg_constraint WHERE conrelid='financeiro_hml.contas_financeiras'::regclass AND conname='contas_financeiras_tipo_check'").find('interno')==-1)
     sql(settings+proposal)
+    check('Constraint ampliada mantém banco/caixa e aceita interno',all(t in query("SELECT pg_get_constraintdef(oid) FROM pg_constraint WHERE conrelid='financeiro_hml.contas_financeiras'::regclass AND conname='contas_financeiras_tipo_check'") for t in ['banco','caixa','interno']))
     check('Instalação acrescenta somente dois eventos técnicos de auditoria',query('SELECT count(*) FROM financeiro_hml.auditoria')==str(int(audits)+2))
     check('Seis aberturas integralmente preservadas pela proposta',before==query("SELECT md5(jsonb_agg(to_jsonb(o) ORDER BY id)::text) FROM financeiro_hml.tesouraria_operacoes o WHERE id<>'"+manifest['abertura']+"'"))
     check('Proposta não cria movimentos',query('SELECT count(*) FROM financeiro_hml.tesouraria_movimentos')=='0')
@@ -124,7 +127,7 @@ try:
     rejected('Receita com categoria de despesa recusada',rpc(fresh(recipe|{'plano':categories[6]})),'TES_CATEGORIA_NATUREZA')
     expense={'tipo':'saida','data':'2026-11-02','valor':'20.05','descricao':'SINTETICO LOCAL DESPESA','plano':categories[6],'referencia':'externo:despesa-1'}
     rejected('Despesa com categoria de receita recusada',rpc(fresh(expense|{'plano':categories[0]}),1),'TES_CATEGORIA_NATUREZA')
-    check('Administrador Financeiro registra despesa',not json.loads(sql(rpc(fresh(expense),1)))['repetida'])
+    check('Analista Financeiro aprovado registra despesa',not json.loads(sql(rpc(fresh(expense),1)))['repetida'])
     rejected('Conta de homologação não pode lançar',rpc(fresh(recipe|{'destino':accounts[3]})),'TES_VINCULO_INTERNO')
     rejected('Categoria não oficial não pode lançar',rpc(fresh(recipe|{'plano':'99999999-9999-4999-8999-999999999999'})),'TES_CATEGORIA_OFICIAL')
     rejected('Referência inválida recusada',rpc(fresh(recipe|{'referencia':'nota-1'})),'TES_REFERENCIA')
@@ -168,7 +171,7 @@ try:
     line=next(x for x in history['operacoes'] if x['id']==r['id'])
     check('Histórico devolve referência documental',line['referencia_documental']=='externo:nota-1')
     check('Histórico devolve autoria canônica',line['criado_por']==users[0])
-    check('Administrador geral lê nome autorizado',line['responsavel_nome']=='Responsável sintético')
+    check('Sem coluna nome: histórico mantém UUID e nome nulo',line['responsavel_nome'] is None and line['criado_por']==users[0])
     limited=json.loads(sql(caller("SELECT financeiro_hml.tesouraria_historico_operacoes('{}');",1)))
     check('Nome invisível por RLS não remove histórico',next(x for x in limited['operacoes'] if x['id']==r['id'])['responsavel_nome'] is None)
     # Even another active administrator outside approved pair cannot write.
