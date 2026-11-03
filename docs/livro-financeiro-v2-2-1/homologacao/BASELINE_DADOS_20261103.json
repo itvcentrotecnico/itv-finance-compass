@@ -1,0 +1,72 @@
+{
+  "origem": "SELECTs Supabase HML ayjppexbzpgdkzbehvzw",
+  "coletado_em_utc": "2026-11-03 21:11:14",
+  "hash": "MD5 de JSONB de linhas ordenadas por representação completa",
+  "tabelas": [
+    {
+      "tabela": "perfis",
+      "linhas": 2,
+      "md5": "58b75c7a7ead925a1d4fb7a327b7265e"
+    },
+    {
+      "tabela": "plano_contas",
+      "linhas": 18,
+      "md5": "cd3c4d6f8a44b1db5a0cf43f2fa7cac1"
+    },
+    {
+      "tabela": "centros_custo",
+      "linhas": 1,
+      "md5": "2709c560755c8e0a4b65c0e409797d95"
+    },
+    {
+      "tabela": "contas_financeiras",
+      "linhas": 6,
+      "md5": "3ab4a7018d6f9c00bdee80f7795afb79"
+    },
+    {
+      "tabela": "contas_preparadas",
+      "linhas": 3,
+      "md5": "76a14ceb792b90bee9900627384524e2"
+    },
+    {
+      "tabela": "tesouraria_conferencias",
+      "linhas": 49,
+      "md5": "c74025f99a1384ec9666c8f7e4218ea9"
+    },
+    {
+      "tabela": "tesouraria_operacoes",
+      "linhas": 6,
+      "md5": "809afc571260b8dc1699e13267723d7b"
+    },
+    {
+      "tabela": "tesouraria_movimentos",
+      "linhas": 0,
+      "md5": "d751713988987e9331980363e24189ce"
+    },
+    {
+      "tabela": "auditoria",
+      "linhas": 296,
+      "md5": "2c5991da5e600bf0e098f79ce4f998a7"
+    },
+    {
+      "tabela": "integracao_itens",
+      "linhas": 49,
+      "md5": "70b3da40fb4fb2d34f0e297a5d5447df"
+    },
+    {
+      "tabela": "integracao_sincronizacoes",
+      "linhas": 19,
+      "md5": "c81f8986a70b874ec3df8f9a8804bff7"
+    },
+    {
+      "tabela": "diagnostico_autorizacoes",
+      "linhas": 2,
+      "md5": "de8ebbdf023c4087c9d067217d419ef9"
+    },
+    {
+      "tabela": "diagnostico_tentativas",
+      "linhas": 11,
+      "md5": "ad9b10aa9c4ab7170082dfa74924f109"
+    }
+  ]
+}
