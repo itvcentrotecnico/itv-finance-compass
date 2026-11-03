@@ -17,6 +17,8 @@ export function resultadoErro(err: { code?: string; message?: string }): Resulta
 export interface Filtros { conta?: string; inicio?: string; fim?: string; tipo?: string; plano?: string; pagina: number }
 export interface Pedido { tipo: TipoOperacao; chave: string; data: string; descricao: string; valor?: string; nome?: string; conta_tipo?: string; banco?: string; agencia?: string; numero_conta?: string; origem?: string; destino?: string; plano?: string; centro?: string; original?: string; justificativa?: string; referencia?: string }
 export const podeOperar = (role: Role | null) => role === "admin_geral" || role === "admin_financeiro";
+/** Livro único V2.2.1: somente Administrador Geral e Analista Financeiro; o banco confirma o par aprovado. */
+export const podeLancarLivro = (role: Role | null) => role === "admin_geral" || role === "analista_financeiro";
 export const podeEstornar = (role: Role | null) => role === "admin_geral" || role === "admin_financeiro";
 
 /** Decimal string ↔ integer cents: never convert financial values to Number. */

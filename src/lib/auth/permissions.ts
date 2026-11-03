@@ -34,7 +34,7 @@ export type TableAction = "read" | "create" | "update" | "delete";
 const TABLE_WRITERS: Record<TableKey, Role[]> = {
   perfis: ["admin_geral"],
   plano_contas: ["admin_geral", "admin_financeiro"],
-  centros_custo: ["admin_geral", "admin_financeiro", "analista_financeiro"],
+  centros_custo: ["admin_geral"],
   contas_financeiras: ["admin_geral", "admin_financeiro"],
 };
 
@@ -53,8 +53,10 @@ export function can(role: Role, module: ModuleKey, action: Action): boolean {
   if (module === "tesouraria" || module === "lancamentos") {
     if (action === "view") return true;
     if (action === "delete" || action === "update" || action === "approve") return false;
+    if (module === "lancamentos") return role === "admin_geral" || role === "analista_financeiro";
     return role === "admin_geral" || role === "admin_financeiro";
   }
+  if (module === "centros_custo" && action !== "view") return role === "admin_geral";
   switch (role) {
     case "admin_geral":
       return true;

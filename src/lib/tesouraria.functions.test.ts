@@ -51,7 +51,7 @@ describe("adaptação das funções financeiras — somente mocks locais", () =>
   });
   it("sonda confirma somente o contrato corrigido", async () => {
     const ids = (n: number) => Array.from({ length: n }, (_, i) => `00000000-0000-4000-8000-${String(i + 1).padStart(12, "0")}`);
-    const rpc = vi.fn().mockResolvedValue({ data: { contrato: "tesouraria_lancar_livro_v2_2", modo: "livro_unico", contas: ids(1), categorias: ids(14) }, error: null });
+    const rpc = vi.fn().mockResolvedValue({ data: { contrato: "tesouraria_lancar_livro_v2_2_1", modo: "livro_unico", contas: ids(1), categorias: ids(14) }, error: null });
     context.supabase.schema.mockReturnValue({ rpc });
     expect(await verificarContratoLancamento({})).toBe(true);
     expect(rpc).toHaveBeenCalledWith("tesouraria_lancar", { p: { tipo: "sonda" } });

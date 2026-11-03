@@ -14,7 +14,7 @@ import { Carregando, ErroCarga } from "@/components/cadastros/comum";
 import { listarContas, type Conta } from "@/lib/cadastros";
 import { carregarHistoricoTesouraria, carregarOpcoesLancamento } from "@/lib/tesouraria.functions";
 import type { OpcoesOficiais } from "@/lib/lancamentos-oficiais";
-import { podeOperar, type OperacaoHistorico } from "@/lib/tesouraria";
+import { podeLancarLivro, type OperacaoHistorico } from "@/lib/tesouraria";
 import { validarPedidoLivro } from "@/lib/livro-financeiro";
 import { dinheiro, FORMAS_PAGAMENTO, hojeManaus, intervalo, normalizarValor, PERIODOS, resumir, type Periodo } from "@/lib/lancamentos";
 import { useEnvioSeguro } from "@/components/tesouraria/useEnvioSeguro";
@@ -45,8 +45,8 @@ function Lancamentos() {
   const { inicio, fim } = periodo === "personalizado" ? custom : intervalo(periodo, hoje);
 
   const contratoFn = useServerFn(carregarOpcoesLancamento);
-  const contrato = useQuery({ queryKey: ["tesouraria", "opcoes-livro-v2.2"], queryFn: () => contratoFn(), enabled: podeOperar(role), staleTime: 60000 });
-  const liberado = podeOperar(role) && contrato.data != null;
+  const contrato = useQuery({ queryKey: ["tesouraria", "opcoes-livro-v2.2.1"], queryFn: () => contratoFn(), enabled: podeLancarLivro(role), staleTime: 60000 });
+  const liberado = podeLancarLivro(role) && contrato.data != null;
   const seguro = useEnvioSeguro(() => { qc.invalidateQueries({ queryKey: ["tesouraria"] }); toast.success("Lançamento registrado com sucesso."); setNovo(false); });
 
   const pc = useQuery({ queryKey: ["plano_contas"], queryFn: listarContas });
@@ -77,7 +77,7 @@ function Lancamentos() {
   const reset = () => setPagina(0);
   const categorias = (pc.data ?? []).filter((c) => c.aceita_lancamentos && (!tipo || c.natureza === (tipo === "entrada" ? "receita" : "despesa")));
 
-  const motivoBloqueio = !podeOperar(role) ? "Seu perfil permite somente consulta." : contrato.isLoading ? "Verificando habilitação do registro..." : !liberado ? "O registro de lançamentos aguarda habilitação dos controles de segurança no banco de dados." : null;
+  const motivoBloqueio = !podeLancarLivro(role) ? "Seu perfil permite somente consulta." : contrato.isLoading ? "Verificando habilitação do registro..." : !liberado ? "O registro de lançamentos aguarda habilitação dos controles de segurança no banco de dados." : null;
 
   return <>
     <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
