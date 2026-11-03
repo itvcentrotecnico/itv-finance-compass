@@ -1,0 +1,26 @@
+{
+  "modo": "livro_unico",
+  "contas": ["975982de-f0cb-442d-8318-a086815f93e3"],
+  "categorias": [
+    "9b82cc9f-98e9-4057-97ae-281924e2bdeb",
+    "e299b823-22d3-4a5a-b1be-eac629d9f58b",
+    "d9a5114e-0633-450a-9ab7-cfc6622aaa17",
+    "4ad2949e-6dd4-4608-ada0-05ec4a5fbdf4",
+    "4c5c3846-6df7-4e52-b81b-f83f3abc1d4c",
+    "349dbd2c-780f-431d-b885-ee5996e97c9d",
+    "8bb3788c-eb49-47f2-94e9-9a735db82938",
+    "89fec2fa-e9e8-45be-8a01-f2eada468c3a",
+    "93aba76c-c954-4d5a-9bfa-6555d45bf879",
+    "23163875-b524-441e-99ad-38c05113790c",
+    "c15e80a5-a03b-460a-9407-a67010053c3c",
+    "5acbaf4f-4a59-4b0d-9178-76cc6ac374fd",
+    "8aef3cb2-719f-4e46-979d-b59ed043c787",
+    "0b8b4d5e-0058-40bb-8d5f-e379a62bd9f4"
+  ],
+  "responsaveis": [
+    "2a232414-0290-47b2-8aeb-77a6b490efe4",
+    "e5494111-2e8b-4a75-916b-1ecc1d8578e2"
+  ],
+  "abertura": "216d6c59-6cfc-4891-9860-dee4b2488c2e",
+  "chave_abertura": "0d6aefe2-8d11-4c5f-b9cc-518cb2d07a90"
+}

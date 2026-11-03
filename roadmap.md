@@ -1,5 +1,13 @@
 # Autenticação segura — ITV FINANCEIRO HML
 
+## Resolução dos impedimentos V2.2.1 — 03/11/2026, 21h25 UTC
+
+- [x] Consolidar manifesto completo para aprovação: 2 perfis ativos e 14 categorias oficiais lidos; 3 UUIDs técnicos novos distintos, sem colisão nas contas/IDs/chaves de operações no snapshot. Nenhuma escrita hospedada.
+- [x] Verificar recursos de exportação: PGHOST ausente; não executar dump por exec; orientar procedimento gratuito no computador autorizado e primeira ação administrativa, sem credenciais no chat.
+- [ ] Backup recuperável: depende de exportação/restauração e evidências de owners/ACLs/dependências pelo responsável; nenhuma alegação de backup concluído.
+- [ ] Manifesto: aguarda aprovação específica do conteúdo apresentado; autorização administrativa geral já registrada, não pedir novamente.
+- [ ] Janela/instalação: somente após backup comprovado, suspensão de produtores/drenagem e revalidação prévia; publicação específica posterior.
+
 ## Autorização condicionada de implantação V2.2.1 — 03/11/2026, 21h21 UTC
 
 - [x] Registrar autorização do pacote final (SHA-256 f5687d37a804ea80a1701de3f2f451200128cbee2172f9362a7e40eac8a3c5d7), tipo interno/abertura zero/permissões; publicação específica permanece pendente.
