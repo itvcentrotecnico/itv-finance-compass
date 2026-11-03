@@ -1,0 +1,698 @@
+{
+  "tabelas": [
+    {
+      "rls": true,
+      "nome": "auditoria",
+      "force": true,
+      "owner": "postgres"
+    },
+    {
+      "rls": true,
+      "nome": "centros_custo",
+      "force": true,
+      "owner": "postgres"
+    },
+    {
+      "rls": true,
+      "nome": "contas_financeiras",
+      "force": true,
+      "owner": "postgres"
+    },
+    {
+      "rls": true,
+      "nome": "contas_preparadas",
+      "force": false,
+      "owner": "postgres"
+    },
+    {
+      "rls": true,
+      "nome": "diagnostico_autorizacoes",
+      "force": false,
+      "owner": "postgres"
+    },
+    {
+      "rls": true,
+      "nome": "diagnostico_tentativas",
+      "force": false,
+      "owner": "postgres"
+    },
+    {
+      "rls": true,
+      "nome": "integracao_itens",
+      "force": false,
+      "owner": "postgres"
+    },
+    {
+      "rls": true,
+      "nome": "integracao_sincronizacoes",
+      "force": false,
+      "owner": "postgres"
+    },
+    {
+      "rls": true,
+      "nome": "perfis",
+      "force": true,
+      "owner": "postgres"
+    },
+    {
+      "rls": true,
+      "nome": "plano_contas",
+      "force": true,
+      "owner": "postgres"
+    },
+    {
+      "rls": true,
+      "nome": "tesouraria_conferencias",
+      "force": false,
+      "owner": "postgres"
+    },
+    {
+      "rls": true,
+      "nome": "tesouraria_movimentos",
+      "force": true,
+      "owner": "postgres"
+    },
+    {
+      "rls": true,
+      "nome": "tesouraria_operacoes",
+      "force": true,
+      "owner": "postgres"
+    }
+  ],
+  "politicas": [
+    {
+      "cmd": "SELECT",
+      "qual": "financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text])",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "auditoria",
+      "permissive": "PERMISSIVE",
+      "policyname": "auditoria_ler",
+      "schemaname": "financeiro_hml",
+      "with_check": null
+    },
+    {
+      "cmd": "UPDATE",
+      "qual": "financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text, 'analista_financeiro'::text])",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "centros_custo",
+      "permissive": "PERMISSIVE",
+      "policyname": "cc_alterar",
+      "schemaname": "financeiro_hml",
+      "with_check": "financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text, 'analista_financeiro'::text])"
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "centros_custo",
+      "permissive": "PERMISSIVE",
+      "policyname": "cc_criar",
+      "schemaname": "financeiro_hml",
+      "with_check": "financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text, 'analista_financeiro'::text])"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(financeiro_hml.papel_atual() IS NOT NULL)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "centros_custo",
+      "permissive": "PERMISSIVE",
+      "policyname": "cc_ler",
+      "schemaname": "financeiro_hml",
+      "with_check": null
+    },
+    {
+      "cmd": "UPDATE",
+      "qual": "financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text])",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "contas_financeiras",
+      "permissive": "PERMISSIVE",
+      "policyname": "cf_alterar",
+      "schemaname": "financeiro_hml",
+      "with_check": "financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text])"
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "contas_financeiras",
+      "permissive": "PERMISSIVE",
+      "policyname": "cf_criar",
+      "schemaname": "financeiro_hml",
+      "with_check": "financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text])"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(financeiro_hml.papel_atual() IS NOT NULL)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "contas_financeiras",
+      "permissive": "PERMISSIVE",
+      "policyname": "cf_ler",
+      "schemaname": "financeiro_hml",
+      "with_check": null
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text, 'analista_financeiro'::text, 'consulta_gerencial'::text])",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "contas_preparadas",
+      "permissive": "PERMISSIVE",
+      "policyname": "contas_preparadas_ler",
+      "schemaname": "financeiro_hml",
+      "with_check": null
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "((administrador_id = auth.uid()) AND financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text]))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "diagnostico_autorizacoes",
+      "permissive": "PERMISSIVE",
+      "policyname": "diagnostico_autorizacoes_ler",
+      "schemaname": "financeiro_hml",
+      "with_check": null
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "((usuario_id = auth.uid()) AND financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text]))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "diagnostico_tentativas",
+      "permissive": "PERMISSIVE",
+      "policyname": "diagnostico_tentativas_ler",
+      "schemaname": "financeiro_hml",
+      "with_check": null
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text, 'analista_financeiro'::text, 'consulta_gerencial'::text])",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "integracao_itens",
+      "permissive": "PERMISSIVE",
+      "policyname": "int_itens_ler",
+      "schemaname": "financeiro_hml",
+      "with_check": null
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text, 'analista_financeiro'::text, 'consulta_gerencial'::text])",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "integracao_sincronizacoes",
+      "permissive": "PERMISSIVE",
+      "policyname": "int_sync_ler",
+      "schemaname": "financeiro_hml",
+      "with_check": null
+    },
+    {
+      "cmd": "UPDATE",
+      "qual": "(financeiro_hml.tem_papel(ARRAY['admin_geral'::text]) AND (usuario_id <> auth.uid()))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "perfis",
+      "permissive": "PERMISSIVE",
+      "policyname": "perfis_alterar",
+      "schemaname": "financeiro_hml",
+      "with_check": "(financeiro_hml.tem_papel(ARRAY['admin_geral'::text]) AND (usuario_id <> auth.uid()))"
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "perfis",
+      "permissive": "PERMISSIVE",
+      "policyname": "perfis_criar",
+      "schemaname": "financeiro_hml",
+      "with_check": "(financeiro_hml.tem_papel(ARRAY['admin_geral'::text]) AND (usuario_id <> auth.uid()))"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "((usuario_id = auth.uid()) OR financeiro_hml.tem_papel(ARRAY['admin_geral'::text]))",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "perfis",
+      "permissive": "PERMISSIVE",
+      "policyname": "perfis_ler",
+      "schemaname": "financeiro_hml",
+      "with_check": null
+    },
+    {
+      "cmd": "UPDATE",
+      "qual": "financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text])",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "plano_contas",
+      "permissive": "PERMISSIVE",
+      "policyname": "pc_alterar",
+      "schemaname": "financeiro_hml",
+      "with_check": "financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text])"
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "plano_contas",
+      "permissive": "PERMISSIVE",
+      "policyname": "pc_criar",
+      "schemaname": "financeiro_hml",
+      "with_check": "financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text])"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(financeiro_hml.papel_atual() IS NOT NULL)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "plano_contas",
+      "permissive": "PERMISSIVE",
+      "policyname": "pc_ler",
+      "schemaname": "financeiro_hml",
+      "with_check": null
+    },
+    {
+      "cmd": "UPDATE",
+      "qual": "financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text, 'analista_financeiro'::text])",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "tesouraria_conferencias",
+      "permissive": "PERMISSIVE",
+      "policyname": "conf_editar",
+      "schemaname": "financeiro_hml",
+      "with_check": "financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text, 'analista_financeiro'::text])"
+    },
+    {
+      "cmd": "INSERT",
+      "qual": null,
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "tesouraria_conferencias",
+      "permissive": "PERMISSIVE",
+      "policyname": "conf_inserir",
+      "schemaname": "financeiro_hml",
+      "with_check": "financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text, 'analista_financeiro'::text])"
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text, 'analista_financeiro'::text, 'consulta_gerencial'::text])",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "tesouraria_conferencias",
+      "permissive": "PERMISSIVE",
+      "policyname": "conf_ler",
+      "schemaname": "financeiro_hml",
+      "with_check": null
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(financeiro_hml.papel_atual() IS NOT NULL)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "tesouraria_movimentos",
+      "permissive": "PERMISSIVE",
+      "policyname": "tesouraria_movimentos_ler",
+      "schemaname": "financeiro_hml",
+      "with_check": null
+    },
+    {
+      "cmd": "SELECT",
+      "qual": "(financeiro_hml.papel_atual() IS NOT NULL)",
+      "roles": [
+        "authenticated"
+      ],
+      "tablename": "tesouraria_operacoes",
+      "permissive": "PERMISSIVE",
+      "policyname": "tesouraria_operacoes_ler",
+      "schemaname": "financeiro_hml",
+      "with_check": null
+    }
+  ],
+  "constraints": [
+    {
+      "nome": "auditoria_acao_check",
+      "tipo": "c",
+      "tabela": "auditoria",
+      "definicao": "CHECK ((acao = ANY (ARRAY['criar'::text, 'alterar'::text, 'inativar'::text, 'reativar'::text])))"
+    },
+    {
+      "nome": "chk_codigo_centro_custo",
+      "tipo": "c",
+      "tabela": "centros_custo",
+      "definicao": "CHECK (((codigo)::text ~ '^[A-Za-z0-9._-]{1,32}$'::text))"
+    },
+    {
+      "nome": "chk_descricao_centro_custo",
+      "tipo": "c",
+      "tabela": "centros_custo",
+      "definicao": "CHECK (((length(btrim((descricao)::text)) >= 2) AND (length(btrim((descricao)::text)) <= 160)))"
+    },
+    {
+      "nome": "chk_nome_conta_financeira",
+      "tipo": "c",
+      "tabela": "contas_financeiras",
+      "definicao": "CHECK (((length(btrim((nome)::text)) >= 2) AND (length(btrim((nome)::text)) <= 160)))"
+    },
+    {
+      "nome": "contas_financeiras_moeda_check",
+      "tipo": "c",
+      "tabela": "contas_financeiras",
+      "definicao": "CHECK ((moeda = 'BRL'::bpchar))"
+    },
+    {
+      "nome": "contas_financeiras_tipo_check",
+      "tipo": "c",
+      "tabela": "contas_financeiras",
+      "definicao": "CHECK (((tipo)::text = ANY ((ARRAY['banco'::character varying, 'caixa'::character varying])::text[])))"
+    },
+    {
+      "nome": "contas_preparadas_check",
+      "tipo": "c",
+      "tabela": "contas_preparadas",
+      "definicao": "CHECK (((situacao = 'habilitada'::text) = ((conta_financeira_id IS NOT NULL) AND (data_abertura IS NOT NULL) AND (saldo_validado IS NOT NULL) AND (responsavel_conferencia IS NOT NULL))))"
+    },
+    {
+      "nome": "contas_preparadas_nome_check",
+      "tipo": "c",
+      "tabela": "contas_preparadas",
+      "definicao": "CHECK (((length(btrim((nome)::text)) >= 2) AND (length(btrim((nome)::text)) <= 160)))"
+    },
+    {
+      "nome": "contas_preparadas_situacao_check",
+      "tipo": "c",
+      "tabela": "contas_preparadas",
+      "definicao": "CHECK ((situacao = ANY (ARRAY['pendente_abertura'::text, 'habilitada'::text])))"
+    },
+    {
+      "nome": "contas_preparadas_tipo_check",
+      "tipo": "c",
+      "tabela": "contas_preparadas",
+      "definicao": "CHECK (((tipo)::text = ANY ((ARRAY['banco'::character varying, 'caixa'::character varying])::text[])))"
+    },
+    {
+      "nome": "diagnostico_autorizacoes_check",
+      "tipo": "c",
+      "tabela": "diagnostico_autorizacoes",
+      "definicao": "CHECK ((encerra_em > criado_em))"
+    },
+    {
+      "nome": "diagnostico_autorizacoes_consumidas_check",
+      "tipo": "c",
+      "tabela": "diagnostico_autorizacoes",
+      "definicao": "CHECK (((consumidas >= 0) AND (consumidas <= 5)))"
+    },
+    {
+      "nome": "diagnostico_tentativas_categoria_check",
+      "tipo": "c",
+      "tabela": "diagnostico_tentativas",
+      "definicao": "CHECK ((categoria = ANY (ARRAY['leitura_valida'::text, 'autenticacao_origem'::text, 'autorizacao_origem'::text, 'limite_origem'::text, 'erro_interno_origem'::text, 'http_origem'::text, 'resposta_invalida_origem'::text, 'timeout_origem'::text, 'configuracao_origem'::text, 'rede_origem'::text, 'invocacao_origem'::text, 'conexao_origem'::text, 'leitura_nao_autorizada'::text, 'falha_interna'::text, 'concorrencia'::text, 'repeticao'::text, 'limite'::text, 'autorizacao_inativa'::text])))"
+    },
+    {
+      "nome": "diagnostico_tentativas_check",
+      "tipo": "c",
+      "tabela": "diagnostico_tentativas",
+      "definicao": "CHECK (((estado = 'bloqueada'::text) = (ordinal IS NULL)))"
+    },
+    {
+      "nome": "diagnostico_tentativas_check1",
+      "tipo": "c",
+      "tabela": "diagnostico_tentativas",
+      "definicao": "CHECK (((estado <> 'reservada'::text) OR ((categoria IS NULL) AND (status_http IS NULL) AND (duracao_ms IS NULL) AND (tipo_excecao IS NULL) AND (concluido_em IS NULL))))"
+    },
+    {
+      "nome": "diagnostico_tentativas_check2",
+      "tipo": "c",
+      "tabela": "diagnostico_tentativas",
+      "definicao": "CHECK (((estado <> ALL (ARRAY['concluida'::text, 'falha'::text])) OR ((categoria IS NOT NULL) AND (duracao_ms IS NOT NULL) AND (concluido_em IS NOT NULL))))"
+    },
+    {
+      "nome": "diagnostico_tentativas_check3",
+      "tipo": "c",
+      "tabela": "diagnostico_tentativas",
+      "definicao": "CHECK (((estado <> 'concluida'::text) OR (categoria = 'leitura_valida'::text)))"
+    },
+    {
+      "nome": "diagnostico_tentativas_check4",
+      "tipo": "c",
+      "tabela": "diagnostico_tentativas",
+      "definicao": "CHECK (((estado <> 'bloqueada'::text) OR (categoria = ANY (ARRAY['concorrencia'::text, 'repeticao'::text, 'limite'::text, 'autorizacao_inativa'::text]))))"
+    },
+    {
+      "nome": "diagnostico_tentativas_duracao_ms_check",
+      "tipo": "c",
+      "tabela": "diagnostico_tentativas",
+      "definicao": "CHECK ((duracao_ms >= 0))"
+    },
+    {
+      "nome": "diagnostico_tentativas_estado_check",
+      "tipo": "c",
+      "tabela": "diagnostico_tentativas",
+      "definicao": "CHECK ((estado = ANY (ARRAY['reservada'::text, 'concluida'::text, 'falha'::text, 'bloqueada'::text])))"
+    },
+    {
+      "nome": "diagnostico_tentativas_ordinal_check",
+      "tipo": "c",
+      "tabela": "diagnostico_tentativas",
+      "definicao": "CHECK (((ordinal >= 1) AND (ordinal <= 5)))"
+    },
+    {
+      "nome": "diagnostico_tentativas_recurso_check",
+      "tipo": "c",
+      "tabela": "diagnostico_tentativas",
+      "definicao": "CHECK ((recurso = ANY (ARRAY['formas_pagamento'::text, 'recebimentos'::text, 'pagamentos'::text, 'recebimentos_titulos'::text, 'titulos'::text])))"
+    },
+    {
+      "nome": "diagnostico_tentativas_status_http_check",
+      "tipo": "c",
+      "tabela": "diagnostico_tentativas",
+      "definicao": "CHECK (((status_http >= 100) AND (status_http <= 599)))"
+    },
+    {
+      "nome": "diagnostico_tentativas_tipo_excecao_check",
+      "tipo": "c",
+      "tabela": "diagnostico_tentativas",
+      "definicao": "CHECK ((tipo_excecao = ANY (ARRAY['TypeError'::text, 'Error'::text, 'AbortError'::text, 'TimeoutError'::text, 'DOMException'::text, 'nao_identificado'::text, 'codigo_dns'::text, 'codigo_tls'::text, 'codigo_conexao'::text])))"
+    },
+    {
+      "nome": "integracao_itens_referencia_origem_check",
+      "tipo": "c",
+      "tabela": "integracao_itens",
+      "definicao": "CHECK (((length(referencia_origem) >= 3) AND (length(referencia_origem) <= 300)))"
+    },
+    {
+      "nome": "integracao_itens_situacao_check",
+      "tipo": "c",
+      "tabela": "integracao_itens",
+      "definicao": "CHECK ((situacao = ANY (ARRAY['novo'::text, 'existente'::text, 'alterado'::text, 'enviado_conferencia'::text, 'possivel_duplicidade'::text])))"
+    },
+    {
+      "nome": "integracao_itens_tipo_check",
+      "tipo": "c",
+      "tabela": "integracao_itens",
+      "definicao": "CHECK ((tipo = ANY (ARRAY['pagamento'::text, 'recebimento_titulo'::text, 'titulo_aberto'::text])))"
+    },
+    {
+      "nome": "integracao_sincronizacoes_consultados_check",
+      "tipo": "c",
+      "tabela": "integracao_sincronizacoes",
+      "definicao": "CHECK ((consultados >= 0))"
+    },
+    {
+      "nome": "integracao_sincronizacoes_divergentes_check",
+      "tipo": "c",
+      "tabela": "integracao_sincronizacoes",
+      "definicao": "CHECK ((divergentes >= 0))"
+    },
+    {
+      "nome": "integracao_sincronizacoes_enviados_conferencia_check",
+      "tipo": "c",
+      "tabela": "integracao_sincronizacoes",
+      "definicao": "CHECK ((enviados_conferencia >= 0))"
+    },
+    {
+      "nome": "integracao_sincronizacoes_existentes_check",
+      "tipo": "c",
+      "tabela": "integracao_sincronizacoes",
+      "definicao": "CHECK ((existentes >= 0))"
+    },
+    {
+      "nome": "integracao_sincronizacoes_modo_check",
+      "tipo": "c",
+      "tabela": "integracao_sincronizacoes",
+      "definicao": "CHECK ((modo = ANY (ARRAY['manual'::text, 'automatica'::text])))"
+    },
+    {
+      "nome": "integracao_sincronizacoes_novos_check",
+      "tipo": "c",
+      "tabela": "integracao_sincronizacoes",
+      "definicao": "CHECK ((novos >= 0))"
+    },
+    {
+      "nome": "integracao_sincronizacoes_status_check",
+      "tipo": "c",
+      "tabela": "integracao_sincronizacoes",
+      "definicao": "CHECK ((status = ANY (ARRAY['em_andamento'::text, 'concluida'::text, 'falha'::text])))"
+    },
+    {
+      "nome": "perfis_papel_check",
+      "tipo": "c",
+      "tabela": "perfis",
+      "definicao": "CHECK (((papel)::text = ANY ((ARRAY['admin_geral'::character varying, 'admin_financeiro'::character varying, 'analista_financeiro'::character varying, 'consulta_gerencial'::character varying])::text[])))"
+    },
+    {
+      "nome": "pc_codigo_formato",
+      "tipo": "c",
+      "tabela": "plano_contas",
+      "definicao": "CHECK (((codigo)::text ~ '^[A-Za-z0-9._-]{1,32}$'::text))"
+    },
+    {
+      "nome": "pc_descricao_tamanho",
+      "tipo": "c",
+      "tabela": "plano_contas",
+      "definicao": "CHECK (((length(btrim((descricao)::text)) >= 2) AND (length(btrim((descricao)::text)) <= 160)))"
+    },
+    {
+      "nome": "plano_contas_natureza_check",
+      "tipo": "c",
+      "tabela": "plano_contas",
+      "definicao": "CHECK (((natureza)::text = ANY ((ARRAY['receita'::character varying, 'despesa'::character varying, 'ativo'::character varying, 'passivo'::character varying, 'patrimonio'::character varying])::text[])))"
+    },
+    {
+      "nome": "tesouraria_conferencias_boleto_status_check",
+      "tipo": "c",
+      "tabela": "tesouraria_conferencias",
+      "definicao": "CHECK ((boleto_status = ANY (ARRAY['pendente'::text, 'pago'::text, 'vencido'::text])))"
+    },
+    {
+      "nome": "tesouraria_conferencias_check",
+      "tipo": "c",
+      "tabela": "tesouraria_conferencias",
+      "definicao": "CHECK (((valor_liquido > (0)::numeric) AND (valor_liquido <= valor_bruto)))"
+    },
+    {
+      "nome": "tesouraria_conferencias_check1",
+      "tipo": "c",
+      "tabela": "tesouraria_conferencias",
+      "definicao": "CHECK (((forma <> 'boleto'::text) OR (boleto_status IS NOT NULL)))"
+    },
+    {
+      "nome": "tesouraria_conferencias_check2",
+      "tipo": "c",
+      "tabela": "tesouraria_conferencias",
+      "definicao": "CHECK (((status <> 'conciliado'::text) OR (conta_financeira_id IS NOT NULL)))"
+    },
+    {
+      "nome": "tesouraria_conferencias_check3",
+      "tipo": "c",
+      "tabela": "tesouraria_conferencias",
+      "definicao": "CHECK (((forma <> ALL (ARRAY['credito'::text, 'debito'::text, 'parcelado'::text])) OR (status <> 'conciliado'::text) OR ((valor_liquido IS NOT NULL) AND (data_liquidacao IS NOT NULL))))"
+    },
+    {
+      "nome": "tesouraria_conferencias_check4",
+      "tipo": "c",
+      "tabela": "tesouraria_conferencias",
+      "definicao": "CHECK (((forma <> 'boleto'::text) OR (status <> 'conciliado'::text) OR ((boleto_status = 'pago'::text) AND (boleto_pagamento IS NOT NULL))))"
+    },
+    {
+      "nome": "tesouraria_conferencias_descricao_check",
+      "tipo": "c",
+      "tabela": "tesouraria_conferencias",
+      "definicao": "CHECK ((length(btrim((descricao)::text)) >= 2))"
+    },
+    {
+      "nome": "tesouraria_conferencias_forma_check",
+      "tipo": "c",
+      "tabela": "tesouraria_conferencias",
+      "definicao": "CHECK ((forma = ANY (ARRAY['dinheiro'::text, 'pix'::text, 'credito'::text, 'debito'::text, 'parcelado'::text, 'boleto'::text, 'misto'::text, 'indefinida'::text])))"
+    },
+    {
+      "nome": "tesouraria_conferencias_natureza_check",
+      "tipo": "c",
+      "tabela": "tesouraria_conferencias",
+      "definicao": "CHECK ((natureza = ANY (ARRAY['entrada'::text, 'saida'::text])))"
+    },
+    {
+      "nome": "tesouraria_conferencias_referencia_origem_check",
+      "tipo": "c",
+      "tabela": "tesouraria_conferencias",
+      "definicao": "CHECK (((length(referencia_origem) >= 3) AND (length(referencia_origem) <= 300)))"
+    },
+    {
+      "nome": "tesouraria_conferencias_status_check",
+      "tipo": "c",
+      "tabela": "tesouraria_conferencias",
+      "definicao": "CHECK ((status = ANY (ARRAY['pendente'::text, 'em_conferencia'::text, 'conciliado'::text, 'divergente'::text])))"
+    },
+    {
+      "nome": "tesouraria_conferencias_valor_bruto_check",
+      "tipo": "c",
+      "tabela": "tesouraria_conferencias",
+      "definicao": "CHECK ((valor_bruto > (0)::numeric))"
+    },
+    {
+      "nome": "tesouraria_conferencias_valor_total_grupo_check",
+      "tipo": "c",
+      "tabela": "tesouraria_conferencias",
+      "definicao": "CHECK ((valor_total_grupo > (0)::numeric))"
+    },
+    {
+      "nome": "tesouraria_movimentos_direcao_check",
+      "tipo": "c",
+      "tabela": "tesouraria_movimentos",
+      "definicao": "CHECK ((direcao = ANY (ARRAY['credito'::text, 'debito'::text])))"
+    },
+    {
+      "nome": "tesouraria_movimentos_valor_check",
+      "tipo": "c",
+      "tabela": "tesouraria_movimentos",
+      "definicao": "CHECK ((valor > (0)::numeric))"
+    },
+    {
+      "nome": "tesouraria_operacoes_descricao_check",
+      "tipo": "c",
+      "tabela": "tesouraria_operacoes",
+      "definicao": "CHECK (((length(btrim((descricao)::text)) >= 2) AND (length(btrim((descricao)::text)) <= 500)))"
+    },
+    {
+      "nome": "tesouraria_operacoes_tipo_check",
+      "tipo": "c",
+      "tabela": "tesouraria_operacoes",
+      "definicao": "CHECK ((tipo = ANY (ARRAY['abertura'::text, 'entrada'::text, 'saida'::text, 'transferencia'::text, 'estorno'::text])))"
+    },
+    {
+      "nome": "tesouraria_operacoes_valor_check",
+      "tipo": "c",
+      "tabela": "tesouraria_operacoes",
+      "definicao": "CHECK ((valor >= (0)::numeric))"
+    }
+  ]
+}

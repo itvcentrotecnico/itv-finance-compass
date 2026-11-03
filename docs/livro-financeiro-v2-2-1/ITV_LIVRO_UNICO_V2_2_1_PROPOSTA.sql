@@ -44,6 +44,8 @@ BEGIN
  END LOOP;
  IF m->>'modo' IS DISTINCT FROM 'livro_unico' OR jsonb_typeof(m->'responsaveis') IS DISTINCT FROM 'array' OR jsonb_array_length(m->'responsaveis')<>2 THEN RAISE EXCEPTION 'V22_RESPONSAVEIS'; END IF;
  IF (SELECT count(DISTINCT value::uuid) FROM jsonb_array_elements_text(m->'responsaveis'))<>2 OR EXISTS(SELECT 1 FROM jsonb_array_elements_text(m->'responsaveis') v LEFT JOIN financeiro_hml.perfis p ON p.usuario_id=v.value::uuid WHERE p.usuario_id IS NULL OR NOT p.ativo OR p.papel NOT IN ('admin_geral','analista_financeiro')) OR (SELECT count(DISTINCT p.papel) FROM jsonb_array_elements_text(m->'responsaveis') v JOIN financeiro_hml.perfis p ON p.usuario_id=v.value::uuid)<>2 THEN RAISE EXCEPTION 'V22_RESPONSAVEIS'; END IF;
+ -- Derivado exclusivamente dos perfis validados; nunca aceitar um mapa fornecido pelo cliente.
+ m:=m||jsonb_build_object('papeis',(SELECT jsonb_object_agg(p.usuario_id::text,p.papel) FROM financeiro_hml.perfis p WHERE (m->'responsaveis') ? p.usuario_id::text));
  IF auth.uid() IS NULL OR NOT (m->'responsaveis') ? auth.uid()::text OR NOT EXISTS(SELECT 1 FROM financeiro_hml.perfis WHERE usuario_id=auth.uid() AND ativo AND papel='admin_geral') THEN RAISE EXCEPTION 'V22_AUTORIA_INSTALACAO'; END IF;
  IF (SELECT count(*) FROM financeiro_hml.contas_financeiras)<>6 OR EXISTS(SELECT 1 FROM financeiro_hml.contas_financeiras WHERE id=contas[1] OR tipo='interno' OR nome='LIVRO FINANCEIRO ITV — CONTROLE INTERNO') THEN RAISE EXCEPTION 'V22_CONTROLE_EXISTENTE'; END IF;
  IF nullif(m->>'abertura','')::uuid IS NULL OR nullif(m->>'chave_abertura','')::uuid IS NULL OR EXISTS(SELECT 1 FROM financeiro_hml.tesouraria_operacoes WHERE id=(m->>'abertura')::uuid OR chave_idempotencia=(m->>'chave_abertura')::uuid) THEN RAISE EXCEPTION 'V22_ABERTURA_ID'; END IF;
@@ -62,6 +64,7 @@ BEGIN
   SELECT papel,ativo INTO perfil FROM financeiro_hml.perfis WHERE usuario_id=uid FOR SHARE;
   IF uid IS NULL OR NOT FOUND OR NOT perfil.ativo OR perfil.papel NOT IN ('admin_geral','analista_financeiro') THEN RAISE EXCEPTION 'TES_PERMISSAO' USING ERRCODE='42501'; END IF;
   IF NOT (m->'responsaveis') ? uid::text THEN RAISE EXCEPTION 'TES_PERMISSAO' USING ERRCODE='42501'; END IF;
+  IF perfil.papel IS DISTINCT FROM (m->'papeis'->>uid::text) THEN RAISE EXCEPTION 'TES_PERMISSAO' USING ERRCODE='42501'; END IF;
   IF p IS NULL OR jsonb_typeof(p)<>'object' THEN RAISE EXCEPTION 'TES_DADOS'; END IF;
   tipo:=p->>'tipo';
   IF tipo IS NULL OR tipo NOT IN ('entrada','saida') THEN RAISE EXCEPTION 'TES_OPERACAO_BLOQUEADA' USING ERRCODE='42501'; END IF;
@@ -106,6 +109,7 @@ BEGIN
  BEGIN
   IF auth.uid() IS NULL OR NOT financeiro_hml.tem_papel(ARRAY['admin_geral','analista_financeiro']) THEN RAISE EXCEPTION 'TES_PERMISSAO' USING ERRCODE='42501'; END IF;
   IF NOT (m->'responsaveis') ? auth.uid()::text THEN RAISE EXCEPTION 'TES_PERMISSAO' USING ERRCODE='42501'; END IF;
+  IF financeiro_hml.papel_atual() IS DISTINCT FROM (m->'papeis'->>auth.uid()::text) THEN RAISE EXCEPTION 'TES_PERMISSAO' USING ERRCODE='42501'; END IF;
   IF p='{"tipo":"sonda"}'::jsonb THEN RETURN jsonb_build_object('contas',m->'contas','categorias',m->'categorias','modo','livro_unico','contrato','tesouraria_lancar_livro_v2_2_1'); END IF;
   RETURN financeiro_hml.tes_executar(p);
  END $fn$;$wrapper$;
@@ -125,7 +129,9 @@ AS $function$
  WITH parametros AS (SELECT nullif(p->>'conta','')::uuid conta,nullif(p->>'inicio','')::date inicio,nullif(p->>'fim','')::date fim,nullif(p->>'tipo','') tipo,nullif(p->>'plano','')::uuid plano,least(greatest(coalesce((p->>'pagina')::bigint,0),0),100000) pagina),
  filtrado AS (SELECT o.* FROM financeiro_hml.tesouraria_operacoes o CROSS JOIN parametros p WHERE (p.conta IS NULL OR o.conta_origem_id=p.conta OR o.conta_destino_id=p.conta) AND (p.inicio IS NULL OR o.data_movimento>=p.inicio) AND (p.fim IS NULL OR o.data_movimento<=p.fim) AND (p.tipo IS NULL OR o.tipo=p.tipo) AND (p.plano IS NULL OR o.plano_conta_id=p.plano)),
  pagina AS (SELECT * FROM filtrado ORDER BY data_movimento DESC,criado_em DESC,id DESC LIMIT 50 OFFSET (SELECT pagina*50 FROM parametros))
- SELECT jsonb_build_object('total',(SELECT count(*) FROM filtrado),'operacoes',coalesce((SELECT jsonb_agg(to_jsonb(o)-'requisicao'||jsonb_build_object('efeitos',coalesce((SELECT jsonb_agg(jsonb_build_object('id',m.id,'conta_id',m.conta_financeira_id,'direcao',m.direcao,'valor',m.valor::text) ORDER BY m.id) FROM financeiro_hml.tesouraria_movimentos m WHERE m.operacao_id=o.id),'[]'::jsonb),'valor',o.valor::text,'referencia_documental',o.requisicao->>'referencia','responsavel_nome',(SELECT nullif(btrim(pr.nome),'') FROM financeiro_hml.perfis pr WHERE pr.usuario_id=o.criado_por)) ORDER BY o.data_movimento DESC,o.criado_em DESC,o.id DESC) FROM pagina o),'[]'::jsonb));
+ -- O banco hospedado não possui perfis.nome. Campo opcional lido como JSON sob RLS;
+ -- ausência retorna NULL, sem presumir coluna ou buscar nomes privilegiados no Auth.
+ SELECT jsonb_build_object('total',(SELECT count(*) FROM filtrado),'operacoes',coalesce((SELECT jsonb_agg(to_jsonb(o)-'requisicao'||jsonb_build_object('efeitos',coalesce((SELECT jsonb_agg(jsonb_build_object('id',m.id,'conta_id',m.conta_financeira_id,'direcao',m.direcao,'valor',m.valor::text) ORDER BY m.id) FROM financeiro_hml.tesouraria_movimentos m WHERE m.operacao_id=o.id),'[]'::jsonb),'valor',o.valor::text,'referencia_documental',o.requisicao->>'referencia','responsavel_nome',(SELECT nullif(btrim(to_jsonb(pr)->>'nome'),'') FROM financeiro_hml.perfis pr WHERE pr.usuario_id=o.criado_por)) ORDER BY o.data_movimento DESC,o.criado_em DESC,o.id DESC) FROM pagina o),'[]'::jsonb));
 $function$
 ;
 

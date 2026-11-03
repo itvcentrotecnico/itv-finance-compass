@@ -1,5 +1,5 @@
 """Ensaio descartável LOCAL. Não acessa Supabase, rede ou dados reais.
-python3 docs/livro-financeiro-v2-2/testar_livro_local.py
+python3 docs/livro-financeiro-v2-2-1/testar_livro_local.py
 Requer binários PostgreSQL 17 (ou 18) em PATH. Cria/apaga apenas /tmp/itv-livro221-teste-*.
 """
 import hashlib, json, os, pwd, shutil, subprocess, tempfile
@@ -184,6 +184,14 @@ try:
     rejected('V2.2.1: Consulta Gerencial é recusada',rpc(fresh(recipe),3),'TES_PERMISSAO')
     sql("UPDATE financeiro_hml.perfis SET papel='admin_financeiro' WHERE usuario_id='"+users[1]+"';")
     rejected('V2.2.1: analista com papel trocado é recusado',rpc(fresh(recipe),1),'TES_PERMISSAO')
+    sql("UPDATE financeiro_hml.perfis SET papel='analista_financeiro' WHERE usuario_id='"+users[1]+"';")
+    sql("UPDATE financeiro_hml.perfis SET papel='admin_geral' WHERE usuario_id='"+users[1]+"';")
+    rejected('Papel fixado: analista promovido a Administrador Geral não lança',rpc(fresh(recipe),1),'TES_PERMISSAO')
+    rejected('Papel fixado: analista promovido não recebe sonda',rpc({'tipo':'sonda'},1),'TES_PERMISSAO')
+    sql("UPDATE financeiro_hml.perfis SET papel='analista_financeiro' WHERE usuario_id='"+users[0]+"';")
+    rejected('Papel fixado: administrador rebaixado a analista não lança',rpc(fresh(recipe),0),'TES_PERMISSAO')
+    rejected('Papel fixado: administrador rebaixado não recebe sonda',rpc({'tipo':'sonda'},0),'TES_PERMISSAO')
+    sql("UPDATE financeiro_hml.perfis SET papel='admin_geral' WHERE usuario_id='"+users[0]+"';")
     sql("UPDATE financeiro_hml.perfis SET papel='analista_financeiro' WHERE usuario_id='"+users[1]+"';")
     sql("UPDATE financeiro_hml.perfis SET ativo=false WHERE usuario_id='"+users[1]+"';")
     rejected('V2.2.1: analista desativado é recusado',rpc(fresh(recipe),1),'TES_PERMISSAO')
