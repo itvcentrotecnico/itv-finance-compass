@@ -36,8 +36,8 @@ describe("hierarquia", () => {
 });
 
 describe("permissões dos cadastros", () => {
-  it("Analista gerencia centros de custo mas só lê o plano de contas", () => {
-    expect(canTable("analista_financeiro", "centros_custo", "update")).toBe(true);
+  it("Analista só consulta centros de custo e plano de contas (decisão B)", () => {
+    expect(canTable("analista_financeiro", "centros_custo", "update")).toBe(false);
     expect(canTable("analista_financeiro", "plano_contas", "create")).toBe(false);
   });
   it("Consulta Gerencial não grava em nenhum dos dois", () => {
