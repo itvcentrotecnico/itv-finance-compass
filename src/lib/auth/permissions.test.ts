@@ -26,7 +26,15 @@ describe("permissões por tabela (espelho do RLS)", () => {
     expect(canTable("analista_financeiro", "perfis", "read")).toBe(false);
   });
   it("Analista altera centros de custo mas não o plano de contas nem contas financeiras", () => {
-    expect(canTable("analista_financeiro", "centros_custo", "update")).toBe(true);
+    expect(canTable("analista_financeiro", "centros_custo", "update")).toBe(false);
+    expect(canTable("analista_financeiro", "centros_custo", "create")).toBe(false);
+    expect(canTable("admin_financeiro", "centros_custo", "create")).toBe(false);
+    expect(canTable("admin_geral", "centros_custo", "update")).toBe(true);
+    expect(can("analista_financeiro", "centros_custo", "view")).toBe(true);
+    expect(can("analista_financeiro", "centros_custo", "create")).toBe(false);
+    expect(can("analista_financeiro", "lancamentos", "create")).toBe(true);
+    expect(can("admin_financeiro", "lancamentos", "create")).toBe(false);
+    expect(can("analista_financeiro", "plano_contas", "update")).toBe(false);
     expect(canTable("analista_financeiro", "plano_contas", "update")).toBe(false);
     expect(canTable("analista_financeiro", "contas_financeiras", "create")).toBe(false);
   });

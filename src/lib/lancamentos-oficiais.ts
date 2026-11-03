@@ -1,6 +1,6 @@
 /** IDs come only from the installed separate ledger contract, pinned by the DB. */
 export interface OpcoesOficiais { contas: string[]; categorias: string[] }
-export const CONTRATO_LANCAMENTO = "tesouraria_lancar_livro_v2_2";
+export const CONTRATO_LANCAMENTO = "tesouraria_lancar_livro_v2_2_1";
 export function lerOpcoesOficiais(v: unknown): OpcoesOficiais | null {
   if (!v || typeof v !== "object") return null;
   const x = v as Record<string, unknown>;
