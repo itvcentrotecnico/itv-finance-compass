@@ -174,7 +174,9 @@ DECLARE t record; r text; f record; allowed text[];
 BEGIN
  FOREACH r IN ARRAY ARRAY['anon','authenticated','service_role'] LOOP
   FOR t IN SELECT c.oid,c.relname FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='financeiro_hml' AND c.relkind='r' LOOP
-   IF has_table_privilege(r,t.oid,'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') OR has_any_column_privilege(r,t.oid,'INSERT,UPDATE,REFERENCES') THEN RAISE EXCEPTION 'V22_DML_RESIDUAL: % %',r,t.relname; END IF;
+   IF r='authenticated' AND t.relname IN ('perfis','plano_contas','centros_custo') THEN
+    IF NOT has_table_privilege(r,t.oid,'INSERT') OR NOT has_table_privilege(r,t.oid,'UPDATE') OR has_table_privilege(r,t.oid,'DELETE,TRUNCATE,REFERENCES,TRIGGER') OR has_any_column_privilege(r,t.oid,'REFERENCES') THEN RAISE EXCEPTION 'V22_DML_RESIDUAL: % %',r,t.relname; END IF;
+   ELSIF has_table_privilege(r,t.oid,'INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER') OR has_any_column_privilege(r,t.oid,'INSERT,UPDATE,REFERENCES') THEN RAISE EXCEPTION 'V22_DML_RESIDUAL: % %',r,t.relname; END IF;
   END LOOP;
   allowed:=CASE r WHEN 'authenticated' THEN ARRAY['tem_papel','papel_atual','tesouraria_saldos','tesouraria_extrato','tesouraria_historico_operacoes','integracao_estado_manual','integracao_iniciar','integracao_concluir','diagnostico_reservar','tesouraria_lancar'] WHEN 'service_role' THEN ARRAY['diagnostico_finalizar'] ELSE ARRAY[]::text[] END;
   FOR f IN SELECT p.oid,p.proname FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='financeiro_hml' LOOP
