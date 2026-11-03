@@ -1,7 +1,11 @@
 {
   "ambiente": "PostgreSQL local descartável; Auth simplificado; sem rede; sem dados reais",
-  "total": 123,
+  "total": 130,
   "testes": [
+    {
+      "teste": "Fixture reproduz ausência real de perfis.nome",
+      "aprovado": true
+    },
     {
       "teste": "Proposta sem confirmação técnica é recusada",
       "aprovado": true
@@ -11,15 +15,15 @@
       "aprovado": true
     },
     {
-      "teste": "Manifesto incompleto/nulo é recusado 2",
-      "aprovado": true
-    },
-    {
       "teste": "Manifesto incompleto/nulo é recusado 3",
       "aprovado": true
     },
     {
       "teste": "Manifesto incompleto/nulo é recusado 4",
+      "aprovado": true
+    },
+    {
+      "teste": "Manifesto incompleto/nulo é recusado 5",
       "aprovado": true
     },
     {
@@ -48,6 +52,14 @@
     },
     {
       "teste": "Escritor concorrente impede implantação",
+      "aprovado": true
+    },
+    {
+      "teste": "Constraint real antes: apenas banco e caixa",
+      "aprovado": true
+    },
+    {
+      "teste": "Constraint ampliada mantém banco/caixa e aceita interno",
       "aprovado": true
     },
     {
@@ -211,7 +223,7 @@
       "aprovado": true
     },
     {
-      "teste": "Administrador Financeiro registra despesa",
+      "teste": "Analista Financeiro aprovado registra despesa",
       "aprovado": true
     },
     {
@@ -339,7 +351,7 @@
       "aprovado": true
     },
     {
-      "teste": "Administrador geral lê nome autorizado",
+      "teste": "Sem coluna nome: histórico mantém UUID e nome nulo",
       "aprovado": true
     },
     {
@@ -376,6 +388,22 @@
     },
     {
       "teste": "V2.2.1: analista com papel trocado é recusado",
+      "aprovado": true
+    },
+    {
+      "teste": "Papel fixado: analista promovido a Administrador Geral não lança",
+      "aprovado": true
+    },
+    {
+      "teste": "Papel fixado: analista promovido não recebe sonda",
+      "aprovado": true
+    },
+    {
+      "teste": "Papel fixado: administrador rebaixado a analista não lança",
+      "aprovado": true
+    },
+    {
+      "teste": "Papel fixado: administrador rebaixado não recebe sonda",
       "aprovado": true
     },
     {
