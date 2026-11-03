@@ -1,11 +1,18 @@
 # Autenticação segura — ITV FINANCEIRO HML
 
+## Autorização condicionada de implantação V2.2.1 — 03/11/2026, 21h21 UTC
+
+- [x] Registrar autorização do pacote final (SHA-256 f5687d37a804ea80a1701de3f2f451200128cbee2172f9362a7e40eac8a3c5d7), tipo interno/abertura zero/permissões; publicação específica permanece pendente.
+- [x] Verificar evidências disponíveis sem repetir homologação: manifesto vazio, sem archive atual acessível/conexão gerenciada; restauração informada de 29/10 cobre 280 auditorias/Auth simplificado, não owners/ACLs atuais. Condição A de backup não comprovada; interrompido antes de manutenção/migração.
+- [ ] Implantar: aguarda evidência de recuperação atual owners/ACLs/dependências, manifesto final e janela com produtores suspensos/drenagem; nenhuma escrita hospedada permitida antes das condições cumpridas.
+- [x] Entregar relatório de instalação interrompida com ações externas objetivas; não declarar pós-instalação, liberação ou publicação.
+
 ## Encerramento da homologação V2.2.1 — 03/11/2026
 
 - [x] Coletar evidências hospedadas somente leitura: colunas reais, 13 contagens/hashes, categorias, usuários, segurança e dependências; separar de testes locais.
 - [x] Revisar scripts e corrigir CHECK interno, perfis sem nome e UUID→papel; 130 PostgreSQL local + 249 app aprovados, build OK.
 - [x] Entregar relatório consolidado, SQL revisado e procedimento exclusivo/contingência/backup Free; parecer BLOQUEADA por evidências externas.
-- [ ] Implantação: e-mail/último login do analista já confirmados por leitura; aguardam confirmação da primeira aba, recovery real owners/ACLs, manifesto aprovado, janela/drenagem e autorização posterior; escrita/publicação proibidas.
+- [ ] Implantação: autorização condicionada recebida às 21h21 UTC; aguardam confirmação da primeira aba, recuperação atual owners/ACLs, manifesto e janela/drenagem. Publicação depende de autorização específica pós-instalação.
 
 ## Pré-condições V2.2 — 02/11/2026, 19h56 UTC
 
