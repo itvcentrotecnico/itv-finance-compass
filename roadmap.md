@@ -5,6 +5,7 @@
 - [x] Registrar escopo escolhido: preparar a próxima etapa sem instalar, publicar ou alterar o banco; Lançamentos V2.2.1 continua bloqueado por recuperação não comprovada.
 - [x] Conferir componentes e proposta Etapa 2 existentes; identificar incompatibilidade da seleção bancária/fluxo antigo com o livro único.
 - [x] Preparar plano de reuso e critérios de aprovação para Conferência de Caixa, sem reativar SQL legado ou acessar GESTÃO ITV.
+- [x] Executar plano aprovado: proposta funcional, campos/estados, responsabilidades, mapa técnico de reuso/lacunas, roteiro de testes e impactos em `docs/conferencia-caixa/PROPOSTA_PREPARACAO_20261111.md`; somente documentação, sem implementação operacional.
 - [ ] Implantação de Lançamentos: depende de recuperação comprovada, janela e demais condições já registradas; não dispensadas pela preparação do próximo módulo.
 
 
