@@ -65,6 +65,7 @@ try:
     categories=json.loads(query('SELECT json_agg(id ORDER BY codigo) FROM financeiro_hml.plano_contas WHERE aceita_lancamentos'))
     livro='80000000-0000-4000-8000-000000000001'
     manifest={'modo':'livro_unico','contas':[livro],'categorias':categories,'responsaveis':users[:2],'abertura':'80000000-0000-4000-8000-000000000002','chave_abertura':'80000000-0000-4000-8000-000000000003'}
+    check('Base isolada tem as 14 categorias analíticas oficiais (6 receitas, 8 despesas)',len(categories)==14 and query("SELECT string_agg(natureza||':'||n,',' ORDER BY natureza) FROM (SELECT natureza,count(*) n FROM financeiro_hml.plano_contas WHERE aceita_lancamentos GROUP BY natureza) x")=='despesa:8,receita:6')
     check('Fixture reproduz ausência real de perfis.nome',query("SELECT count(*) FROM pg_attribute WHERE attrelid='financeiro_hml.perfis'::regclass AND attname='nome' AND NOT attisdropped")=='0')
     allbefore=query("SELECT md5(jsonb_agg(to_jsonb(c) ORDER BY id)::text) FROM financeiro_hml.contas_financeiras c")
     audits=query("SELECT count(*) FROM financeiro_hml.auditoria")

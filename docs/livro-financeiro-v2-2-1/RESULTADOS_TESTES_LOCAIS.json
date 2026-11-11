@@ -1,7 +1,11 @@
 {
   "ambiente": "PostgreSQL local descartável; Auth simplificado; sem rede; sem dados reais",
-  "total": 131,
+  "total": 132,
   "testes": [
+    {
+      "teste": "Base isolada tem as 14 categorias analíticas oficiais (6 receitas, 8 despesas)",
+      "aprovado": true
+    },
     {
       "teste": "Fixture reproduz ausência real de perfis.nome",
       "aprovado": true
@@ -19,15 +23,15 @@
       "aprovado": true
     },
     {
-      "teste": "Manifesto incompleto/nulo é recusado 4",
-      "aprovado": true
-    },
-    {
       "teste": "Manifesto incompleto/nulo é recusado 5",
       "aprovado": true
     },
     {
       "teste": "Manifesto incompleto/nulo é recusado 6",
+      "aprovado": true
+    },
+    {
+      "teste": "Manifesto incompleto/nulo é recusado 7",
       "aprovado": true
     },
     {

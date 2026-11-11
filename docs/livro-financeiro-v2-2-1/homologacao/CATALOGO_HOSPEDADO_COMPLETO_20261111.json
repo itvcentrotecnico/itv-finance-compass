@@ -1,0 +1,1190 @@
+{
+ "estrutura": {
+  "tabelas": [
+   {
+    "rls": true,
+    "nome": "auditoria",
+    "force": true,
+    "owner": "postgres"
+   },
+   {
+    "rls": true,
+    "nome": "centros_custo",
+    "force": true,
+    "owner": "postgres"
+   },
+   {
+    "rls": true,
+    "nome": "contas_financeiras",
+    "force": true,
+    "owner": "postgres"
+   },
+   {
+    "rls": true,
+    "nome": "contas_preparadas",
+    "force": false,
+    "owner": "postgres"
+   },
+   {
+    "rls": true,
+    "nome": "diagnostico_autorizacoes",
+    "force": false,
+    "owner": "postgres"
+   },
+   {
+    "rls": true,
+    "nome": "diagnostico_tentativas",
+    "force": false,
+    "owner": "postgres"
+   },
+   {
+    "rls": true,
+    "nome": "integracao_itens",
+    "force": false,
+    "owner": "postgres"
+   },
+   {
+    "rls": true,
+    "nome": "integracao_sincronizacoes",
+    "force": false,
+    "owner": "postgres"
+   },
+   {
+    "rls": true,
+    "nome": "perfis",
+    "force": true,
+    "owner": "postgres"
+   },
+   {
+    "rls": true,
+    "nome": "plano_contas",
+    "force": true,
+    "owner": "postgres"
+   },
+   {
+    "rls": true,
+    "nome": "tesouraria_conferencias",
+    "force": false,
+    "owner": "postgres"
+   },
+   {
+    "rls": true,
+    "nome": "tesouraria_movimentos",
+    "force": true,
+    "owner": "postgres"
+   },
+   {
+    "rls": true,
+    "nome": "tesouraria_operacoes",
+    "force": true,
+    "owner": "postgres"
+   }
+  ],
+  "gatilhos": [
+   {
+    "def": "CREATE TRIGGER auditoria AFTER INSERT OR UPDATE ON financeiro_hml.centros_custo FOR EACH ROW EXECUTE FUNCTION financeiro_hml.registrar_auditoria()",
+    "nome": "auditoria",
+    "tabela": "centros_custo",
+    "enabled": "O"
+   },
+   {
+    "def": "CREATE TRIGGER autoria BEFORE INSERT OR UPDATE ON financeiro_hml.centros_custo FOR EACH ROW EXECUTE FUNCTION financeiro_hml.autoria_cadastro()",
+    "nome": "autoria",
+    "tabela": "centros_custo",
+    "enabled": "O"
+   },
+   {
+    "def": "CREATE TRIGGER autoria BEFORE INSERT OR UPDATE ON financeiro_hml.contas_financeiras FOR EACH ROW EXECUTE FUNCTION financeiro_hml.autoria()",
+    "nome": "autoria",
+    "tabela": "contas_financeiras",
+    "enabled": "O"
+   },
+   {
+    "def": "CREATE TRIGGER tes_auditoria_conta AFTER INSERT OR UPDATE ON financeiro_hml.contas_financeiras FOR EACH ROW EXECUTE FUNCTION financeiro_hml.registrar_auditoria()",
+    "nome": "tes_auditoria_conta",
+    "tabela": "contas_financeiras",
+    "enabled": "O"
+   },
+   {
+    "def": "CREATE CONSTRAINT TRIGGER tes_conta_abertura AFTER INSERT ON financeiro_hml.contas_financeiras DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION financeiro_hml.tes_conta_exige_abertura()",
+    "nome": "tes_conta_abertura",
+    "tabela": "contas_financeiras",
+    "enabled": "O"
+   },
+   {
+    "def": "CREATE TRIGGER tes_proteger_conta BEFORE UPDATE ON financeiro_hml.contas_financeiras FOR EACH ROW EXECUTE FUNCTION financeiro_hml.tes_proteger_conta()",
+    "nome": "tes_proteger_conta",
+    "tabela": "contas_financeiras",
+    "enabled": "O"
+   },
+   {
+    "def": "CREATE TRIGGER tes_contas_preparadas_auditar AFTER INSERT OR UPDATE ON financeiro_hml.contas_preparadas FOR EACH ROW EXECUTE FUNCTION financeiro_hml.tes_conf_auditar()",
+    "nome": "tes_contas_preparadas_auditar",
+    "tabela": "contas_preparadas",
+    "enabled": "O"
+   },
+   {
+    "def": "CREATE TRIGGER diagnostico_autorizacoes_auditar AFTER INSERT OR UPDATE ON financeiro_hml.diagnostico_autorizacoes FOR EACH ROW EXECUTE FUNCTION financeiro_hml.tes_conf_auditar()",
+    "nome": "diagnostico_autorizacoes_auditar",
+    "tabela": "diagnostico_autorizacoes",
+    "enabled": "O"
+   },
+   {
+    "def": "CREATE TRIGGER diagnostico_tentativas_auditar AFTER INSERT OR UPDATE ON financeiro_hml.diagnostico_tentativas FOR EACH ROW EXECUTE FUNCTION financeiro_hml.tes_conf_auditar()",
+    "nome": "diagnostico_tentativas_auditar",
+    "tabela": "diagnostico_tentativas",
+    "enabled": "O"
+   },
+   {
+    "def": "CREATE TRIGGER int_itens_auditar AFTER INSERT OR UPDATE ON financeiro_hml.integracao_itens FOR EACH ROW EXECUTE FUNCTION financeiro_hml.tes_conf_auditar()",
+    "nome": "int_itens_auditar",
+    "tabela": "integracao_itens",
+    "enabled": "O"
+   },
+   {
+    "def": "CREATE TRIGGER int_sync_auditar AFTER INSERT OR UPDATE ON financeiro_hml.integracao_sincronizacoes FOR EACH ROW EXECUTE FUNCTION financeiro_hml.tes_conf_auditar()",
+    "nome": "int_sync_auditar",
+    "tabela": "integracao_sincronizacoes",
+    "enabled": "O"
+   },
+   {
+    "def": "CREATE TRIGGER perfis_protecao BEFORE DELETE OR UPDATE ON financeiro_hml.perfis FOR EACH ROW EXECUTE FUNCTION financeiro_hml.perfis_protecao()",
+    "nome": "perfis_protecao",
+    "tabela": "perfis",
+    "enabled": "O"
+   },
+   {
+    "def": "CREATE TRIGGER auditoria AFTER INSERT OR UPDATE ON financeiro_hml.plano_contas FOR EACH ROW EXECUTE FUNCTION financeiro_hml.registrar_auditoria()",
+    "nome": "auditoria",
+    "tabela": "plano_contas",
+    "enabled": "O"
+   },
+   {
+    "def": "CREATE TRIGGER autoria BEFORE INSERT OR UPDATE ON financeiro_hml.plano_contas FOR EACH ROW EXECUTE FUNCTION financeiro_hml.autoria_cadastro()",
+    "nome": "autoria",
+    "tabela": "plano_contas",
+    "enabled": "O"
+   },
+   {
+    "def": "CREATE TRIGGER pc_hierarquia BEFORE INSERT OR UPDATE ON financeiro_hml.plano_contas FOR EACH ROW EXECUTE FUNCTION financeiro_hml.pc_hierarquia()",
+    "nome": "pc_hierarquia",
+    "tabela": "plano_contas",
+    "enabled": "O"
+   },
+   {
+    "def": "CREATE TRIGGER tes_proteger_natureza BEFORE UPDATE ON financeiro_hml.plano_contas FOR EACH ROW EXECUTE FUNCTION financeiro_hml.tes_proteger_natureza()",
+    "nome": "tes_proteger_natureza",
+    "tabela": "plano_contas",
+    "enabled": "O"
+   },
+   {
+    "def": "CREATE TRIGGER tes_conf_auditar AFTER INSERT OR UPDATE ON financeiro_hml.tesouraria_conferencias FOR EACH ROW EXECUTE FUNCTION financeiro_hml.tes_conf_auditar()",
+    "nome": "tes_conf_auditar",
+    "tabela": "tesouraria_conferencias",
+    "enabled": "O"
+   },
+   {
+    "def": "CREATE TRIGGER tes_conf_proteger BEFORE INSERT OR UPDATE ON financeiro_hml.tesouraria_conferencias FOR EACH ROW EXECUTE FUNCTION financeiro_hml.tes_conf_proteger()",
+    "nome": "tes_conf_proteger",
+    "tabela": "tesouraria_conferencias",
+    "enabled": "O"
+   },
+   {
+    "def": "CREATE CONSTRAINT TRIGGER tes_mov_efeitos AFTER INSERT ON financeiro_hml.tesouraria_movimentos DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION financeiro_hml.tes_validar_efeitos()",
+    "nome": "tes_mov_efeitos",
+    "tabela": "tesouraria_movimentos",
+    "enabled": "O"
+   },
+   {
+    "def": "CREATE TRIGGER tes_mov_imutavel BEFORE DELETE OR UPDATE ON financeiro_hml.tesouraria_movimentos FOR EACH ROW EXECUTE FUNCTION financeiro_hml.tes_imutavel()",
+    "nome": "tes_mov_imutavel",
+    "tabela": "tesouraria_movimentos",
+    "enabled": "O"
+   },
+   {
+    "def": "CREATE CONSTRAINT TRIGGER tes_op_efeitos AFTER INSERT ON financeiro_hml.tesouraria_operacoes DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION financeiro_hml.tes_validar_efeitos()",
+    "nome": "tes_op_efeitos",
+    "tabela": "tesouraria_operacoes",
+    "enabled": "O"
+   },
+   {
+    "def": "CREATE TRIGGER tes_op_imutavel BEFORE DELETE OR UPDATE ON financeiro_hml.tesouraria_operacoes FOR EACH ROW EXECUTE FUNCTION financeiro_hml.tes_imutavel()",
+    "nome": "tes_op_imutavel",
+    "tabela": "tesouraria_operacoes",
+    "enabled": "O"
+   }
+  ],
+  "politicas": [
+   {
+    "cmd": "SELECT",
+    "qual": "financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text])",
+    "roles": [
+     "authenticated"
+    ],
+    "tablename": "auditoria",
+    "permissive": "PERMISSIVE",
+    "policyname": "auditoria_ler",
+    "schemaname": "financeiro_hml",
+    "with_check": null
+   },
+   {
+    "cmd": "UPDATE",
+    "qual": "financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text, 'analista_financeiro'::text])",
+    "roles": [
+     "authenticated"
+    ],
+    "tablename": "centros_custo",
+    "permissive": "PERMISSIVE",
+    "policyname": "cc_alterar",
+    "schemaname": "financeiro_hml",
+    "with_check": "financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text, 'analista_financeiro'::text])"
+   },
+   {
+    "cmd": "INSERT",
+    "qual": null,
+    "roles": [
+     "authenticated"
+    ],
+    "tablename": "centros_custo",
+    "permissive": "PERMISSIVE",
+    "policyname": "cc_criar",
+    "schemaname": "financeiro_hml",
+    "with_check": "financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text, 'analista_financeiro'::text])"
+   },
+   {
+    "cmd": "SELECT",
+    "qual": "(financeiro_hml.papel_atual() IS NOT NULL)",
+    "roles": [
+     "authenticated"
+    ],
+    "tablename": "centros_custo",
+    "permissive": "PERMISSIVE",
+    "policyname": "cc_ler",
+    "schemaname": "financeiro_hml",
+    "with_check": null
+   },
+   {
+    "cmd": "UPDATE",
+    "qual": "financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text])",
+    "roles": [
+     "authenticated"
+    ],
+    "tablename": "contas_financeiras",
+    "permissive": "PERMISSIVE",
+    "policyname": "cf_alterar",
+    "schemaname": "financeiro_hml",
+    "with_check": "financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text])"
+   },
+   {
+    "cmd": "INSERT",
+    "qual": null,
+    "roles": [
+     "authenticated"
+    ],
+    "tablename": "contas_financeiras",
+    "permissive": "PERMISSIVE",
+    "policyname": "cf_criar",
+    "schemaname": "financeiro_hml",
+    "with_check": "financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text])"
+   },
+   {
+    "cmd": "SELECT",
+    "qual": "(financeiro_hml.papel_atual() IS NOT NULL)",
+    "roles": [
+     "authenticated"
+    ],
+    "tablename": "contas_financeiras",
+    "permissive": "PERMISSIVE",
+    "policyname": "cf_ler",
+    "schemaname": "financeiro_hml",
+    "with_check": null
+   },
+   {
+    "cmd": "SELECT",
+    "qual": "financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text, 'analista_financeiro'::text, 'consulta_gerencial'::text])",
+    "roles": [
+     "authenticated"
+    ],
+    "tablename": "contas_preparadas",
+    "permissive": "PERMISSIVE",
+    "policyname": "contas_preparadas_ler",
+    "schemaname": "financeiro_hml",
+    "with_check": null
+   },
+   {
+    "cmd": "SELECT",
+    "qual": "((administrador_id = auth.uid()) AND financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text]))",
+    "roles": [
+     "authenticated"
+    ],
+    "tablename": "diagnostico_autorizacoes",
+    "permissive": "PERMISSIVE",
+    "policyname": "diagnostico_autorizacoes_ler",
+    "schemaname": "financeiro_hml",
+    "with_check": null
+   },
+   {
+    "cmd": "SELECT",
+    "qual": "((usuario_id = auth.uid()) AND financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text]))",
+    "roles": [
+     "authenticated"
+    ],
+    "tablename": "diagnostico_tentativas",
+    "permissive": "PERMISSIVE",
+    "policyname": "diagnostico_tentativas_ler",
+    "schemaname": "financeiro_hml",
+    "with_check": null
+   },
+   {
+    "cmd": "SELECT",
+    "qual": "financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text, 'analista_financeiro'::text, 'consulta_gerencial'::text])",
+    "roles": [
+     "authenticated"
+    ],
+    "tablename": "integracao_itens",
+    "permissive": "PERMISSIVE",
+    "policyname": "int_itens_ler",
+    "schemaname": "financeiro_hml",
+    "with_check": null
+   },
+   {
+    "cmd": "SELECT",
+    "qual": "financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text, 'analista_financeiro'::text, 'consulta_gerencial'::text])",
+    "roles": [
+     "authenticated"
+    ],
+    "tablename": "integracao_sincronizacoes",
+    "permissive": "PERMISSIVE",
+    "policyname": "int_sync_ler",
+    "schemaname": "financeiro_hml",
+    "with_check": null
+   },
+   {
+    "cmd": "UPDATE",
+    "qual": "(financeiro_hml.tem_papel(ARRAY['admin_geral'::text]) AND (usuario_id <> auth.uid()))",
+    "roles": [
+     "authenticated"
+    ],
+    "tablename": "perfis",
+    "permissive": "PERMISSIVE",
+    "policyname": "perfis_alterar",
+    "schemaname": "financeiro_hml",
+    "with_check": "(financeiro_hml.tem_papel(ARRAY['admin_geral'::text]) AND (usuario_id <> auth.uid()))"
+   },
+   {
+    "cmd": "INSERT",
+    "qual": null,
+    "roles": [
+     "authenticated"
+    ],
+    "tablename": "perfis",
+    "permissive": "PERMISSIVE",
+    "policyname": "perfis_criar",
+    "schemaname": "financeiro_hml",
+    "with_check": "(financeiro_hml.tem_papel(ARRAY['admin_geral'::text]) AND (usuario_id <> auth.uid()))"
+   },
+   {
+    "cmd": "SELECT",
+    "qual": "((usuario_id = auth.uid()) OR financeiro_hml.tem_papel(ARRAY['admin_geral'::text]))",
+    "roles": [
+     "authenticated"
+    ],
+    "tablename": "perfis",
+    "permissive": "PERMISSIVE",
+    "policyname": "perfis_ler",
+    "schemaname": "financeiro_hml",
+    "with_check": null
+   },
+   {
+    "cmd": "UPDATE",
+    "qual": "financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text])",
+    "roles": [
+     "authenticated"
+    ],
+    "tablename": "plano_contas",
+    "permissive": "PERMISSIVE",
+    "policyname": "pc_alterar",
+    "schemaname": "financeiro_hml",
+    "with_check": "financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text])"
+   },
+   {
+    "cmd": "INSERT",
+    "qual": null,
+    "roles": [
+     "authenticated"
+    ],
+    "tablename": "plano_contas",
+    "permissive": "PERMISSIVE",
+    "policyname": "pc_criar",
+    "schemaname": "financeiro_hml",
+    "with_check": "financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text])"
+   },
+   {
+    "cmd": "SELECT",
+    "qual": "(financeiro_hml.papel_atual() IS NOT NULL)",
+    "roles": [
+     "authenticated"
+    ],
+    "tablename": "plano_contas",
+    "permissive": "PERMISSIVE",
+    "policyname": "pc_ler",
+    "schemaname": "financeiro_hml",
+    "with_check": null
+   },
+   {
+    "cmd": "UPDATE",
+    "qual": "financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text, 'analista_financeiro'::text])",
+    "roles": [
+     "authenticated"
+    ],
+    "tablename": "tesouraria_conferencias",
+    "permissive": "PERMISSIVE",
+    "policyname": "conf_editar",
+    "schemaname": "financeiro_hml",
+    "with_check": "financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text, 'analista_financeiro'::text])"
+   },
+   {
+    "cmd": "INSERT",
+    "qual": null,
+    "roles": [
+     "authenticated"
+    ],
+    "tablename": "tesouraria_conferencias",
+    "permissive": "PERMISSIVE",
+    "policyname": "conf_inserir",
+    "schemaname": "financeiro_hml",
+    "with_check": "financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text, 'analista_financeiro'::text])"
+   },
+   {
+    "cmd": "SELECT",
+    "qual": "financeiro_hml.tem_papel(ARRAY['admin_geral'::text, 'admin_financeiro'::text, 'analista_financeiro'::text, 'consulta_gerencial'::text])",
+    "roles": [
+     "authenticated"
+    ],
+    "tablename": "tesouraria_conferencias",
+    "permissive": "PERMISSIVE",
+    "policyname": "conf_ler",
+    "schemaname": "financeiro_hml",
+    "with_check": null
+   },
+   {
+    "cmd": "SELECT",
+    "qual": "(financeiro_hml.papel_atual() IS NOT NULL)",
+    "roles": [
+     "authenticated"
+    ],
+    "tablename": "tesouraria_movimentos",
+    "permissive": "PERMISSIVE",
+    "policyname": "tesouraria_movimentos_ler",
+    "schemaname": "financeiro_hml",
+    "with_check": null
+   },
+   {
+    "cmd": "SELECT",
+    "qual": "(financeiro_hml.papel_atual() IS NOT NULL)",
+    "roles": [
+     "authenticated"
+    ],
+    "tablename": "tesouraria_operacoes",
+    "permissive": "PERMISSIVE",
+    "policyname": "tesouraria_operacoes_ler",
+    "schemaname": "financeiro_hml",
+    "with_check": null
+   }
+  ],
+  "constraints": [
+   {
+    "def": "CHECK ((acao = ANY (ARRAY['criar'::text, 'alterar'::text, 'inativar'::text, 'reativar'::text])))",
+    "nome": "auditoria_acao_check",
+    "tabela": "auditoria"
+   },
+   {
+    "def": "PRIMARY KEY (id)",
+    "nome": "auditoria_pkey",
+    "tabela": "auditoria"
+   },
+   {
+    "def": "FOREIGN KEY (atualizado_por) REFERENCES auth.users(id)",
+    "nome": "centros_custo_atualizado_por_fkey",
+    "tabela": "centros_custo"
+   },
+   {
+    "def": "UNIQUE (codigo)",
+    "nome": "centros_custo_codigo_key",
+    "tabela": "centros_custo"
+   },
+   {
+    "def": "FOREIGN KEY (criado_por) REFERENCES auth.users(id)",
+    "nome": "centros_custo_criado_por_fkey",
+    "tabela": "centros_custo"
+   },
+   {
+    "def": "PRIMARY KEY (id)",
+    "nome": "centros_custo_pkey",
+    "tabela": "centros_custo"
+   },
+   {
+    "def": "CHECK (((codigo)::text ~ '^[A-Za-z0-9._-]{1,32}$'::text))",
+    "nome": "chk_codigo_centro_custo",
+    "tabela": "centros_custo"
+   },
+   {
+    "def": "CHECK (((length(btrim((descricao)::text)) >= 2) AND (length(btrim((descricao)::text)) <= 160)))",
+    "nome": "chk_descricao_centro_custo",
+    "tabela": "centros_custo"
+   },
+   {
+    "def": "CHECK (((length(btrim((nome)::text)) >= 2) AND (length(btrim((nome)::text)) <= 160)))",
+    "nome": "chk_nome_conta_financeira",
+    "tabela": "contas_financeiras"
+   },
+   {
+    "def": "FOREIGN KEY (criado_por) REFERENCES auth.users(id)",
+    "nome": "contas_financeiras_criado_por_fkey",
+    "tabela": "contas_financeiras"
+   },
+   {
+    "def": "CHECK ((moeda = 'BRL'::bpchar))",
+    "nome": "contas_financeiras_moeda_check",
+    "tabela": "contas_financeiras"
+   },
+   {
+    "def": "PRIMARY KEY (id)",
+    "nome": "contas_financeiras_pkey",
+    "tabela": "contas_financeiras"
+   },
+   {
+    "def": "CHECK (((tipo)::text = ANY (ARRAY[('banco'::character varying)::text, ('caixa'::character varying)::text])))",
+    "nome": "contas_financeiras_tipo_check",
+    "tabela": "contas_financeiras"
+   },
+   {
+    "def": "TRIGGER DEFERRABLE INITIALLY DEFERRED",
+    "nome": "tes_conta_abertura",
+    "tabela": "contas_financeiras"
+   },
+   {
+    "def": "CHECK (((situacao = 'habilitada'::text) = ((conta_financeira_id IS NOT NULL) AND (data_abertura IS NOT NULL) AND (saldo_validado IS NOT NULL) AND (responsavel_conferencia IS NOT NULL))))",
+    "nome": "contas_preparadas_check",
+    "tabela": "contas_preparadas"
+   },
+   {
+    "def": "FOREIGN KEY (conta_financeira_id) REFERENCES financeiro_hml.contas_financeiras(id)",
+    "nome": "contas_preparadas_conta_financeira_id_fkey",
+    "tabela": "contas_preparadas"
+   },
+   {
+    "def": "UNIQUE (conta_financeira_id)",
+    "nome": "contas_preparadas_conta_financeira_id_key",
+    "tabela": "contas_preparadas"
+   },
+   {
+    "def": "CHECK (((length(btrim((nome)::text)) >= 2) AND (length(btrim((nome)::text)) <= 160)))",
+    "nome": "contas_preparadas_nome_check",
+    "tabela": "contas_preparadas"
+   },
+   {
+    "def": "UNIQUE (nome)",
+    "nome": "contas_preparadas_nome_key",
+    "tabela": "contas_preparadas"
+   },
+   {
+    "def": "PRIMARY KEY (id)",
+    "nome": "contas_preparadas_pkey",
+    "tabela": "contas_preparadas"
+   },
+   {
+    "def": "CHECK ((situacao = ANY (ARRAY['pendente_abertura'::text, 'habilitada'::text])))",
+    "nome": "contas_preparadas_situacao_check",
+    "tabela": "contas_preparadas"
+   },
+   {
+    "def": "CHECK (((tipo)::text = ANY (ARRAY[('banco'::character varying)::text, ('caixa'::character varying)::text])))",
+    "nome": "contas_preparadas_tipo_check",
+    "tabela": "contas_preparadas"
+   },
+   {
+    "def": "CHECK ((encerra_em > criado_em))",
+    "nome": "diagnostico_autorizacoes_check",
+    "tabela": "diagnostico_autorizacoes"
+   },
+   {
+    "def": "CHECK (((consumidas >= 0) AND (consumidas <= 5)))",
+    "nome": "diagnostico_autorizacoes_consumidas_check",
+    "tabela": "diagnostico_autorizacoes"
+   },
+   {
+    "def": "PRIMARY KEY (id)",
+    "nome": "diagnostico_autorizacoes_pkey",
+    "tabela": "diagnostico_autorizacoes"
+   },
+   {
+    "def": "FOREIGN KEY (autorizacao_id) REFERENCES financeiro_hml.diagnostico_autorizacoes(id)",
+    "nome": "diagnostico_tentativas_autorizacao_id_fkey",
+    "tabela": "diagnostico_tentativas"
+   },
+   {
+    "def": "CHECK ((categoria = ANY (ARRAY['leitura_valida'::text, 'autenticacao_origem'::text, 'autorizacao_origem'::text, 'limite_origem'::text, 'erro_interno_origem'::text, 'http_origem'::text, 'resposta_invalida_origem'::text, 'timeout_origem'::text, 'configuracao_origem'::text, 'rede_origem'::text, 'invocacao_origem'::text, 'conexao_origem'::text, 'leitura_nao_autorizada'::text, 'falha_interna'::text, 'concorrencia'::text, 'repeticao'::text, 'limite'::text, 'autorizacao_inativa'::text])))",
+    "nome": "diagnostico_tentativas_categoria_check",
+    "tabela": "diagnostico_tentativas"
+   },
+   {
+    "def": "CHECK (((estado = 'bloqueada'::text) = (ordinal IS NULL)))",
+    "nome": "diagnostico_tentativas_check",
+    "tabela": "diagnostico_tentativas"
+   },
+   {
+    "def": "CHECK (((estado <> 'reservada'::text) OR ((categoria IS NULL) AND (status_http IS NULL) AND (duracao_ms IS NULL) AND (tipo_excecao IS NULL) AND (concluido_em IS NULL))))",
+    "nome": "diagnostico_tentativas_check1",
+    "tabela": "diagnostico_tentativas"
+   },
+   {
+    "def": "CHECK (((estado <> ALL (ARRAY['concluida'::text, 'falha'::text])) OR ((categoria IS NOT NULL) AND (duracao_ms IS NOT NULL) AND (concluido_em IS NOT NULL))))",
+    "nome": "diagnostico_tentativas_check2",
+    "tabela": "diagnostico_tentativas"
+   },
+   {
+    "def": "CHECK (((estado <> 'concluida'::text) OR (categoria = 'leitura_valida'::text)))",
+    "nome": "diagnostico_tentativas_check3",
+    "tabela": "diagnostico_tentativas"
+   },
+   {
+    "def": "CHECK (((estado <> 'bloqueada'::text) OR (categoria = ANY (ARRAY['concorrencia'::text, 'repeticao'::text, 'limite'::text, 'autorizacao_inativa'::text]))))",
+    "nome": "diagnostico_tentativas_check4",
+    "tabela": "diagnostico_tentativas"
+   },
+   {
+    "def": "CHECK ((duracao_ms >= 0))",
+    "nome": "diagnostico_tentativas_duracao_ms_check",
+    "tabela": "diagnostico_tentativas"
+   },
+   {
+    "def": "CHECK ((estado = ANY (ARRAY['reservada'::text, 'concluida'::text, 'falha'::text, 'bloqueada'::text])))",
+    "nome": "diagnostico_tentativas_estado_check",
+    "tabela": "diagnostico_tentativas"
+   },
+   {
+    "def": "CHECK (((ordinal >= 1) AND (ordinal <= 5)))",
+    "nome": "diagnostico_tentativas_ordinal_check",
+    "tabela": "diagnostico_tentativas"
+   },
+   {
+    "def": "PRIMARY KEY (id)",
+    "nome": "diagnostico_tentativas_pkey",
+    "tabela": "diagnostico_tentativas"
+   },
+   {
+    "def": "CHECK ((recurso = ANY (ARRAY['formas_pagamento'::text, 'recebimentos'::text, 'pagamentos'::text, 'recebimentos_titulos'::text, 'titulos'::text])))",
+    "nome": "diagnostico_tentativas_recurso_check",
+    "tabela": "diagnostico_tentativas"
+   },
+   {
+    "def": "CHECK (((status_http >= 100) AND (status_http <= 599)))",
+    "nome": "diagnostico_tentativas_status_http_check",
+    "tabela": "diagnostico_tentativas"
+   },
+   {
+    "def": "CHECK ((tipo_excecao = ANY (ARRAY['TypeError'::text, 'Error'::text, 'AbortError'::text, 'TimeoutError'::text, 'DOMException'::text, 'nao_identificado'::text, 'codigo_dns'::text, 'codigo_tls'::text, 'codigo_conexao'::text])))",
+    "nome": "diagnostico_tentativas_tipo_excecao_check",
+    "tabela": "diagnostico_tentativas"
+   },
+   {
+    "def": "FOREIGN KEY (conferencia_id) REFERENCES financeiro_hml.tesouraria_conferencias(id)",
+    "nome": "integracao_itens_conferencia_id_fkey",
+    "tabela": "integracao_itens"
+   },
+   {
+    "def": "FOREIGN KEY (duplicidade_candidata_id) REFERENCES financeiro_hml.tesouraria_conferencias(id)",
+    "nome": "integracao_itens_duplicidade_candidata_id_fkey",
+    "tabela": "integracao_itens"
+   },
+   {
+    "def": "PRIMARY KEY (id)",
+    "nome": "integracao_itens_pkey",
+    "tabela": "integracao_itens"
+   },
+   {
+    "def": "FOREIGN KEY (primeira_sincronizacao_id) REFERENCES financeiro_hml.integracao_sincronizacoes(id)",
+    "nome": "integracao_itens_primeira_sincronizacao_id_fkey",
+    "tabela": "integracao_itens"
+   },
+   {
+    "def": "CHECK (((length(referencia_origem) >= 3) AND (length(referencia_origem) <= 300)))",
+    "nome": "integracao_itens_referencia_origem_check",
+    "tabela": "integracao_itens"
+   },
+   {
+    "def": "UNIQUE (referencia_origem)",
+    "nome": "integracao_itens_referencia_origem_key",
+    "tabela": "integracao_itens"
+   },
+   {
+    "def": "CHECK ((situacao = ANY (ARRAY['novo'::text, 'existente'::text, 'alterado'::text, 'enviado_conferencia'::text, 'possivel_duplicidade'::text])))",
+    "nome": "integracao_itens_situacao_check",
+    "tabela": "integracao_itens"
+   },
+   {
+    "def": "CHECK ((tipo = ANY (ARRAY['pagamento'::text, 'recebimento_titulo'::text, 'titulo_aberto'::text])))",
+    "nome": "integracao_itens_tipo_check",
+    "tabela": "integracao_itens"
+   },
+   {
+    "def": "FOREIGN KEY (ultima_sincronizacao_id) REFERENCES financeiro_hml.integracao_sincronizacoes(id)",
+    "nome": "integracao_itens_ultima_sincronizacao_id_fkey",
+    "tabela": "integracao_itens"
+   },
+   {
+    "def": "CHECK ((consultados >= 0))",
+    "nome": "integracao_sincronizacoes_consultados_check",
+    "tabela": "integracao_sincronizacoes"
+   },
+   {
+    "def": "CHECK ((divergentes >= 0))",
+    "nome": "integracao_sincronizacoes_divergentes_check",
+    "tabela": "integracao_sincronizacoes"
+   },
+   {
+    "def": "CHECK ((enviados_conferencia >= 0))",
+    "nome": "integracao_sincronizacoes_enviados_conferencia_check",
+    "tabela": "integracao_sincronizacoes"
+   },
+   {
+    "def": "CHECK ((existentes >= 0))",
+    "nome": "integracao_sincronizacoes_existentes_check",
+    "tabela": "integracao_sincronizacoes"
+   },
+   {
+    "def": "CHECK ((modo = ANY (ARRAY['manual'::text, 'automatica'::text])))",
+    "nome": "integracao_sincronizacoes_modo_check",
+    "tabela": "integracao_sincronizacoes"
+   },
+   {
+    "def": "CHECK ((novos >= 0))",
+    "nome": "integracao_sincronizacoes_novos_check",
+    "tabela": "integracao_sincronizacoes"
+   },
+   {
+    "def": "PRIMARY KEY (id)",
+    "nome": "integracao_sincronizacoes_pkey",
+    "tabela": "integracao_sincronizacoes"
+   },
+   {
+    "def": "CHECK ((status = ANY (ARRAY['em_andamento'::text, 'concluida'::text, 'falha'::text])))",
+    "nome": "integracao_sincronizacoes_status_check",
+    "tabela": "integracao_sincronizacoes"
+   },
+   {
+    "def": "CHECK (((papel)::text = ANY (ARRAY[('admin_geral'::character varying)::text, ('admin_financeiro'::character varying)::text, ('analista_financeiro'::character varying)::text, ('consulta_gerencial'::character varying)::text])))",
+    "nome": "perfis_papel_check",
+    "tabela": "perfis"
+   },
+   {
+    "def": "PRIMARY KEY (usuario_id)",
+    "nome": "perfis_pkey",
+    "tabela": "perfis"
+   },
+   {
+    "def": "FOREIGN KEY (usuario_id) REFERENCES auth.users(id) ON DELETE CASCADE",
+    "nome": "perfis_usuario_id_fkey",
+    "tabela": "perfis"
+   },
+   {
+    "def": "CHECK (((codigo)::text ~ '^[A-Za-z0-9._-]{1,32}$'::text))",
+    "nome": "pc_codigo_formato",
+    "tabela": "plano_contas"
+   },
+   {
+    "def": "CHECK (((length(btrim((descricao)::text)) >= 2) AND (length(btrim((descricao)::text)) <= 160)))",
+    "nome": "pc_descricao_tamanho",
+    "tabela": "plano_contas"
+   },
+   {
+    "def": "FOREIGN KEY (atualizado_por) REFERENCES auth.users(id)",
+    "nome": "plano_contas_atualizado_por_fkey",
+    "tabela": "plano_contas"
+   },
+   {
+    "def": "UNIQUE (codigo)",
+    "nome": "plano_contas_codigo_key",
+    "tabela": "plano_contas"
+   },
+   {
+    "def": "FOREIGN KEY (conta_pai_id) REFERENCES financeiro_hml.plano_contas(id)",
+    "nome": "plano_contas_conta_pai_id_fkey",
+    "tabela": "plano_contas"
+   },
+   {
+    "def": "FOREIGN KEY (criado_por) REFERENCES auth.users(id)",
+    "nome": "plano_contas_criado_por_fkey",
+    "tabela": "plano_contas"
+   },
+   {
+    "def": "CHECK (((natureza)::text = ANY (ARRAY[('receita'::character varying)::text, ('despesa'::character varying)::text, ('ativo'::character varying)::text, ('passivo'::character varying)::text, ('patrimonio'::character varying)::text])))",
+    "nome": "plano_contas_natureza_check",
+    "tabela": "plano_contas"
+   },
+   {
+    "def": "PRIMARY KEY (id)",
+    "nome": "plano_contas_pkey",
+    "tabela": "plano_contas"
+   },
+   {
+    "def": "CHECK ((boleto_status = ANY (ARRAY['pendente'::text, 'pago'::text, 'vencido'::text])))",
+    "nome": "tesouraria_conferencias_boleto_status_check",
+    "tabela": "tesouraria_conferencias"
+   },
+   {
+    "def": "FOREIGN KEY (centro_custo_id) REFERENCES financeiro_hml.centros_custo(id)",
+    "nome": "tesouraria_conferencias_centro_custo_id_fkey",
+    "tabela": "tesouraria_conferencias"
+   },
+   {
+    "def": "CHECK (((valor_liquido > (0)::numeric) AND (valor_liquido <= valor_bruto)))",
+    "nome": "tesouraria_conferencias_check",
+    "tabela": "tesouraria_conferencias"
+   },
+   {
+    "def": "CHECK (((forma <> 'boleto'::text) OR (boleto_status IS NOT NULL)))",
+    "nome": "tesouraria_conferencias_check1",
+    "tabela": "tesouraria_conferencias"
+   },
+   {
+    "def": "CHECK (((status <> 'conciliado'::text) OR (conta_financeira_id IS NOT NULL)))",
+    "nome": "tesouraria_conferencias_check2",
+    "tabela": "tesouraria_conferencias"
+   },
+   {
+    "def": "CHECK (((forma <> ALL (ARRAY['credito'::text, 'debito'::text, 'parcelado'::text])) OR (status <> 'conciliado'::text) OR ((valor_liquido IS NOT NULL) AND (data_liquidacao IS NOT NULL))))",
+    "nome": "tesouraria_conferencias_check3",
+    "tabela": "tesouraria_conferencias"
+   },
+   {
+    "def": "CHECK (((forma <> 'boleto'::text) OR (status <> 'conciliado'::text) OR ((boleto_status = 'pago'::text) AND (boleto_pagamento IS NOT NULL))))",
+    "nome": "tesouraria_conferencias_check4",
+    "tabela": "tesouraria_conferencias"
+   },
+   {
+    "def": "FOREIGN KEY (conta_financeira_id) REFERENCES financeiro_hml.contas_financeiras(id)",
+    "nome": "tesouraria_conferencias_conta_financeira_id_fkey",
+    "tabela": "tesouraria_conferencias"
+   },
+   {
+    "def": "CHECK ((length(btrim((descricao)::text)) >= 2))",
+    "nome": "tesouraria_conferencias_descricao_check",
+    "tabela": "tesouraria_conferencias"
+   },
+   {
+    "def": "CHECK ((forma = ANY (ARRAY['dinheiro'::text, 'pix'::text, 'credito'::text, 'debito'::text, 'parcelado'::text, 'boleto'::text, 'misto'::text, 'indefinida'::text])))",
+    "nome": "tesouraria_conferencias_forma_check",
+    "tabela": "tesouraria_conferencias"
+   },
+   {
+    "def": "UNIQUE (identificador_origem)",
+    "nome": "tesouraria_conferencias_identificador_origem_key",
+    "tabela": "tesouraria_conferencias"
+   },
+   {
+    "def": "CHECK ((natureza = ANY (ARRAY['entrada'::text, 'saida'::text])))",
+    "nome": "tesouraria_conferencias_natureza_check",
+    "tabela": "tesouraria_conferencias"
+   },
+   {
+    "def": "FOREIGN KEY (operacao_id) REFERENCES financeiro_hml.tesouraria_operacoes(id)",
+    "nome": "tesouraria_conferencias_operacao_id_fkey",
+    "tabela": "tesouraria_conferencias"
+   },
+   {
+    "def": "UNIQUE (operacao_id)",
+    "nome": "tesouraria_conferencias_operacao_id_key",
+    "tabela": "tesouraria_conferencias"
+   },
+   {
+    "def": "PRIMARY KEY (id)",
+    "nome": "tesouraria_conferencias_pkey",
+    "tabela": "tesouraria_conferencias"
+   },
+   {
+    "def": "FOREIGN KEY (plano_conta_id) REFERENCES financeiro_hml.plano_contas(id)",
+    "nome": "tesouraria_conferencias_plano_conta_id_fkey",
+    "tabela": "tesouraria_conferencias"
+   },
+   {
+    "def": "CHECK (((length(referencia_origem) >= 3) AND (length(referencia_origem) <= 300)))",
+    "nome": "tesouraria_conferencias_referencia_origem_check",
+    "tabela": "tesouraria_conferencias"
+   },
+   {
+    "def": "UNIQUE (referencia_origem)",
+    "nome": "tesouraria_conferencias_referencia_origem_key",
+    "tabela": "tesouraria_conferencias"
+   },
+   {
+    "def": "CHECK ((status = ANY (ARRAY['pendente'::text, 'em_conferencia'::text, 'conciliado'::text, 'divergente'::text])))",
+    "nome": "tesouraria_conferencias_status_check",
+    "tabela": "tesouraria_conferencias"
+   },
+   {
+    "def": "CHECK ((valor_bruto > (0)::numeric))",
+    "nome": "tesouraria_conferencias_valor_bruto_check",
+    "tabela": "tesouraria_conferencias"
+   },
+   {
+    "def": "CHECK ((valor_total_grupo > (0)::numeric))",
+    "nome": "tesouraria_conferencias_valor_total_grupo_check",
+    "tabela": "tesouraria_conferencias"
+   },
+   {
+    "def": "TRIGGER DEFERRABLE INITIALLY DEFERRED",
+    "nome": "tes_mov_efeitos",
+    "tabela": "tesouraria_movimentos"
+   },
+   {
+    "def": "FOREIGN KEY (conta_financeira_id) REFERENCES financeiro_hml.contas_financeiras(id) ON DELETE RESTRICT",
+    "nome": "tesouraria_movimentos_conta_financeira_id_fkey",
+    "tabela": "tesouraria_movimentos"
+   },
+   {
+    "def": "CHECK ((direcao = ANY (ARRAY['credito'::text, 'debito'::text])))",
+    "nome": "tesouraria_movimentos_direcao_check",
+    "tabela": "tesouraria_movimentos"
+   },
+   {
+    "def": "UNIQUE (operacao_id, conta_financeira_id)",
+    "nome": "tesouraria_movimentos_operacao_id_conta_financeira_id_key",
+    "tabela": "tesouraria_movimentos"
+   },
+   {
+    "def": "FOREIGN KEY (operacao_id) REFERENCES financeiro_hml.tesouraria_operacoes(id) ON DELETE RESTRICT",
+    "nome": "tesouraria_movimentos_operacao_id_fkey",
+    "tabela": "tesouraria_movimentos"
+   },
+   {
+    "def": "PRIMARY KEY (id)",
+    "nome": "tesouraria_movimentos_pkey",
+    "tabela": "tesouraria_movimentos"
+   },
+   {
+    "def": "CHECK ((valor > (0)::numeric))",
+    "nome": "tesouraria_movimentos_valor_check",
+    "tabela": "tesouraria_movimentos"
+   },
+   {
+    "def": "TRIGGER DEFERRABLE INITIALLY DEFERRED",
+    "nome": "tes_op_efeitos",
+    "tabela": "tesouraria_operacoes"
+   },
+   {
+    "def": "FOREIGN KEY (centro_custo_id) REFERENCES financeiro_hml.centros_custo(id) ON DELETE RESTRICT",
+    "nome": "tesouraria_operacoes_centro_custo_id_fkey",
+    "tabela": "tesouraria_operacoes"
+   },
+   {
+    "def": "FOREIGN KEY (conta_destino_id) REFERENCES financeiro_hml.contas_financeiras(id) ON DELETE RESTRICT",
+    "nome": "tesouraria_operacoes_conta_destino_id_fkey",
+    "tabela": "tesouraria_operacoes"
+   },
+   {
+    "def": "FOREIGN KEY (conta_origem_id) REFERENCES financeiro_hml.contas_financeiras(id) ON DELETE RESTRICT",
+    "nome": "tesouraria_operacoes_conta_origem_id_fkey",
+    "tabela": "tesouraria_operacoes"
+   },
+   {
+    "def": "UNIQUE (criado_por, chave_idempotencia)",
+    "nome": "tesouraria_operacoes_criado_por_chave_idempotencia_key",
+    "tabela": "tesouraria_operacoes"
+   },
+   {
+    "def": "CHECK (((length(btrim((descricao)::text)) >= 2) AND (length(btrim((descricao)::text)) <= 500)))",
+    "nome": "tesouraria_operacoes_descricao_check",
+    "tabela": "tesouraria_operacoes"
+   },
+   {
+    "def": "FOREIGN KEY (operacao_original_id) REFERENCES financeiro_hml.tesouraria_operacoes(id) ON DELETE RESTRICT",
+    "nome": "tesouraria_operacoes_operacao_original_id_fkey",
+    "tabela": "tesouraria_operacoes"
+   },
+   {
+    "def": "UNIQUE (operacao_original_id)",
+    "nome": "tesouraria_operacoes_operacao_original_id_key",
+    "tabela": "tesouraria_operacoes"
+   },
+   {
+    "def": "PRIMARY KEY (id)",
+    "nome": "tesouraria_operacoes_pkey",
+    "tabela": "tesouraria_operacoes"
+   },
+   {
+    "def": "FOREIGN KEY (plano_conta_id) REFERENCES financeiro_hml.plano_contas(id) ON DELETE RESTRICT",
+    "nome": "tesouraria_operacoes_plano_conta_id_fkey",
+    "tabela": "tesouraria_operacoes"
+   },
+   {
+    "def": "CHECK ((tipo = ANY (ARRAY['abertura'::text, 'entrada'::text, 'saida'::text, 'transferencia'::text, 'estorno'::text])))",
+    "nome": "tesouraria_operacoes_tipo_check",
+    "tabela": "tesouraria_operacoes"
+   },
+   {
+    "def": "CHECK ((valor >= (0)::numeric))",
+    "nome": "tesouraria_operacoes_valor_check",
+    "tabela": "tesouraria_operacoes"
+   }
+  ]
+ },
+ "funcoes": {
+  "financeiro_hml.autoria()": {
+   "acl": "{postgres=X/postgres}",
+   "md5": "167f40fd1f0506f0de0a566c3be38da2",
+   "owner": "postgres"
+  },
+  "financeiro_hml.papel_atual()": {
+   "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+   "md5": "ff6e26e80bea9e4e9a8ec60d183915d9",
+   "owner": "postgres"
+  },
+  "financeiro_hml.tes_imutavel()": {
+   "acl": "{postgres=X/postgres}",
+   "md5": "3781de7d81ac4d248871565c7700a2fb",
+   "owner": "postgres"
+  },
+  "financeiro_hml.pc_hierarquia()": {
+   "acl": "{postgres=X/postgres}",
+   "md5": "b997693a30edf98768ee9a66d7907ec6",
+   "owner": "postgres"
+  },
+  "financeiro_hml.perfis_protecao()": {
+   "acl": "{postgres=X/postgres}",
+   "md5": "61d5750e5d25ba1740159026d9e5a72e",
+   "owner": "postgres"
+  },
+  "financeiro_hml.tem_papel(text[])": {
+   "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+   "md5": "9652b9d1810b1d2273cdfed0d7a0ea07",
+   "owner": "postgres"
+  },
+  "financeiro_hml.autoria_cadastro()": {
+   "acl": null,
+   "md5": "4e4f9210bb82bdfb92c104de9cfc71dd",
+   "owner": "postgres"
+  },
+  "financeiro_hml.tes_conf_auditar()": {
+   "acl": "{postgres=X/postgres}",
+   "md5": "c6a017d70d412451ca0bfc408ec52eed",
+   "owner": "postgres"
+  },
+  "financeiro_hml.tes_conf_proteger()": {
+   "acl": "{postgres=X/postgres}",
+   "md5": "05cbdfeaa8957c81393f00fcd16739bb",
+   "owner": "postgres"
+  },
+  "financeiro_hml.tes_executar(jsonb)": {
+   "acl": "{postgres=X/postgres}",
+   "md5": "028954f4e03ac8a5402dde2d32f62410",
+   "owner": "postgres"
+  },
+  "financeiro_hml.tesouraria_saldos()": {
+   "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+   "md5": "6b5905c5d0f7ffbdc6aa3ad49d353501",
+   "owner": "postgres"
+  },
+  "financeiro_hml.integracao_iniciar()": {
+   "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+   "md5": "2c08d74468969909eb539130a785c56c",
+   "owner": "postgres"
+  },
+  "financeiro_hml.tes_proteger_conta()": {
+   "acl": "{postgres=X/postgres}",
+   "md5": "833cba25cdae146f782bb07560574e2b",
+   "owner": "postgres"
+  },
+  "financeiro_hml.registrar_auditoria()": {
+   "acl": "{postgres=X/postgres}",
+   "md5": "ef434542af5a5735d531640e4a7cbc8c",
+   "owner": "postgres"
+  },
+  "financeiro_hml.tes_validar_efeitos()": {
+   "acl": "{postgres=X/postgres}",
+   "md5": "5fc456018ec1207ba0f85b2c4d869305",
+   "owner": "postgres"
+  },
+  "financeiro_hml.tes_proteger_natureza()": {
+   "acl": "{postgres=X/postgres}",
+   "md5": "019a3664b770494ff71647be079f2bb5",
+   "owner": "postgres"
+  },
+  "financeiro_hml.tesouraria_lancar(jsonb)": {
+   "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+   "md5": "12893e4cf1ec633acc2cb9051f6290f3",
+   "owner": "postgres"
+  },
+  "financeiro_hml.tesouraria_extrato(jsonb)": {
+   "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+   "md5": "df18ba14c55612a5791499dd459dab5d",
+   "owner": "postgres"
+  },
+  "financeiro_hml.integracao_concluir(jsonb)": {
+   "acl": "{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}",
+   "md5": "d2fcbb76dd8521b4e8742879a33f4216",
+   "owner": "postgres"
+  },
+  "financeiro_hml.integracao_estado_manual()": {
+   "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+   "md5": "12b05c826dd7d702c135f533c5bfb538",
+   "owner": "postgres"
+  },
+  "financeiro_hml.tes_conta_exige_abertura()": {
+   "acl": "{postgres=X/postgres}",
+   "md5": "f30e26b8e87ebf0a63ac04cf27c9df4e",
+   "owner": "postgres"
+  },
+  "financeiro_hml.tesouraria_estornar(jsonb)": {
+   "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+   "md5": "3d0a9a341dd02642718db613031f63e1",
+   "owner": "postgres"
+  },
+  "financeiro_hml.tesouraria_transferir(jsonb)": {
+   "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+   "md5": "d337c33d1e2296addc801835aabd94fc",
+   "owner": "postgres"
+  },
+  "financeiro_hml.integracao_expirar_travadas()": {
+   "acl": "{postgres=X/postgres}",
+   "md5": "7f71d7e5947aa5797d3a1b7a5dee33af",
+   "owner": "postgres"
+  },
+  "financeiro_hml.tesouraria_criar_conta(jsonb)": {
+   "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+   "md5": "026000de0ad4630239652e25641b5fb5",
+   "owner": "postgres"
+  },
+  "financeiro_hml.diagnostico_reservar(uuid,text)": {
+   "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+   "md5": "01b85221e475f18a663f10a39ee9e8c2",
+   "owner": "postgres"
+  },
+  "financeiro_hml.tesouraria_habilitar_conta(jsonb)": {
+   "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+   "md5": "02c3db2711eb0aece17fa4c0d2d88792",
+   "owner": "postgres"
+  },
+  "financeiro_hml.tesouraria_lancar_conferencia(jsonb)": {
+   "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+   "md5": "1cce3f157da433610b6983ba7cd1b2b0",
+   "owner": "postgres"
+  },
+  "financeiro_hml.tesouraria_historico_operacoes(jsonb)": {
+   "acl": "{postgres=X/postgres,authenticated=X/postgres}",
+   "md5": "c4be449256a6a03fedc3262f4d0d6b45",
+   "owner": "postgres"
+  },
+  "financeiro_hml.integracao_iniciar_automatica(date,date)": {
+   "acl": "{postgres=X/postgres,service_role=X/postgres}",
+   "md5": "0eb46bd9a67f2e0cb14da0fbc8c0b302",
+   "owner": "postgres"
+  },
+  "financeiro_hml.diagnostico_finalizar(uuid,uuid,integer,integer,text,text)": {
+   "acl": "{postgres=X/postgres,service_role=X/postgres}",
+   "md5": "4ebe2f56016907cfa4d5633ea8a3f544",
+   "owner": "postgres"
+  }
+ }
+}

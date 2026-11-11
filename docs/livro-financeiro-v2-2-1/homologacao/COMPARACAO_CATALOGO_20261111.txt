@@ -1,0 +1,14 @@
+== tabelas
+chaves ref tabela ['rls', 'nome', 'force', 'owner']
+== politicas
+chaves ref ['cmd', 'qual', 'roles', 'tablename', 'permissive', 'policyname', 'schemaname', 'with_check']
+chaves cur ['cmd', 'qual', 'roles', 'tablename', 'permissive', 'policyname', 'schemaname', 'with_check']
+== constraints
+representacao contas_financeiras_tipo_check
+representacao contas_preparadas_tipo_check
+representacao perfis_papel_check
+representacao plano_contas_natureza_check
+iguais 52 representacao 4 sem_referencia 51
+Counter({'FOREIGN': 24, 'PRIMARY': 13, 'UNIQUE': 11, 'TRIGGER': 3})
+== funcoes cur 31 exp 31 divergentes [] extras []
+== gatilhos 22
