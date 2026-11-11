@@ -1,5 +1,13 @@
 # Autenticação segura — ITV FINANCEIRO HML
 
+## Dashboard executivo em preparação — 11/11/2026
+
+- [x] Preparar indicadores não apurados, período, comparação e seções vazias sem acesso financeiro.
+- [x] Substituir a apresentação inicial de Tesouraria pelo Dashboard, mantendo consulta de Tesouraria no seu módulo.
+- [x] Verificar apresentação isolada desktop/375px e controles locais de período/comparação; build OK.
+- [ ] Verificar Dashboard integrado com usuário real: sessão externa indisponível no executor; não alegar validação autenticada.
+
+
 ## Telas de Conferência de Caixa — 11/11/2026
 
 - [x] Preparar painel vazio, filtros, resumo e detalhes sem consultas/RPCs ou persistência.

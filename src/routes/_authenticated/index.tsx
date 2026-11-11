@@ -1,10 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/layout/AppShell";
 import { PageHeader } from "@/components/shared/finance";
-import { TesourariaPanel, tesourariaOptions } from "@/components/tesouraria/TesourariaPanel";
+import { DashboardExecutivoPanel } from "@/components/dashboard/DashboardExecutivoPanel";
 
 export const Route = createFileRoute("/_authenticated/")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(tesourariaOptions),
   head: () => ({
     meta: [
       { title: "Dashboard executivo · ITV Financeiro" },
@@ -21,8 +20,8 @@ export const Route = createFileRoute("/_authenticated/")({
 function Dashboard() {
   return (
     <AppShell>
-      <PageHeader eyebrow="Visão executiva" title="Painel financeiro" description="Contas, saldos registrados e histórico. Novos lançamentos aguardam a validação dos controles de aprovação." />
-      <TesourariaPanel />
+      <PageHeader eyebrow="Visão executiva" title="Dashboard executivo" description="ITV Centro Técnico · Receitas, despesas, resultado e conferência por período." />
+      <DashboardExecutivoPanel />
     </AppShell>
   );
 }
