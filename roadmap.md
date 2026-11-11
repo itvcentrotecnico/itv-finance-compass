@@ -5,7 +5,8 @@
 - [x] Consolidar manifesto completo para aprovação: 2 perfis ativos e 14 categorias oficiais lidos; 3 UUIDs técnicos novos distintos, sem colisão nas contas/IDs/chaves de operações no snapshot. Nenhuma escrita hospedada.
 - [x] Verificar recursos de exportação: PGHOST ausente; não executar dump por exec; orientar procedimento gratuito no computador autorizado e primeira ação administrativa, sem credenciais no chat.
 - [ ] Backup recuperável: depende de exportação/restauração e evidências de owners/ACLs/dependências pelo responsável; nenhuma alegação de backup concluído.
-- [ ] Manifesto: aguarda aprovação específica do conteúdo apresentado; autorização administrativa geral já registrada, não pedir novamente.
+- [x] Manifesto: conteúdo completo aprovado pelo responsável nas respostas; manter os identificadores apresentados, sem pedir nova aprovação genérica.
+- [x] Backup: responsável confirmou Session pooler disponível; próximo passo é verificar pg_dump no computador local, sem solicitar credenciais.
 - [ ] Janela/instalação: somente após backup comprovado, suspensão de produtores/drenagem e revalidação prévia; publicação específica posterior.
 
 ## Autorização condicionada de implantação V2.2.1 — 03/11/2026, 21h21 UTC
