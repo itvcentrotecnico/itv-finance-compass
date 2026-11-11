@@ -1,5 +1,13 @@
 # Autenticação segura — ITV FINANCEIRO HML
 
+## Preparação de Conferência de Caixa — 11/11/2026
+
+- [x] Registrar escopo escolhido: preparar a próxima etapa sem instalar, publicar ou alterar o banco; Lançamentos V2.2.1 continua bloqueado por recuperação não comprovada.
+- [x] Conferir componentes e proposta Etapa 2 existentes; identificar incompatibilidade da seleção bancária/fluxo antigo com o livro único.
+- [x] Preparar plano de reuso e critérios de aprovação para Conferência de Caixa, sem reativar SQL legado ou acessar GESTÃO ITV.
+- [ ] Implantação de Lançamentos: depende de recuperação comprovada, janela e demais condições já registradas; não dispensadas pela preparação do próximo módulo.
+
+
 ## Resolução dos impedimentos V2.2.1 — 03/11/2026, 21h25 UTC
 
 - [x] Consolidar manifesto completo para aprovação: 2 perfis ativos e 14 categorias oficiais lidos; 3 UUIDs técnicos novos distintos, sem colisão nas contas/IDs/chaves de operações no snapshot. Nenhuma escrita hospedada.
