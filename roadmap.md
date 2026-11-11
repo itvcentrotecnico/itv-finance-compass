@@ -1,5 +1,11 @@
 # Autenticação segura — ITV FINANCEIRO HML
 
+## Auditoria geral dos módulos — 11/11/2026
+
+- [x] Inspecionar código, catálogo/segurança/dados hospedados e evidências anteriores; 251 testes locais aprovados, cadastro público fechado confirmado e site publicado protegido sem sessão; nenhuma escrita hospedada.
+- [x] Distinguir os 11 módulos: 0 integralmente funcionais comprovados, 3 instalados com pendências, 1 desenvolvido não instalado, 2 parciais e 5 não desenvolvidos; V2.2.1 ausente e uso autenticado externo não verificado.
+- [x] Entregar `docs/auditoria/ITV_AUDITORIA_GERAL_MODULOS_20261111.md` com riscos, correção das contagens do backup e sequência objetiva. Falha local de importação e hash estrutural divergente documentados, sem correção nesta auditoria; aguardar aprovação para implementação.
+
 ## Dashboard executivo em preparação — 11/11/2026
 
 - [x] Preparar indicadores não apurados, período, comparação e seções vazias sem acesso financeiro.
