@@ -1,5 +1,5 @@
 import {
-  ClipboardList, LayoutDashboard, Gauge, FileBarChart, Landmark, ArrowUpFromLine, ArrowDownToLine,
+  ClipboardList, ClipboardCheck, LayoutDashboard, Gauge, FileBarChart, Landmark, ArrowUpFromLine, ArrowDownToLine,
   Receipt, GitCompareArrows, Users, BadgePercent, Scale, HandCoins, FileSpreadsheet,
   Waves, Target, Rocket, ListTree, Building2, Truck, ShieldCheck, Plug, Settings,
   type LucideIcon,
@@ -35,6 +35,7 @@ export const MODULE_GROUPS: ModuleGroup[] = [
     label: "Movimentação financeira",
     modules: [
       { key: "lancamentos", slug: "lancamentos", title: "Lançamentos Financeiros", icon: ClipboardList, description: "Controle de receitas e despesas da ITV Centro Técnico.", features: [] },
+      { key: "conferencia_caixa", slug: "conferencia-de-caixa", title: "Conferência de Caixa", icon: ClipboardCheck, description: "Conferência diária de receitas, despesas e recebimentos da ITV Centro Técnico.", features: [] },
       { key: "tesouraria", slug: "tesouraria", title: "Tesouraria", icon: Landmark, description: "Contas, caixas e saldos bancários.", gestaoRefs: ["caixa_lancamentos", "caixa_pagamentos"], features: ["Contas bancárias e caixas", "Transferências entre contas", "Saldo consolidado", "Fechamento de caixa"] },
       { key: "contas_pagar", slug: "contas-a-pagar", title: "Contas a pagar", icon: ArrowUpFromLine, description: "Obrigações com fornecedores e terceiros.", gestaoRefs: ["contas_pagar", "contas_pagar_pagamentos"], features: ["Lançamento e parcelamento", "Baixas parciais e totais", "Agenda de vencimentos", "Aprovação de pagamentos"] },
       { key: "contas_receber", slug: "contas-a-receber", title: "Contas a receber", icon: ArrowDownToLine, description: "Recebíveis de clientes e ordens de serviço.", gestaoRefs: ["contas_receber", "contas_receber_recebimentos"], features: ["Títulos a receber", "Recebimentos parciais", "Inadimplência", "Cartões e antecipações"] },

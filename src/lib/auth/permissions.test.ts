@@ -2,6 +2,17 @@ import { describe, it, expect } from "vitest";
 import { can, canTable } from "./permissions";
 
 describe("permissões por módulo", () => {
+  it("Conferência em preparação é visível somente ao par autorizado", () => {
+    expect(can("admin_geral", "conferencia_caixa", "view")).toBe(true);
+    expect(can("analista_financeiro", "conferencia_caixa", "view")).toBe(true);
+    expect(can("admin_financeiro", "conferencia_caixa", "view")).toBe(false);
+    expect(can("consulta_gerencial", "conferencia_caixa", "view")).toBe(false);
+  });
+  it("Conferência em preparação não concede ações de escrita a nenhum perfil", () => {
+    for (const role of ["admin_geral", "admin_financeiro", "analista_financeiro", "consulta_gerencial"] as const) {
+      for (const action of ["create", "update", "delete", "approve"] as const) expect(can(role, "conferencia_caixa", action)).toBe(false);
+    }
+  });
   it("Administrador Geral tem acesso integral", () => {
     expect(can("admin_geral", "usuarios", "delete")).toBe(true);
   });

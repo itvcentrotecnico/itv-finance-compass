@@ -1,5 +1,13 @@
 # Autenticação segura — ITV FINANCEIRO HML
 
+## Telas de Conferência de Caixa — 11/11/2026
+
+- [x] Preparar painel vazio, filtros, resumo e detalhes sem consultas/RPCs ou persistência.
+- [x] Integrar registro central/menu autenticado, restrito ao par autorizado e somente apresentação.
+- [x] Testar guardas: 10 testes aprovados; apresentação isolada desktop/375px, limpeza de filtros e abertura de detalhes verificadas; build OK.
+- [ ] Verificar acesso integrado com usuário real: sessão externa não disponível neste executor; apresentação isolada não comprova acesso autenticado.
+
+
 ## Preparação de Conferência de Caixa — 11/11/2026
 
 - [x] Registrar escopo escolhido: preparar a próxima etapa sem instalar, publicar ou alterar o banco; Lançamentos V2.2.1 continua bloqueado por recuperação não comprovada.

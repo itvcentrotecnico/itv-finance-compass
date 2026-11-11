@@ -11,7 +11,7 @@ export type Action = "view" | "create" | "update" | "delete" | "approve";
 
 export type ModuleKey =
   | "dashboard" | "indicadores" | "relatorios"
-  | "tesouraria" | "lancamentos" | "contas_pagar" | "contas_receber" | "despesas" | "conciliacao"
+  | "tesouraria" | "lancamentos" | "conferencia_caixa" | "contas_pagar" | "contas_receber" | "despesas" | "conciliacao"
   | "folha" | "comissoes" | "tributos" | "financiamentos"
   | "dre" | "fluxo_caixa" | "planejamento" | "projetos"
   | "plano_contas" | "centros_custo" | "fornecedores" | "usuarios" | "integracoes" | "configuracoes";
@@ -50,6 +50,8 @@ const ADMIN_ONLY: ModuleKey[] = ["usuarios", "integracoes", "configuracoes"];
 const STRUCTURE: ModuleKey[] = ["plano_contas"];
 
 export function can(role: Role, module: ModuleKey, action: Action): boolean {
+  // Presentation only: no financial reads or mutating commands exist for this screen.
+  if (module === "conferencia_caixa") return action === "view" && (role === "admin_geral" || role === "analista_financeiro");
   if (module === "tesouraria" || module === "lancamentos") {
     if (action === "view") return true;
     if (action === "delete" || action === "update" || action === "approve") return false;
