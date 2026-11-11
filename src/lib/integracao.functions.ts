@@ -7,7 +7,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { montarItens, type FonteGestao } from "./integracao";
 import type { ControleManual } from "./integracao-manual";
 
 export interface Sincronizacao {
@@ -88,31 +87,6 @@ function janela(): { inicio: string; fim: string } {
   return { inicio: `${hoje.slice(0, 4)}-01-01`, fim: hoje };
 }
 
-/** Manual e automática delegam ao mesmo leitor, carregado apenas no servidor. */
-export async function lerFonteGestao(inicio: string, fim: string): Promise<FonteGestao> {
-  const { lerFonteGestaoServidor } = await import("./integracao-leitura.server");
-  return lerFonteGestaoServidor(inicio, fim);
-}
-
-/** Lê a origem e conclui a sincronização já iniciada (manual ou automática) pela RPC idempotente. */
-export async function executarSincronizacao(db: Db, syncId: string, inicio: string, fim: string): Promise<ResultadoSincronizacao> {
-  let fonte: FonteGestao;
-  try {
-    fonte = await lerFonteGestao(inicio, fim);
-  } catch (e) {
-    const etapa = e instanceof Error ? e.message : "leitura_origem";
-    await db.rpc("integracao_concluir", { p: { id: syncId, status: "falha", erros: [{ etapa }] } });
-    return { estado: "falha", etapa };
-  }
-  const itens = montarItens(fonte);
-  const { data: resultado, error } = await db.rpc("integracao_concluir", { p: { id: syncId, status: "concluida", itens } });
-  if (error) {
-    await db.rpc("integracao_concluir", { p: { id: syncId, status: "falha", erros: [{ etapa: "registro" }] } });
-    return { estado: "falha", etapa: "registro" };
-  }
-  return { estado: "concluida", ...(resultado as object) } as ResultadoSincronizacao;
-}
-
 const dia = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 export const sincronizarGestaoItv = createServerFn({ method: "POST" }).middleware([requireSupabaseAuth])
   .inputValidator((v: unknown) => z.object({ dia: dia.optional() }).parse(v ?? {}))
@@ -131,5 +105,6 @@ export const sincronizarGestaoItv = createServerFn({ method: "POST" }).middlewar
     throw new Error("Falha ao iniciar a sincronização.");
   }
   const { inicio, fim } = data.dia ? { inicio: data.dia, fim: data.dia } : janela();
+  const { executarSincronizacao } = await import("./integracao-execucao.server");
   return executarSincronizacao(db, syncId as string, inicio, fim);
 });

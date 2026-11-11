@@ -26,7 +26,7 @@ export const Route = createFileRoute("/api/public/integracao/sincronizacao-diari
         if (!process.env["GESTAO_ITV_READ_TOKEN"]) return resposta(503, { estado: "desabilitada" });
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const { executarSincronizacao } = await import("@/lib/integracao.functions");
+        const { executarSincronizacao } = await import("@/lib/integracao-execucao.server");
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const db = (supabaseAdmin as any).schema("financeiro_hml");
         const { inicio, fim } = janelaAutomatica(new Date());

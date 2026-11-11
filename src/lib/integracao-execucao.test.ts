@@ -7,7 +7,7 @@ vi.mock("@tanstack/react-start", () => ({ createServerFn: () => {
 } }));
 vi.mock("@/integrations/supabase/auth-middleware", () => ({ requireSupabaseAuth: {} }));
 vi.mock("./integracao-leitura.server", () => ({ lerFonteGestaoServidor: vi.fn() }));
-import { executarSincronizacao } from "./integracao.functions";
+import { executarSincronizacao } from "./integracao-execucao.server";
 import { lerFonteGestaoServidor } from "./integracao-leitura.server";
 
 describe("falhas do leitor compartilhado sem escrita financeira", () => {

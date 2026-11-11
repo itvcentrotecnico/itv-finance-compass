@@ -1,9 +1,13 @@
 {
   "ambiente": "PostgreSQL local descartável; Auth simplificado; sem rede; sem dados reais",
-  "total": 130,
+  "total": 131,
   "testes": [
     {
       "teste": "Fixture reproduz ausência real de perfis.nome",
+      "aprovado": true
+    },
+    {
+      "teste": "Base isolada reproduz a impressão estrutural hospedada de 11/11/2026",
       "aprovado": true
     },
     {
@@ -15,15 +19,15 @@
       "aprovado": true
     },
     {
-      "teste": "Manifesto incompleto/nulo é recusado 3",
-      "aprovado": true
-    },
-    {
       "teste": "Manifesto incompleto/nulo é recusado 4",
       "aprovado": true
     },
     {
       "teste": "Manifesto incompleto/nulo é recusado 5",
+      "aprovado": true
+    },
+    {
+      "teste": "Manifesto incompleto/nulo é recusado 6",
       "aprovado": true
     },
     {

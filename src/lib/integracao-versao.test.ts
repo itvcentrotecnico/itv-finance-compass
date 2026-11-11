@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 vi.mock("@tanstack/react-router", () => ({ createFileRoute: () => (options: unknown) => ({ options }) }));
 const mocks = vi.hoisted(() => ({ rpc: vi.fn(), executar: vi.fn() }));
 vi.mock("@/integrations/supabase/client.server", () => ({ supabaseAdmin: { schema: () => ({ rpc: mocks.rpc }) } }));
-vi.mock("@/lib/integracao.functions", () => ({ executarSincronizacao: mocks.executar }));
+vi.mock("@/lib/integracao-execucao.server", () => ({ executarSincronizacao: mocks.executar }));
 import { Route } from "@/routes/api/public/integracao/sincronizacao-diaria";
 
 const handlers = (Route.options as unknown as { server: { handlers: Record<"GET" | "POST", (ctx: { request: Request }) => Promise<Response>> } }).server.handlers;
