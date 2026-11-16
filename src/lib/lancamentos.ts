@@ -47,3 +47,16 @@ export function dinheiro(valor: string): string {
   return `${valor.startsWith("-") && cents !== 0n ? "−" : ""}R$ ${(cents / 100n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".")},${(cents % 100n).toString().padStart(2, "0")}`;
 }
 export const FORMAS_PAGAMENTO = ["PIX", "Dinheiro", "Cartão de débito", "Cartão de crédito", "Transferência bancária", "Boleto", "Outros"];
+
+/** Número da OS: aceita "1323", "OS 1323", "os 1323"; preserva zeros à esquerda. */
+export function normalizarNumeroOS(entrada: string): string | null {
+  const t = entrada.replace(/\s+/g, " ").trim().replace(/^os\s*/i, "").trim();
+  return /^[0-9]{1,30}$/.test(t) ? t : null;
+}
+export function referenciaDaOS(numero: string): string { return `externo:os-${numero}`; }
+/** Exibe "OS 1323" para referências de OS; outras referências ficam como estão. */
+export function exibirReferencia(ref: string | null | undefined): string | null {
+  if (!ref) return null;
+  const m = /^externo:os-([0-9]+)$/i.exec(ref.trim());
+  return m ? `OS ${m[1]}` : ref;
+}

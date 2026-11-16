@@ -37,4 +37,14 @@ describe("admissão de lançamentos — sessão e banco simulados", () => {
     await waitFor(() => expect(screen.getAllByText("Indisponível")).toHaveLength(4));
     expect(screen.queryByText("R$ 0,00")).not.toBeInTheDocument();
   });
+  it("histórico exibe OS 1323 e preserva referências de outros tipos", async () => {
+    const op = (id: string, ref: string) => ({ id, tipo: "entrada", valor: "10.00", descricao: `Op ${id}`, data_movimento: "2026-11-16", criado_em: "2026-11-16T20:00:00Z", estornada: false, referencia_documental: ref, classificacao_snapshot: null, conta_destino_id: null, conta_origem_id: null, criado_por: null, responsavel_nome: null });
+    sonda.mockResolvedValue(null);
+    historico.mockResolvedValue({ total: 2, operacoes: [op("a", "externo:os-1323"), op("b", "externo:nf-325")] });
+    montar();
+    expect(await screen.findByText("OS 1323")).toBeTruthy();
+    expect(screen.getByText("externo:nf-325")).toBeTruthy();
+    expect(screen.queryByText("externo:os-1323")).toBeNull();
+  });
 });
+

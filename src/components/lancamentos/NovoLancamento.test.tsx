@@ -21,11 +21,11 @@ function montar(contasPermitidas = ["11111111-1111-4111-8111-111111111111"]) {
 
 beforeEach(() => { Element.prototype.scrollIntoView = vi.fn(); });
 
-async function preencher(tipo: "entrada" | "saida") {
+async function preencher(tipo: "entrada" | "saida", os = "1323") {
   if (tipo === "saida") fireEvent.click(screen.getByRole("radio", { name: "Despesa" }));
   fireEvent.change(screen.getByLabelText("Valor"), { target: { value: "1.234,56" } });
   fireEvent.change(screen.getByLabelText("Descrição"), { target: { value: "Documento somente local" } });
-  fireEvent.change(screen.getByLabelText("Referência"), { target: { value: "externo:local-1450" } });
+  fireEvent.change(screen.getByLabelText("Número da OS"), { target: { value: os } });
   fireEvent.click(screen.getByLabelText("Categoria do lançamento"));
   fireEvent.click(await screen.findByRole("option", { name: tipo === "entrada" ? "1.01 · Conserto de televisores" : "2.01 · Compra de peças" }));
 }
@@ -63,9 +63,28 @@ describe("Novo lançamento", () => {
     await act(async () => { fireEvent.click(screen.getByRole("button", { name: /Registrar lançamento/ })); });
     expect(executar).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({
       tipo, valor: "1234.56", plano: tipo === "entrada" ? "r" : "d", data: "2026-11-02",
-      referencia: "externo:local-1450", chave: expect.stringMatching(/^[a-f0-9-]{36}$/),
+      referencia: "externo:os-1323", chave: expect.stringMatching(/^[a-f0-9-]{36}$/),
     }));
     expect(executar.mock.calls[0]?.[0]).not.toHaveProperty("origem");
     expect(executar.mock.calls[0]?.[0]).not.toHaveProperty("destino");
+  });
+  it.each(["1323", "OS 1323", "os 1323", "  OS   1323  "])("aceita %j como a OS 1323", async (os) => {
+    const executar = montar();
+    await preencher("entrada", os);
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: /Registrar lançamento/ })); });
+    expect(executar.mock.calls[0]?.[0]).toMatchObject({ referencia: "externo:os-1323" });
+  });
+  it("preserva zeros à esquerda", async () => {
+    const executar = montar();
+    await preencher("entrada", "OS 001323");
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: /Registrar lançamento/ })); });
+    expect(executar.mock.calls[0]?.[0]).toMatchObject({ referencia: "externo:os-001323" });
+  });
+  it("OS inválida mostra a mensagem e não envia", async () => {
+    const executar = montar();
+    await preencher("entrada", "OS abc");
+    await act(async () => { fireEvent.click(screen.getByRole("button", { name: /Registrar lançamento/ })); });
+    expect(screen.getByRole("alert").textContent).toBe("Informe um número de OS válido.");
+    expect(executar).not.toHaveBeenCalled();
   });
 });

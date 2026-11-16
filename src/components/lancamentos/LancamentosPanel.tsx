@@ -16,7 +16,7 @@ import { carregarHistoricoTesouraria, carregarOpcoesLancamento } from "@/lib/tes
 import type { OpcoesOficiais } from "@/lib/lancamentos-oficiais";
 import { podeLancarLivro, type OperacaoHistorico } from "@/lib/tesouraria";
 import { validarPedidoLivro } from "@/lib/livro-financeiro";
-import { dinheiro, FORMAS_PAGAMENTO, hojeManaus, intervalo, normalizarValor, PERIODOS, resumir, type Periodo } from "@/lib/lancamentos";
+import { dinheiro, exibirReferencia, normalizarNumeroOS, referenciaDaOS, FORMAS_PAGAMENTO, hojeManaus, intervalo, normalizarValor, PERIODOS, resumir, type Periodo } from "@/lib/lancamentos";
 import { useEnvioSeguro } from "@/components/tesouraria/useEnvioSeguro";
 
 const POR_PAGINA = 20;
@@ -101,10 +101,11 @@ function Lancamentos() {
     </div>
 
     {inicio > fim ? <p role="alert" className="text-sm text-destructive">A data inicial deve ser anterior ou igual à data final.</p> : dados.isLoading ? <Carregando /> : dados.isError ? <ErroCarga erro={dados.error} onRetry={() => dados.refetch()} /> : !filtradas.length ? <EmptyState icon={Scale} title="Nenhum lançamento encontrado para o período selecionado." description="Ajuste os filtros ou o período." /> : <>
-      <div className="overflow-x-auto rounded-lg border bg-card"><table className="w-full min-w-[760px] text-sm"><thead className="border-b text-left text-xs text-muted-foreground"><tr>{["Data", "Descrição", "Categoria", "Tipo", "Valor", "Situação", "Ações"].map((s) => <th key={s} className={`px-3 py-3 ${s === "Valor" ? "text-right" : ""}`}>{s}</th>)}</tr></thead>
+      <div className="overflow-x-auto rounded-lg border bg-card"><table className="w-full min-w-[760px] text-sm"><thead className="border-b text-left text-xs text-muted-foreground"><tr>{["Data", "Descrição", "Referência", "Categoria", "Tipo", "Valor", "Situação", "Ações"].map((s) => <th key={s} className={`px-3 py-3 ${s === "Valor" ? "text-right" : ""}`}>{s}</th>)}</tr></thead>
         <tbody>{visiveis.map((o) => { const rec = o.tipo === "entrada"; return <tr key={o.id} className={`border-b last:border-0 ${o.estornada ? "text-muted-foreground" : ""}`}>
           <td className="whitespace-nowrap px-3 py-3">{dataBR(o.data_movimento)}</td>
           <td className="max-w-72 break-words px-3 py-3">{o.descricao}</td>
+          <td className="whitespace-nowrap px-3 text-xs">{exibirReferencia(o.referencia_documental) ?? "—"}</td>
           <td className="px-3 text-xs">{o.classificacao_snapshot ? `${o.classificacao_snapshot.codigo} · ${o.classificacao_snapshot.descricao}` : "—"}</td>
           <td className="px-3"><span className={`inline-flex items-center gap-1 text-xs font-medium ${rec ? "text-brand" : "text-destructive"}`}>{rec ? <ArrowDownLeft className="size-3.5" /> : <ArrowUpRight className="size-3.5" />}{rec ? "Receita" : "Despesa"}</span></td>
           <td className={`whitespace-nowrap px-3 text-right font-mono ${o.estornada ? "line-through" : rec ? "text-brand" : "text-destructive"}`}>{rec ? "+ " : "− "}{dinheiro(o.valor)}</td>
@@ -115,7 +116,7 @@ function Lancamentos() {
     </>}
 
     <Sheet open={novo} onOpenChange={(o) => !o && !seguro.ocupado && setNovo(false)}><SheetContent className="w-full overflow-y-auto sm:max-w-lg"><SheetHeader><SheetTitle>Novo lançamento</SheetTitle><SheetDescription>Receita ou despesa · livro financeiro ITV</SheetDescription></SheetHeader>{novo && liberado && contrato.data && <NovoLancamento oficiais={contrato.data} planos={pc.data ?? []} seguro={seguro} hoje={hoje} onCancel={() => setNovo(false)} />}</SheetContent></Sheet>
-    <Sheet open={detalhe !== null} onOpenChange={(o) => !o && setDetalhe(null)}><SheetContent className="overflow-y-auto"><SheetHeader><SheetTitle>Detalhes do lançamento</SheetTitle><SheetDescription>{detalhe?.descricao}</SheetDescription></SheetHeader>{detalhe && <dl className="mt-6 space-y-3 text-sm">{[["Tipo", detalhe.tipo === "entrada" ? "Receita" : "Despesa"], ["Valor", dinheiro(detalhe.valor)], ["Data", dataBR(detalhe.data_movimento)], ["Vínculo técnico", detalhe.conta_destino_id ?? detalhe.conta_origem_id ?? "Não registrado"], ["Referência documental", detalhe.referencia_documental ?? "Não disponível no registro consultado"], ["Responsável — nome atual", detalhe.responsavel_nome || "Não disponível"], ["Autor — identificador", detalhe.criado_por || "Não registrado"], ["Categoria", detalhe.classificacao_snapshot ? `${detalhe.classificacao_snapshot.codigo} · ${detalhe.classificacao_snapshot.descricao}` : "—"], ["Situação", detalhe.estornada ? "Estornada" : "Confirmada"], ["Registrado em", new Date(detalhe.criado_em).toLocaleString("pt-BR", { timeZone: "America/Manaus" })], ["Identificador", detalhe.id]].map(([k, v]) => <div key={k}><dt className="text-xs text-muted-foreground">{k}</dt><dd className="break-words">{v}</dd></div>)}</dl>}</SheetContent></Sheet>
+    <Sheet open={detalhe !== null} onOpenChange={(o) => !o && setDetalhe(null)}><SheetContent className="overflow-y-auto"><SheetHeader><SheetTitle>Detalhes do lançamento</SheetTitle><SheetDescription>{detalhe?.descricao}</SheetDescription></SheetHeader>{detalhe && <dl className="mt-6 space-y-3 text-sm">{[["Tipo", detalhe.tipo === "entrada" ? "Receita" : "Despesa"], ["Valor", dinheiro(detalhe.valor)], ["Data", dataBR(detalhe.data_movimento)], ["Vínculo técnico", detalhe.conta_destino_id ?? detalhe.conta_origem_id ?? "Não registrado"], ["Referência documental", exibirReferencia(detalhe.referencia_documental) ?? "Não disponível no registro consultado"], ["Responsável — nome atual", detalhe.responsavel_nome || "Não disponível"], ["Autor — identificador", detalhe.criado_por || "Não registrado"], ["Categoria", detalhe.classificacao_snapshot ? `${detalhe.classificacao_snapshot.codigo} · ${detalhe.classificacao_snapshot.descricao}` : "—"], ["Situação", detalhe.estornada ? "Estornada" : "Confirmada"], ["Registrado em", new Date(detalhe.criado_em).toLocaleString("pt-BR", { timeZone: "America/Manaus" })], ["Identificador", detalhe.id]].map(([k, v]) => <div key={k}><dt className="text-xs text-muted-foreground">{k}</dt><dd className="break-words">{v}</dd></div>)}</dl>}</SheetContent></Sheet>
   </>;
 }
 
@@ -141,8 +142,9 @@ export function NovoLancamento({ planos, oficiais, seguro, hoje, onCancel }: { p
     try { valor = normalizarValor(f.valor); } catch { setErro("Informe um valor válido, por exemplo 1.234,56."); return; }
     if (valor === "0.00") { setErro("O valor deve ser maior que zero."); return; }
     if (!f.plano || !aptas.some((c) => c.id === f.plano)) { setErro(`Selecione uma categoria de ${natureza}.`); return; }
-    const ref = f.referencia.trim().toLowerCase();
-    if (!/^externo:[a-z0-9][a-z0-9._:/-]+$/.test(ref)) { setErro("Informe a referência no formato externo:documento (ex.: externo:os-1450)."); return; }
+    const numeroOS = normalizarNumeroOS(f.referencia);
+    if (!numeroOS) { setErro("Informe um número de OS válido."); return; }
+    const ref = referenciaDaOS(numeroOS);
     const pedido = { tipo, chave, data: f.data, descricao: f.descricao.trim(), valor, plano: f.plano, referencia: ref };
     const v = validarPedidoLivro(pedido, oficiais);
     if (v) { setErro(v); return; }
@@ -158,7 +160,7 @@ export function NovoLancamento({ planos, oficiais, seguro, hoje, onCancel }: { p
     <Campo label="Descrição" obrigatorio><Input aria-label="Descrição" maxLength={500} placeholder={tipo === "entrada" ? "Conserto de TV Samsung 55”" : "Compra de barras LED"} value={f.descricao} onChange={(e) => set("descricao", e.target.value)} /></Campo>
     <Campo label="Categoria" obrigatorio nota={!aptas.length ? `Nenhuma categoria de ${natureza} disponível.` : undefined}><Select value={f.plano} onValueChange={(v) => set("plano", v)}><SelectTrigger aria-label="Categoria do lançamento"><SelectValue placeholder="Selecione" /></SelectTrigger><SelectContent>{aptas.map((c) => <SelectItem key={c.id} value={c.id}>{c.codigo} · {c.descricao}</SelectItem>)}</SelectContent></Select></Campo>
     <Campo label="Data do lançamento" obrigatorio><Input type="date" min="2026-11-01" aria-label="Data do lançamento" value={f.data} onChange={(e) => set("data", e.target.value)} /></Campo>
-    <Campo label="Referência documental" obrigatorio nota="Exigida pelo banco no formato externo:documento — ex.: externo:os-1450, externo:nf-325."><Input aria-label="Referência" maxLength={200} placeholder="externo:os-1450" value={f.referencia} onChange={(e) => set("referencia", e.target.value)} /></Campo>
+    <Campo label="Número da OS" obrigatorio><Input aria-label="Número da OS" inputMode="numeric" maxLength={40} placeholder="1323" value={f.referencia} onChange={(e) => set("referencia", e.target.value)} /></Campo>
     <Campo label="Forma de pagamento" nota="Ainda não há campo próprio no banco; será habilitada após aprovação dessa evolução."><Select disabled><SelectTrigger aria-label="Forma de pagamento"><SelectValue placeholder={FORMAS_PAGAMENTO.join(" · ")} /></SelectTrigger><SelectContent /></Select></Campo>
     <p className="text-xs text-muted-foreground">Observações: campo ainda não suportado pelo registro atual.</p>
   </fieldset>
