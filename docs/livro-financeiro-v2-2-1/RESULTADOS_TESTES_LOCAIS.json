@@ -1,7 +1,11 @@
 {
   "ambiente": "PostgreSQL local descartável; Auth simplificado; sem rede; sem dados reais",
-  "total": 132,
+  "total": 133,
   "testes": [
+    {
+      "teste": "Base isolada reproduz tipo, tamanho e obrigatoriedade das 157 colunas hospedadas (inclui tipo varchar(20))",
+      "aprovado": true
+    },
     {
       "teste": "Base isolada tem as 14 categorias analíticas oficiais (6 receitas, 8 despesas)",
       "aprovado": true
@@ -23,15 +27,15 @@
       "aprovado": true
     },
     {
-      "teste": "Manifesto incompleto/nulo é recusado 5",
-      "aprovado": true
-    },
-    {
       "teste": "Manifesto incompleto/nulo é recusado 6",
       "aprovado": true
     },
     {
       "teste": "Manifesto incompleto/nulo é recusado 7",
+      "aprovado": true
+    },
+    {
+      "teste": "Manifesto incompleto/nulo é recusado 8",
       "aprovado": true
     },
     {

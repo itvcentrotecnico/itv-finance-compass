@@ -1,3 +1,10 @@
+-- Banco hospedado: contas_financeiras.tipo é character varying(20) (lido em 16/11/2026).
+ALTER TABLE financeiro_hml."contas_financeiras" ALTER COLUMN tipo TYPE varchar(20);
+-- Demais tamanhos/obrigatoriedades lidos do banco hospedado em 16/11/2026.
+ALTER TABLE financeiro_hml.centros_custo ALTER COLUMN codigo TYPE varchar(32), ALTER COLUMN descricao TYPE varchar(160), ALTER COLUMN responsavel TYPE varchar(160), ALTER COLUMN criado_em SET NOT NULL;
+ALTER TABLE financeiro_hml.contas_financeiras ALTER COLUMN nome TYPE varchar(160), ALTER COLUMN criado_em SET NOT NULL;
+ALTER TABLE financeiro_hml.perfis ALTER COLUMN papel TYPE varchar(30), ALTER COLUMN criado_em SET NOT NULL;
+ALTER TABLE financeiro_hml.plano_contas ALTER COLUMN codigo TYPE varchar(32), ALTER COLUMN descricao TYPE varchar(160), ALTER COLUMN natureza TYPE varchar(20), ALTER COLUMN criado_em SET NOT NULL;
 -- EXCLUSIVO: fixture PostgreSQL descartável local, nunca HML.
 BEGIN;
 SET LOCAL ROLE postgres;

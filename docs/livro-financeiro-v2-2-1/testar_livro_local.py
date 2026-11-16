@@ -46,6 +46,10 @@ try:
     sql(';'.join('ALTER FUNCTION '+sig+' OWNER TO postgres' for sig in cat)+';')
     sql("DO $$ DECLARE t record; BEGIN FOR t IN SELECT tablename FROM pg_tables WHERE schemaname='financeiro_hml' LOOP EXECUTE format('ALTER TABLE financeiro_hml.%I OWNER TO postgres',t.tablename); END LOOP; END $$;")
     sql((HERE/'FIXTURE_AJUSTE_REAL_LOCAL.sql').read_text())
+    colunas_locais=json.loads(sql("SELECT json_agg(x ORDER BY x) FROM (SELECT c.relname||'.'||a.attname||':'||format_type(a.atttypid,a.atttypmod)||':'||a.attnotnull x FROM pg_attribute a JOIN pg_class c ON c.oid=a.attrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='financeiro_hml' AND c.relkind='r' AND a.attnum>0 AND NOT a.attisdropped) s;"))
+    colunas_hosp=json.loads((HERE/'homologacao/COLUNAS_HOSPEDADAS_20261116.json').read_text())
+    print('Colunas divergentes (local x hospedado):',sorted(set(colunas_locais)^set(colunas_hosp)))
+    check('Base isolada reproduz tipo, tamanho e obrigatoriedade das 157 colunas hospedadas (inclui tipo varchar(20))',sorted(colunas_locais)==sorted(colunas_hosp))
     users=['10000000-0000-4000-8000-'+str(i).zfill(12) for i in range(1,8)]
     sql('INSERT INTO auth.users VALUES '+','.join("('"+u+"')" for u in users)+';')
     for i,role in enumerate(['admin_geral','analista_financeiro','admin_financeiro','consulta_gerencial','admin_geral','admin_financeiro']):

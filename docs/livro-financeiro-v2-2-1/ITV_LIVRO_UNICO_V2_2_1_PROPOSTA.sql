@@ -50,7 +50,7 @@ BEGIN
  IF (SELECT count(*) FROM financeiro_hml.contas_financeiras)<>6 OR EXISTS(SELECT 1 FROM financeiro_hml.contas_financeiras WHERE id=contas[1] OR tipo='interno' OR nome='LIVRO FINANCEIRO ITV — CONTROLE INTERNO') THEN RAISE EXCEPTION 'V22_CONTROLE_EXISTENTE'; END IF;
  IF nullif(m->>'abertura','')::uuid IS NULL OR nullif(m->>'chave_abertura','')::uuid IS NULL OR EXISTS(SELECT 1 FROM financeiro_hml.tesouraria_operacoes WHERE id=(m->>'abertura')::uuid OR chave_idempotencia=(m->>'chave_abertura')::uuid) THEN RAISE EXCEPTION 'V22_ABERTURA_ID'; END IF;
  -- No disguised bank/cash, no new table. Existing varchar must admit the neutral value.
- IF (SELECT format_type(atttypid,atttypmod) FROM pg_attribute WHERE attrelid='financeiro_hml.contas_financeiras'::regclass AND attname='tipo') NOT IN ('character varying','text') THEN RAISE EXCEPTION 'V22_TIPO_EXIGE_REVISAO'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM pg_attribute WHERE attrelid='financeiro_hml.contas_financeiras'::regclass AND attname='tipo' AND NOT attisdropped AND (atttypid='text'::regtype OR (atttypid='varchar'::regtype AND (atttypmod=-1 OR atttypmod-4>=7)))) THEN RAISE EXCEPTION 'V22_TIPO_EXIGE_REVISAO'; END IF;
  -- Mudança mínima proposta: ampliar enumeração existente, sem alterar dados ou tipos legados.
  -- Requer aprovação expressa; trava exclusiva e transação impedem janela sem validação.
  ALTER TABLE financeiro_hml.contas_financeiras DROP CONSTRAINT contas_financeiras_tipo_check;
