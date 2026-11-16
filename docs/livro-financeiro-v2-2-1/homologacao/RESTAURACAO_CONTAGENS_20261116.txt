@@ -1,0 +1,44 @@
+count|auditoria|296
+count|centros_custo|1
+count|contas_financeiras|6
+count|contas_preparadas|3
+count|diagnostico_autorizacoes|2
+count|diagnostico_tentativas|11
+count|integracao_itens|49
+count|integracao_sincronizacoes|19
+count|perfis|2
+count|plano_contas|18
+count|tesouraria_conferencias|49
+count|tesouraria_movimentos|0
+count|tesouraria_operacoes|6
+rls|auditoria|t|t|postgres
+rls|centros_custo|t|t|postgres
+rls|contas_financeiras|t|t|postgres
+rls|contas_preparadas|t|f|postgres
+rls|diagnostico_autorizacoes|t|f|postgres
+rls|diagnostico_tentativas|t|f|postgres
+rls|integracao_itens|t|f|postgres
+rls|integracao_sincronizacoes|t|f|postgres
+rls|perfis|t|t|postgres
+rls|plano_contas|t|t|postgres
+rls|tesouraria_conferencias|t|f|postgres
+rls|tesouraria_movimentos|t|t|postgres
+rls|tesouraria_operacoes|t|t|postgres
+nfunc|31
+npol|23
+ntrig|22
+fk_auth|financeiro_hml.centros_custo|centros_custo_atualizado_por_fkey
+fk_auth|financeiro_hml.centros_custo|centros_custo_criado_por_fkey
+fk_auth|financeiro_hml.contas_financeiras|contas_financeiras_criado_por_fkey
+fk_auth|financeiro_hml.perfis|perfis_usuario_id_fkey
+fk_auth|financeiro_hml.plano_contas|plano_contas_atualizado_por_fkey
+fk_auth|financeiro_hml.plano_contas|plano_contas_criado_por_fkey
+abert|6|6
+tem_papel_admin|f
+ psql:/tmp/rest/chk.sql:8: ERROR:  column p.user_id does not exist
+LINE 1: ... not exists(select 1 from auth.users u where u.id=p.user_id)...
+                                                             ^
+psql:/tmp/rest/chk.sql:9: ERROR:  column "user_id" does not exist
+LINE 1: select 'perfis',user_id,papel,ativo from financeiro_hml.perf...
+                        ^
+

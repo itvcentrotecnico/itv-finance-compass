@@ -1,0 +1,16 @@
+{
+  "versao": "V2.2.1-manifesto-v2",
+  "data": "2026-11-16",
+  "base": "MANIFESTO_DEFINITIVO_PARA_APROVACAO_20261103.json (conteúdo de responsáveis, 14 categorias e 3 identificadores técnicos inalterado)",
+  "manifesto_base_sha256": "fc29f41ea48d5703941754f3853b5f0838fcc1dd28c4e8a4dbcba15b21e114c3",
+  "arquivos_ensaiados": {
+    "instalacao": {"arquivo": "ITV_LIVRO_UNICO_V2_2_1_PROPOSTA.sql", "sha256": "e5659a9b13a887bbf3cf52f6a9383ca892e19d4a02ab5de68d462aa1ebcd2aa3"},
+    "contingencia": {"arquivo": "ITV_CONTENCAO_LIVRO_V2_2_1_PROPOSTA.sql", "sha256": "23618014604967b789debe245b9095aefaa9c195f732723bef16489b2a4dbd22"},
+    "fixture_local": {"arquivo": "FIXTURE_AJUSTE_REAL_LOCAL.sql", "sha256": "f8586a60cfc9352f8bc8d061c101abacdf5fb704a45b704848b7063c603ca2b0"},
+    "roteiro_testes": {"arquivo": "testar_livro_local.py", "sha256": "65e1e4c3d078ff557dc60b1e2ba654f67b937642319ea117315f200c1223df44"}
+  },
+  "impressoes_estruturais": {"pre": "9cf8f2614d34e17234989bb1a46de710", "pos": "071ad09b9919c8bab267784612980bfa", "contingencia": "173ccd6c116decc45c70c39b142bb04b"},
+  "revisao_aplicativo": {"commit_ensaio": "5782c44", "observacao": "A revisão exata a publicar é o commit deste manifesto; publicação exige autorização separada."},
+  "backup": {"arquivo": "ITV_FINANCEIRO_PRE_V221_20261111_150728.dump", "sha256": "7cc16b0351b3679fa35d7147cac54a8f2122158ff658f5f6e9190f84e3a2ae79", "restauracao_isolada": "aprovada em 16/11/2026"},
+  "reconfirmacao_hospedada_16_11_2026": {"impressao": "9cf8f2614d34e17234989bb1a46de710", "contagens": {"auditoria":296,"centros_custo":1,"contas_financeiras":6,"contas_preparadas":3,"diagnostico_autorizacoes":2,"diagnostico_tentativas":11,"integracao_itens":49,"integracao_sincronizacoes":19,"perfis":2,"plano_contas":18,"tesouraria_conferencias":49,"tesouraria_movimentos":0,"tesouraria_operacoes":6}, "funcoes": 31, "mudancas_desde_ensaio": "nenhuma"}
+}
