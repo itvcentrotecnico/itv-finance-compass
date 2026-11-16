@@ -1,6 +1,6 @@
 {
   "ambiente": "PostgreSQL local descartável; Auth simplificado; sem rede; sem dados reais",
-  "total": 133,
+  "total": 161,
   "testes": [
     {
       "teste": "Base isolada reproduz tipo, tamanho e obrigatoriedade das 157 colunas hospedadas (inclui tipo varchar(20))",
@@ -488,6 +488,118 @@
     },
     {
       "teste": "V2.2.1: centro e perfil têm autoria por gatilho",
+      "aprovado": true
+    },
+    {
+      "teste": "CP1: obrigação de R$ 1.000,00 com saldo 1.000,00",
+      "aprovado": true
+    },
+    {
+      "teste": "CP1: cadastro não lança despesa no Livro Único",
+      "aprovado": true
+    },
+    {
+      "teste": "CP1: reenvio do cadastro devolve a mesma obrigação",
+      "aprovado": true
+    },
+    {
+      "teste": "CP2: baixa de 400 deixa saldo 600 e situação parcial",
+      "aprovado": true
+    },
+    {
+      "teste": "CP2: um único lançamento de 400 com referência da OS",
+      "aprovado": true
+    },
+    {
+      "teste": "CP2: vínculo e autoria registrados na baixa",
+      "aprovado": true
+    },
+    {
+      "teste": "CP2: reenvio idêntico não altera valores",
+      "aprovado": true
+    },
+    {
+      "teste": "CP2: reenvio com mesma chave e valor diferente é recusado",
+      "aprovado": true
+    },
+    {
+      "teste": "CP3: valor acima do saldo é recusado",
+      "aprovado": true
+    },
+    {
+      "teste": "CP3: vencimento passado com saldo aparece vencida pelo saldo de 600",
+      "aprovado": true
+    },
+    {
+      "teste": "CP3: quitação passa a paga com saldo zero",
+      "aprovado": true
+    },
+    {
+      "teste": "CP4: vínculo de despesa existente não cria segundo lançamento",
+      "aprovado": true
+    },
+    {
+      "teste": "CP4: mesmo lançamento não pode ser usado em duas baixas",
+      "aprovado": true
+    },
+    {
+      "teste": "CP4: vínculo com valor diferente é recusado",
+      "aprovado": true
+    },
+    {
+      "teste": "CP4: Consulta Gerencial não cadastra",
+      "aprovado": true
+    },
+    {
+      "teste": "CP4: Consulta Gerencial não baixa",
+      "aprovado": true
+    },
+    {
+      "teste": "CP4: Administrador Financeiro fora do par não gera lançamento (motor recusa, nada gravado)",
+      "aprovado": true
+    },
+    {
+      "teste": "CP4: Consulta Gerencial consulta obrigações",
+      "aprovado": true
+    },
+    {
+      "teste": "CP4: escrita direta na tabela é negada",
+      "aprovado": true
+    },
+    {
+      "teste": "CP4: anon não lê obrigações",
+      "aprovado": true
+    },
+    {
+      "teste": "CP4: categoria de receita é recusada no cadastro",
+      "aprovado": true
+    },
+    {
+      "teste": "CP4: baixas simultâneas não excedem o saldo",
+      "aprovado": true
+    },
+    {
+      "teste": "CP5: obrigação com OS 1323 gravada como externo:os-1323",
+      "aprovado": true
+    },
+    {
+      "teste": "CP5: obrigação sem OS com fatura baixa no Livro Único sem ajuste de contrato",
+      "aprovado": true
+    },
+    {
+      "teste": "CP: analista não cancela; Administrador Geral cancela obrigação sem baixas",
+      "aprovado": true
+    },
+    {
+      "teste": "CP: obrigação com baixas não é cancelada",
+      "aprovado": true
+    },
+    {
+      "teste": "CP: auditoria registra cadastros e baixas",
+      "aprovado": true
+    },
+    {
+      "teste": "CP contenção: baixas preservadas e cadastro fechado",
       "aprovado": true
     },
     {

@@ -19,7 +19,7 @@ describe("permissões por módulo", () => {
   it("Consulta Gerencial só lê", () => {
     expect(can("consulta_gerencial", "relatorios", "view")).toBe(true);
     expect(can("consulta_gerencial", "relatorios", "create")).toBe(false);
-    expect(can("consulta_gerencial", "contas_pagar", "view")).toBe(false);
+    expect(can("consulta_gerencial", "contas_pagar", "view")).toBe(true);
   });
   it("Analista não aprova nem gerencia usuários", () => {
     expect(can("analista_financeiro", "contas_pagar", "approve")).toBe(false);
@@ -57,4 +57,11 @@ describe("permissões por tabela (espelho do RLS)", () => {
     expect(canTable("admin_geral", "plano_contas", "delete")).toBe(false);
     expect(canTable(null, "plano_contas", "read")).toBe(false);
   });
+});
+
+import { describe as d2, expect as e2, it as i2 } from "vitest";
+import { can as can2 } from "./permissions";
+d2("Contas a Pagar", () => {
+  i2("Consulta Gerencial só consulta", () => { e2(can2("consulta_gerencial", "contas_pagar", "view")).toBe(true); e2(can2("consulta_gerencial", "contas_pagar", "create")).toBe(false); });
+  i2("Analista cadastra e paga; só Administrador Geral cancela", () => { e2(can2("analista_financeiro", "contas_pagar", "create")).toBe(true); e2(can2("analista_financeiro", "contas_pagar", "update")).toBe(false); e2(can2("admin_geral", "contas_pagar", "update")).toBe(true); });
 });

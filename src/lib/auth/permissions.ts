@@ -52,6 +52,13 @@ const STRUCTURE: ModuleKey[] = ["plano_contas"];
 export function can(role: Role, module: ModuleKey, action: Action): boolean {
   // Presentation only: no financial reads or mutating commands exist for this screen.
   if (module === "conferencia_caixa") return action === "view" && (role === "admin_geral" || role === "analista_financeiro");
+  // Contas a Pagar: todos consultam; cadastro/baixa pelos perfis operacionais (o banco decide; o motor do Livro Único restringe a geração).
+  if (module === "contas_pagar") {
+    if (action === "view") return true;
+    if (action === "delete" || action === "approve") return false;
+    if (action === "update") return role === "admin_geral";
+    return role === "admin_geral" || role === "analista_financeiro" || role === "admin_financeiro";
+  }
   if (module === "tesouraria" || module === "lancamentos") {
     if (action === "view") return true;
     if (action === "delete" || action === "update" || action === "approve") return false;

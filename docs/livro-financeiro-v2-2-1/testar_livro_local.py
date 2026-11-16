@@ -39,7 +39,7 @@ try:
     sql((ROOT/'docs/m3/fixture_local.sql').read_text())
     sql("CREATE FUNCTION auth.role() RETURNS text LANGUAGE sql STABLE AS $$ SELECT coalesce(nullif(current_setting('request.jwt.claim.role',true),''),'authenticated') $$; GRANT EXECUTE ON FUNCTION auth.role() TO authenticated,service_role;")
     for p in sorted((ROOT/'supabase/migrations').glob('*.sql')):
-        if p.name.startswith('20261101'):continue
+        if p.name.startswith('20261101') or p.name.startswith('20261116202454'):continue  # V2.2.1 hospedada: instalada abaixo pela proposta
         sql('SET ROLE postgres;'+p.read_text())
     sql('SET ROLE postgres;'+(ROOT/'docs/correcao-minima-v2-1/DEFINICOES_BASE_LOCAL.sql').read_text())
     cat=json.loads((ROOT/'docs/correcao-minima-v2-1/CATALOGO_BASE_20261101.json').read_text())
@@ -227,6 +227,7 @@ try:
     check('V2.2.1: Administrador Geral cria perfil (convite)',sql(caller("INSERT INTO financeiro_hml.perfis(usuario_id,papel,ativo) VALUES ('"+users[6]+"','consulta_gerencial',true) RETURNING 1;",0)).splitlines()[-1]=='1')
     check('V2.2.1: Administrador Geral altera papel/ativo (updateUserRole)',sql(caller("UPDATE financeiro_hml.perfis SET ativo=false WHERE usuario_id='"+users[6]+"' RETURNING 1;",0)).splitlines()[-1]=='1')
     check('V2.2.1: centro e perfil têm autoria por gatilho',query("SELECT criado_por FROM financeiro_hml.centros_custo WHERE id='"+cc+"'")==users[0])
+    exec((ROOT/'docs/contas-pagar/testes_contas_pagar.py').read_text())
     print('MD5 histórico instalado:',query("SELECT md5(pg_get_functiondef('financeiro_hml.tesouraria_historico_operacoes(jsonb)'::regprocedure))"))
     reversal=(HERE/'ITV_CONTENCAO_LIVRO_V2_2_1_PROPOSTA.sql').read_text()
     rejected('Contenção sem confirmação técnica recusada',reversal,'V22_REVERSAO_NAO_AUTORIZADA')

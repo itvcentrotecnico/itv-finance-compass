@@ -7,6 +7,7 @@ import { PlanoContasPanel } from "@/components/cadastros/PlanoContasPanel";
 import { CentrosCustoPanel } from "@/components/cadastros/CentrosCustoPanel";
 import { TesourariaPanel, tesourariaOptions } from "@/components/tesouraria/TesourariaPanel";
 import { LancamentosPanel } from "@/components/lancamentos/LancamentosPanel";
+import { ContasPagarPanel } from "@/components/contas-pagar/ContasPagarPanel";
 import { ConferenciaCaixaPanel } from "@/components/conferencia-caixa/ConferenciaCaixaPanel";
 import { IntegracaoPanel } from "@/components/integracao/IntegracaoPanel";
 import { findGroupOf, findModuleBySlug } from "@/lib/modules";
@@ -53,7 +54,7 @@ function ModulePage() {
     );
   }
 
-  const Operacional = mod.key === "conferencia_caixa" ? ConferenciaCaixaPanel : mod.key === "usuarios" ? UsuariosPanel : mod.key === "plano_contas" ? PlanoContasPanel : mod.key === "centros_custo" ? CentrosCustoPanel : mod.key === "tesouraria" || mod.key === "despesas" ? TesourariaPanel : mod.key === "integracoes" ? IntegracaoPanel : mod.key === "lancamentos" ? LancamentosPanel : null;
+  const Operacional = mod.key === "contas_pagar" ? ContasPagarPanel : mod.key === "conferencia_caixa" ? ConferenciaCaixaPanel : mod.key === "usuarios" ? UsuariosPanel : mod.key === "plano_contas" ? PlanoContasPanel : mod.key === "centros_custo" ? CentrosCustoPanel : mod.key === "tesouraria" || mod.key === "despesas" ? TesourariaPanel : mod.key === "integracoes" ? IntegracaoPanel : mod.key === "lancamentos" ? LancamentosPanel : null;
 
   return (
     <AppShell>

@@ -220,3 +220,5 @@ Testes de convites e demais perfis ficam para homologação final; não bloqueia
 - Pacote v2 preparado e testado em ambiente isolado: 36/36 verificações DB, 221/221 testes app, build OK.
 - Interface libera receitas/despesas somente após sonda do contrato corrigido; transferências/estornos/conferências seguem bloqueados.
 - NADA aplicado remotamente nem publicado. Pré-condições: categorias oficiais, manutenção, backup real, validação autenticada e aprovação final específica.
+
+- [ ] Contas a Pagar V1: instalar no banco real (aguarda autorização) e testar pela tela
